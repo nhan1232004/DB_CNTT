@@ -1,0 +1,17 @@
+- Bữa là thầy giao task về cái dasboard của cái TSNN. Cái dashboard này nó thống kê tình hình, tình trạng của sinh viên đăng kí thực tập. Thì hiện tại nó chưa có gì hết, chỉ mới có mockdata thôi. Nhiệm vụ của mình là suy nghĩ coi là cái dashboard này cần những dữ liệu gì để hiển thị rồi báo thầy thầy sẽ cung cấp, cái nào thầy có thầy sẽ cung cấp.  
+
+- Khảo sát doanh nghiệp phải giảm thiểu việc nhập liệu của sinh viên. Nếu có doanh nghiệp thì cung cấp MST doanh nghiệp, các thông tin còn lại phải load tự động. Sinh viên chỉ làm việc duy nhất là coi có đúng thông tin chưa, không đúng thì sửa. Lấy dữ liệu từ MST Doanh nghiệp rồi sinh viên sẽ kiểm tra lại, đúng submit là xong. Còn chưa có doanh nghiệp thì sẽ cho SV 2 option (tự tìm hoặc khoa hỗ trợ). VD: nếu như ngày 15 chư có công ty thì vô tick vô là chưa có công ty, 2 ngày sau có công ty rồi thì vô bật sang trạng thái là đã có công ty, dashboard sẽ tự thay đổi.Thay vì thông thường sẽ nắm tình hình bằng cách tạo google form cho sinh viên nhập, rồi sau đó khi có thay đổi thì sinh viên lại nhập lại 1 cái form mới, rồi hệ thống mới lấy cái form đó rồi xử lý lại đưa lên dashboard lần nữa thì rất cực, bị duplicate dữ liệu. User là SV và Giảng Viên.
+- Về cái chứng chỉ thì thầy muốn là SV phải cung cấp chi tiết như là Loại chứng chỉ, thang điểm bao nhiêu, Cấp độ mấy, Thi ngày nào,...
+
+- Và dashboard này sẽ làm theo dạng microservice (fe,be đều thuộc dạng module), xử lý chuẩn hóa dữ liệu từ nhiều services bằng cái adapter. đang phân vân giữa 2 cái kiến trúc là có Chart Router và không có Chart Router.
+- Mỗi biểu đồ là 1 cái endpoint, có biểu đồ mới thì tạo endpoint mới.
+
+- Dùng Framework nào để cho chi phí bảo trì thấp nhất và dễ plug and play nhất khi có modules.
+- Sử dụng React thì sau này khi gắn module mới thì có dễ gắn hay không, vì project này mang tính chất kế thừa, duy trì mở rộng về sau. Làm sao để tái sử dụng và kế thừa được.
+
+- Sơ đồ kiến trúc:
+
+
+còn thiếu một chart để hiển thị có hay chưa có doanh nghiệp 
+phân quyền chức năng giữa giảng viên và sinh viên 
+sv và giảng viên đăng nhập bằng gmail mà trường cung cấp 

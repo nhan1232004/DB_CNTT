@@ -1,0 +1,17 @@
+{
+  "name": "reporting-adapter-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Compare pluggable chart reporting with and without Chart Router, sharing one data adapter",
+  "scripts": {
+    "start": "node --experimental-strip-types src/main.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^22.0.0"
+  },
+  "engines": { "node": ">=22.16.0" }
+}
