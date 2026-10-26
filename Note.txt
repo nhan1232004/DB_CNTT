@@ -9,4 +9,4 @@
 - Dùng Framework nào để cho chi phí bảo trì thấp nhất và dễ plug and play nhất khi có modules.
 - Sử dụng React thì sau này khi gắn module mới thì có dễ gắn hay không, vì project này mang tính chất kế thừa, duy trì mở rộng về sau. Làm sao để tái sử dụng và kế thừa được.
 
-- Sơ đồ kiến trúc:
+- Sơ đồ kiến trúc: Trong hình
