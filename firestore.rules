@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{collectionName}/{docId} {
+      allow read, delete: if true;
+      // Chặn vĩnh viễn các document ID mẫu của hệ thống cũ để các tab trình duyệt cũ không thể re-seed
+      allow create, update: if !(
+        docId in [
+          'cert_1', 'cert_2', 'cert_3', 'cert_4', 'cert_5',
+          'jd_01', 'jd_02', 'jd_03', 'jd_04', 'jd_05', 'jd_06', 'jd_07', 'jd_08', 'jd_09', 'jd_10', 'jd_11', 'jd_12',
+          'q_01', 'q_02', 'q_03',
+          'anc_01', 'anc_02', 'anc_03'
+        ]
+      );
+    }
+  }
+}

@@ -1,0 +1,1774 @@
+[
+  {
+    "stt": 1,
+    "mssv": "51900839",
+    "name": "Võ Duy Trí",
+    "dob": "2001-11-18",
+    "pob": "Long An",
+    "gender": "Nam",
+    "class": "19050402",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 2,
+    "mssv": "519H0035",
+    "name": "Phạm Thành Nhân",
+    "dob": "2001-01-28",
+    "pob": "Đồng Tháp",
+    "gender": "Nam",
+    "class": "19H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Dự án Công nghệ thông tin 1"
+    ],
+    "course_str": "DA CNTT 1",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 3,
+    "mssv": "519H0039",
+    "name": "Lê Tuấn Sang",
+    "dob": "2001-08-26",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "19H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Dự án Công nghệ thông tin 1"
+    ],
+    "course_str": "DA CNTT 1",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 4,
+    "mssv": "519H0042",
+    "name": "Nguyễn Anh Tài",
+    "dob": "2001-08-09",
+    "pob": "Hậu Giang",
+    "gender": "Nam",
+    "class": "19H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "KMS Technology",
+    "cert": "VSTEP B2",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 5,
+    "mssv": "519H0178",
+    "name": "Trần Minh Huy",
+    "dob": "2001-02-25",
+    "pob": "Quảng Nam",
+    "gender": "Nam",
+    "class": "19H50203",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 6,
+    "mssv": "519H0230",
+    "name": "Trần Thiên Tấn",
+    "dob": "2001-10-25",
+    "pob": "Đồng Nai",
+    "gender": "Nam",
+    "class": "19H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 7,
+    "mssv": "519H0290",
+    "name": "Nguyễn Ngọc Trung Hiếu",
+    "dob": "2001-09-23",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "19H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 8,
+    "mssv": "519H0301",
+    "name": "Phạm Gia Khiêm",
+    "dob": "2001-04-29",
+    "pob": "Phú Yên",
+    "gender": "Nam",
+    "class": "19H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Dự án Công nghệ thông tin 1",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "DA CNTT 1 + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 9,
+    "mssv": "519H0343",
+    "name": "Bao Hoàng Qui",
+    "dob": "2001-03-11",
+    "pob": "Cà Mau",
+    "gender": "Nam",
+    "class": "19H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Dự án Công nghệ thông tin 1"
+    ],
+    "course_str": "DA CNTT 1",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 10,
+    "mssv": "52000696",
+    "name": "Tạ Hữu Nhân",
+    "dob": "2002-06-05",
+    "pob": "Bến Tre",
+    "gender": "Nam",
+    "class": "20050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 11,
+    "mssv": "52000865",
+    "name": "Nguyễn Tấn Trí",
+    "dob": "2002-09-11",
+    "pob": "Bà Rịa - Vũng Tàu",
+    "gender": "Nam",
+    "class": "20050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 12,
+    "mssv": "520H0451",
+    "name": "Nguyễn Chí Cường",
+    "dob": "2002-01-01",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "20H50304",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "VSTEP B2",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 13,
+    "mssv": "520H0653",
+    "name": "Nguyễn Thanh Tuấn Kiệt",
+    "dob": "2002-03-08",
+    "pob": "Cà Mau",
+    "gender": "Nam",
+    "class": "20H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 14,
+    "mssv": "520H0693",
+    "name": "Lý Nguyễn Quốc Trung",
+    "dob": "2002-10-08",
+    "pob": "Tiền Giang",
+    "gender": "Nam",
+    "class": "20H50304",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 15,
+    "mssv": "52100907",
+    "name": "Nguyễn Hoàng Linh",
+    "dob": "2003-05-01",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "21050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 16,
+    "mssv": "52100912",
+    "name": "Hoàng Đức Minh",
+    "dob": "2003-02-09",
+    "pob": "Đắk Lắk",
+    "gender": "Nam",
+    "class": "21050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 17,
+    "mssv": "521H0090",
+    "name": "Đặng Lữ Anh Kiệt",
+    "dob": "2003-09-22",
+    "pob": "Trà Vinh",
+    "gender": "Nam",
+    "class": "21H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 18,
+    "mssv": "521H0122",
+    "name": "Phạm Quỳnh Như",
+    "dob": "2003-12-27",
+    "pob": "Long An",
+    "gender": "Nữ",
+    "class": "21H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 19,
+    "mssv": "521H0458",
+    "name": "Trần Trọng Khoa",
+    "dob": "2003-06-03",
+    "pob": "Đồng Nai",
+    "gender": "Nam",
+    "class": "21H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 20,
+    "mssv": "521H0459",
+    "name": "Trương Đức Anh Khoa",
+    "dob": "2003-06-01",
+    "pob": "Bình Thuận",
+    "gender": "Nam",
+    "class": "21H50203",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "VSTEP B2",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 21,
+    "mssv": "521H0503",
+    "name": "Trương Huỳnh Đăng Khoa",
+    "dob": "2003-09-28",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "21H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 22,
+    "mssv": "52200030",
+    "name": "Lê Anh Bắc",
+    "dob": "2004-01-09",
+    "pob": "Thanh Hóa",
+    "gender": "Nam",
+    "class": "22050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 23,
+    "mssv": "52200060",
+    "name": "Nguyễn Đặng Như Quỳnh",
+    "dob": "2004-10-07",
+    "pob": "Sóc Trăng",
+    "gender": "Nữ",
+    "class": "22050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 24,
+    "mssv": "52200132",
+    "name": "Võ Văn Sáng",
+    "dob": "2004-04-30",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "22050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 25,
+    "mssv": "52200316",
+    "name": "Từ Gia Huy",
+    "dob": "2004-10-21",
+    "pob": "Bến Tre",
+    "gender": "Nam",
+    "class": "22050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 26,
+    "mssv": "522H0028",
+    "name": "Lê Nguyễn Minh Kha",
+    "dob": "2004-10-09",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "IELTS 6.0",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 27,
+    "mssv": "522H0045",
+    "name": "Nguyễn Hữu Nhân",
+    "dob": "2004-03-12",
+    "pob": "Quảng Nam",
+    "gender": "Nam",
+    "class": "22H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 28,
+    "mssv": "522H0059",
+    "name": "Nguyễn Tường Qui",
+    "dob": "2004-11-25",
+    "pob": "Sóc Trăng",
+    "gender": "Nam",
+    "class": "22H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "VSTEP B2",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 29,
+    "mssv": "522H0067",
+    "name": "Phạm Trọng Tín",
+    "dob": "2004-09-20",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "DXC Technology",
+    "cert": "Cambridge B2 First",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 30,
+    "mssv": "522H0071",
+    "name": "Phan Thiết Trung",
+    "dob": "2004-08-09",
+    "pob": "TP. Đà Nẵng",
+    "gender": "Nam",
+    "class": "22H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 31,
+    "mssv": "522H0085",
+    "name": "Trần Thiên Trí",
+    "dob": "2004-05-25",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 32,
+    "mssv": "522H0094",
+    "name": "Chung Hữu Trí",
+    "dob": "2004-11-21",
+    "pob": "Tiền Giang",
+    "gender": "Nam",
+    "class": "22H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 33,
+    "mssv": "522H0118",
+    "name": "Lý Hưng Lâm",
+    "dob": "2004-02-23",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 34,
+    "mssv": "522H0137",
+    "name": "Nguyễn Như Thảo",
+    "dob": "2004-02-27",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nữ",
+    "class": "22H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "IELTS 6.0",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 35,
+    "mssv": "522H0141",
+    "name": "Nguyễn Thanh Sang",
+    "dob": "2004-07-20",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 36,
+    "mssv": "522H0157",
+    "name": "Trần Công Minh",
+    "dob": "2004-02-17",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "KMS Technology",
+    "cert": "VSTEP B2",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 37,
+    "mssv": "522I0001",
+    "name": "Mã Quốc Cường",
+    "dob": "2004-03-16",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22K50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "DXC Technology",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 38,
+    "mssv": "52300013",
+    "name": "Lê Đức Huỳnh Đại",
+    "dob": "2005-04-28",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 39,
+    "mssv": "52300019",
+    "name": "Nguyễn Khánh Duy",
+    "dob": "2005-12-15",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 40,
+    "mssv": "52300022",
+    "name": "Lê Đoàn Anh Hào",
+    "dob": "2005-12-24",
+    "pob": "Đồng Tháp",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "Chưa có",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 41,
+    "mssv": "52300030",
+    "name": "Phạm Nhựt Huy",
+    "dob": "2005-01-12",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 42,
+    "mssv": "52300044",
+    "name": "Bùi Thị Thanh Ngân",
+    "dob": "2005-04-05",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nữ",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "IELTS 6.0",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 43,
+    "mssv": "52300095",
+    "name": "Nguyễn Duy Minh Đăng",
+    "dob": "2005-04-25",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 44,
+    "mssv": "52300097",
+    "name": "Đào Nguyễn Tấn Đạt",
+    "dob": "2005-09-21",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "KMS Technology",
+    "cert": "VSTEP B2",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 45,
+    "mssv": "52300103",
+    "name": "Lê Ngọc Hải",
+    "dob": "2005-08-08",
+    "pob": "Quảng Trị",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "DXC Technology",
+    "cert": "Cambridge B2 First",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 46,
+    "mssv": "52300120",
+    "name": "Nguyễn Tuấn Khôi",
+    "dob": "2005-10-12",
+    "pob": "Bến Tre",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 47,
+    "mssv": "52300121",
+    "name": "Trần Nhựt Đông Khởi",
+    "dob": "2005-09-25",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 48,
+    "mssv": "52300126",
+    "name": "Phạm Đức Mạnh",
+    "dob": "2005-07-16",
+    "pob": "Thanh Hóa",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Chưa có",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 49,
+    "mssv": "52300139",
+    "name": "Nguyễn An Nhật",
+    "dob": "2005-03-30",
+    "pob": "Bình Định",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 50,
+    "mssv": "52300144",
+    "name": "Trần Cao Phong",
+    "dob": "2005-06-20",
+    "pob": "Kon Tum",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 51,
+    "mssv": "52300153",
+    "name": "Bùi Ngọc Quý",
+    "dob": "2005-01-22",
+    "pob": "Tiền Giang",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 52,
+    "mssv": "52300156",
+    "name": "Tôn Quốc Thái",
+    "dob": "2005-07-06",
+    "pob": "An Giang",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "KMS Technology",
+    "cert": "VSTEP B2",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 53,
+    "mssv": "52300201",
+    "name": "Nguyễn Thị Minh Hương",
+    "dob": "2005-10-17",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nữ",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "DXC Technology",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 54,
+    "mssv": "52300204",
+    "name": "Vũ Mạnh Huy",
+    "dob": "2005-09-07",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 55,
+    "mssv": "52300206",
+    "name": "Vũ Khánh Huyền",
+    "dob": "2005-10-04",
+    "pob": "Khánh Hòa",
+    "gender": "Nữ",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 56,
+    "mssv": "52300212",
+    "name": "Nguyễn Tuấn Kiệt",
+    "dob": "2005-06-01",
+    "pob": "Tiền Giang",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Chưa có",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 57,
+    "mssv": "52300217",
+    "name": "Cao Thị Thùy Linh",
+    "dob": "2005-01-10",
+    "pob": "Bình Phước",
+    "gender": "Nữ",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 58,
+    "mssv": "52300229",
+    "name": "Từ Thanh Ngôn",
+    "dob": "2005-12-30",
+    "pob": "Đồng Tháp",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 59,
+    "mssv": "52300239",
+    "name": "Nguyễn Tiến Phú",
+    "dob": "2005-09-21",
+    "pob": "Khánh Hòa",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 60,
+    "mssv": "52300245",
+    "name": "Hoàng Minh Quân",
+    "dob": "2005-04-08",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "KMS Technology",
+    "cert": "VSTEP B2",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 61,
+    "mssv": "52300247",
+    "name": "Phạm Nhựt Quang",
+    "dob": "2005-11-01",
+    "pob": "Đồng Tháp",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 62,
+    "mssv": "52300253",
+    "name": "Phan Trí Tâm",
+    "dob": "2005-07-04",
+    "pob": "Sóc Trăng",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 63,
+    "mssv": "52300268",
+    "name": "Nguyễn Hoàng Việt",
+    "dob": "2005-07-12",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 64,
+    "mssv": "52300284",
+    "name": "Mitthavong Benjouly",
+    "dob": "2004-09-22",
+    "pob": "Vientiane, Laos",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 65,
+    "mssv": "52300286",
+    "name": "Su Yi Phyo",
+    "dob": "2002-06-20",
+    "pob": "Magway, Myanmar",
+    "gender": "Nữ",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 66,
+    "mssv": "523H0024",
+    "name": "Phạm Minh Hào",
+    "dob": "2005-10-19",
+    "pob": "Bến Tre",
+    "gender": "Nam",
+    "class": "23H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 67,
+    "mssv": "523H0110",
+    "name": "Nguyễn Quang Trường",
+    "dob": "2005-11-08",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "23H50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "Viettel Cyber Security",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 68,
+    "mssv": "523H0140",
+    "name": "Nguyễn Quang Huy",
+    "dob": "2005-08-04",
+    "pob": "Lâm Đồng",
+    "gender": "Nam",
+    "class": "23H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "VSTEP B2",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 69,
+    "mssv": "523H0148",
+    "name": "Nguyễn Đặng Nam Khánh",
+    "dob": "2005-02-14",
+    "pob": "TP. Đà Nẵng",
+    "gender": "Nam",
+    "class": "23H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 70,
+    "mssv": "523H0162",
+    "name": "Phạm Đặng Ánh Ngọc",
+    "dob": "2005-11-27",
+    "pob": "Bà Rịa - Vũng Tàu",
+    "gender": "Nữ",
+    "class": "23H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 71,
+    "mssv": "523H0195",
+    "name": "Dương Quốc Vinh",
+    "dob": "2004-12-08",
+    "pob": "Tây Ninh",
+    "gender": "Nam",
+    "class": "23H50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 72,
+    "mssv": "523H0197",
+    "name": "Nguyễn Chí Vỹ",
+    "dob": "2005-01-22",
+    "pob": "TP. Cần Thơ",
+    "gender": "Nam",
+    "class": "23H50302",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp"
+    ],
+    "course_str": "TSNN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 73,
+    "mssv": "523K0034",
+    "name": "Saw Harry",
+    "dob": "2004-04-02",
+    "pob": "Hpa-an, Myanmar",
+    "gender": "Nam",
+    "class": "23K50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 74,
+    "mssv": "523K0051",
+    "name": "Nan Hnin Yai Kyi",
+    "dob": "2004-05-20",
+    "pob": "Karen State, Myanmar",
+    "gender": "Nữ",
+    "class": "23K50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "VNG Corporation",
+    "cert": "IELTS 6.0",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 75,
+    "mssv": "523K0073",
+    "name": "Thiha Aung",
+    "dob": "1998-05-26",
+    "pob": "Mandalay, Myanmar",
+    "gender": "Nam",
+    "class": "23K50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 76,
+    "mssv": "523K0075",
+    "name": "Thin Lei Sandi",
+    "dob": "2002-02-15",
+    "pob": "Yangon, Myanmar",
+    "gender": "Nữ",
+    "class": "23K50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Tập sự nghề nghiệp",
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "TSNN + KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "VSTEP B2",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 77,
+    "mssv": "520H0385",
+    "name": "Lê Gia Minh",
+    "dob": "2002-10-28",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "20H50204",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "Cambridge B2 First",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 78,
+    "mssv": "520H0540",
+    "name": "Đỗ Đức Gia Khang",
+    "dob": "2002-11-15",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "20H50202",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 3.33,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 79,
+    "mssv": "52100863",
+    "name": "Phạm Lê Anh Tuấn",
+    "dob": "2003-12-11",
+    "pob": "Đắk Lắk",
+    "gender": "Nam",
+    "class": "21050261",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 3.42,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 80,
+    "mssv": "521C0002",
+    "name": "Phạm Trọng Nghĩa",
+    "dob": "2003-01-09",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "21K50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 3.51,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 81,
+    "mssv": "521H0014",
+    "name": "Trương Chấn Bửu",
+    "dob": "2003-12-05",
+    "pob": "Kiên Giang",
+    "gender": "Nam",
+    "class": "21H50203",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "FPT Software",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.6,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 82,
+    "mssv": "52200178",
+    "name": "Nguyễn Đình Hoàng",
+    "dob": "2004-01-04",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nam",
+    "class": "22050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "IELTS 6.0",
+    "gpa": 3.69,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 83,
+    "mssv": "522K0041",
+    "name": "Vương Đức Anh",
+    "dob": "2004-10-19",
+    "pob": "TP. Hà Nội",
+    "gender": "Nam",
+    "class": "22K50301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.78,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 84,
+    "mssv": "52300040",
+    "name": "Trần Tuấn Kiệt",
+    "dob": "2005-01-01",
+    "pob": "Ninh Thuận",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "VSTEP B2",
+    "gpa": 3.87,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 85,
+    "mssv": "52300056",
+    "name": "Nguyễn Duy Quý",
+    "dob": "2005-01-24",
+    "pob": "Quảng Ngãi",
+    "gender": "Nam",
+    "class": "23050201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "DXC Technology",
+    "cert": "Cambridge B2 First",
+    "gpa": 2.7,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 86,
+    "mssv": "52300107",
+    "name": "Nguyễn Mạnh Hùng",
+    "dob": "2005-05-30",
+    "pob": "Nam Định",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NashTech",
+    "cert": "Aptis ESOL B2",
+    "gpa": 2.79,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 87,
+    "mssv": "52300135",
+    "name": "Lê Quang Hồng Ngọc",
+    "dob": "2005-05-18",
+    "pob": "Hà Tĩnh",
+    "gender": "Nam",
+    "class": "23050301",
+    "major": "Khoa học máy tính",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "MISA JSC",
+    "cert": "Cam kết nộp sau",
+    "gpa": 2.88,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 88,
+    "mssv": "52300223",
+    "name": "Lê Diễm My",
+    "dob": "2005-09-20",
+    "pob": "Bình Phước",
+    "gender": "Nữ",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Có doanh nghiệp",
+    "company": "NetNam Corp",
+    "cert": "Chưa có",
+    "gpa": 2.97,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 89,
+    "mssv": "52300228",
+    "name": "Bùi Thị Bích Ngọc",
+    "dob": "2005-01-27",
+    "pob": "TP. Hồ Chí Minh",
+    "gender": "Nữ",
+    "class": "23050401",
+    "major": "Mạng máy tính và truyền thông dữ liệu",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Đang chờ PV/KQPV",
+    "company": "Đang ứng tuyển...",
+    "cert": "TOEIC 650 (B2)",
+    "gpa": 3.06,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 90,
+    "mssv": "523H0083",
+    "name": "Nguyễn Anh Quân",
+    "dob": "2005-05-29",
+    "pob": "Khánh Hòa",
+    "gender": "Nam",
+    "class": "23H50203",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Chưa có doanh nghiệp",
+    "company": "Chưa có",
+    "cert": "IELTS 6.0",
+    "gpa": 3.15,
+    "updated": "22/10/2026"
+  },
+  {
+    "stt": 91,
+    "mssv": "523K0071",
+    "name": "Wai Yan Moe Myint",
+    "dob": "2001-03-28",
+    "pob": "Myanmar",
+    "gender": "Nam",
+    "class": "23K50201",
+    "major": "Kỹ thuật phần mềm",
+    "courses": [
+      "Kiến tập công nghiệp"
+    ],
+    "course_str": "KTCN",
+    "status": "Cần Khoa hỗ trợ",
+    "company": "Chưa có",
+    "cert": "TOEIC 550 (B1)",
+    "gpa": 3.24,
+    "updated": "22/10/2026"
+  }
+]

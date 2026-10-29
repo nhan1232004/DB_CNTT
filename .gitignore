@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build / Cache
+dist/
+build/
+.firebase/
+.vite/
+.vite-temp/
+
+# Scratch / Temp files
+cleaned_students_with_gpa.json
+figma_dump.html
+scratch_blocks.json
+scratch_prototype.pdf
+
+# Environment / Logs
+*.log
+.DS_Store
+Thumbs.db

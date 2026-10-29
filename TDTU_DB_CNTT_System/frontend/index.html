@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" class="notranslate" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google" content="notranslate">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>TDTU Khoa CNTT - Cổng Thông Tin Học Phần Thực Tập TSNN & KTCN</title>
+  
+  <!-- TDTU Official Favicon -->
+  <link rel="shortcut icon" href="https://stdportal.tdtu.edu.vn/logo.ico" />
+
+  <!-- Google Fonts: Inter, Be Vietnam Pro, JetBrains Mono, Roboto Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN with Official TDTU Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            tdtu: {
+              primary: '#003087',
+              primaryLight: '#0052cc',
+              primarySubtle: '#ebf3ff',
+              accent: '#e31837',
+              accentSubtle: '#fef2f2',
+              success: '#16a34a',
+              successSubtle: '#f0fdf4',
+              warning: '#d97706',
+              warningSubtle: '#fffbeb',
+              danger: '#dc2626',
+              dangerSubtle: '#fef2f2',
+              info: '#0284c7',
+              infoSubtle: '#f0f9ff',
+              bg: '#f0f4f8',
+              surface: '#ffffff',
+              border: '#e2e8f0',
+              textMain: '#0f172a',
+              textSub: '#64748b',
+              textMuted: '#94a3b8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Be Vietnam Pro', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Roboto Mono', 'monospace']
+          },
+          boxShadow: {
+            card: '0 2px 12px rgba(0, 48, 135, 0.08)',
+            cardHover: '0 6px 24px rgba(0, 48, 135, 0.14)',
+            modal: '0 20px 40px rgba(0, 15, 45, 0.2)'
+          }
+        }
+      }
+    };
+    if (localStorage.getItem('tdtu_theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <!-- Global Theme Styles conforming to Dashoard_TSNN-frontend_qvinh template -->
+  <style>
+    :root {
+      --color-primary: #003087;
+      --color-primary-light: #0052cc;
+      --color-primary-subtle: #ebf3ff;
+      --color-accent: #e31837;
+      --color-accent-subtle: #fef2f2;
+      --color-success: #16a34a;
+      --color-warning: #d97706;
+      --color-danger: #dc2626;
+      --color-bg: #f0f4f8;
+      --color-surface: #ffffff;
+      --color-border: #e2e8f0;
+      --font-main: 'Inter', 'Be Vietnam Pro', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--color-bg);
+      color: #0f172a;
+    }
+
+    /* Custom thin scrollbar matching template */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+  </style>
+
+  <!-- React 18 & Babel Standalone for direct runtime execution -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Firebase 10 App, Auth & Firestore SDK (Compat CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="./src/config/firebase.config.js?v=20261029_1155"></script>
+
+  <!-- SheetJS for Client-Side Excel (.xlsx, .xls, .csv) Import & Multi-tab Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Modular Frontend Services & Components with Cache-Busting Versioning -->
+  <script src="./src/services/prime-rbac.js?v=20261029_1335"></script>
+  <script src="./src/services/api.client.js?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/components/common/Navbar.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/components/common/Sidebar.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/components/student/StudentEligibilityBanner.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/LoginPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/DashboardPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/DeclarationPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/CertificatesPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/HandbookPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/StudentsPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/BulletinPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/DocumentsPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/pages/AccountsPage.jsx?v=20261029_1335"></script>
+  <script type="text/babel" src="./src/App.jsx?v=20261029_1335"></script>
+</head>
+<body class="bg-[#f0f4f8] text-[#0f172a] dark:bg-slate-900 dark:text-slate-100 antialiased selection:bg-[#003087] selection:text-white">
+  <div id="root">
+    <div class="min-h-screen flex items-center justify-center text-slate-500 text-xs">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#003087] mr-3"></div>
+      <span>Đang khởi động Cổng Thực tập TDTU...</span>
+    </div>
+  </div>
+
+  <!-- Resilient App Mounter (Thread-safe Singleton) -->
+  <script>
+    (function() {
+      var isMounted = false;
+      function tryMount() {
+        if (isMounted) return;
+        if (window.App && window.ReactDOM && window.React) {
+          var rootElem = document.getElementById('root');
+          if (rootElem) {
+            isMounted = true;
+            rootElem.innerHTML = '';
+            var root = ReactDOM.createRoot(rootElem);
+            root.render(React.createElement(window.App));
+            console.log('[TDTU Portal]: React App mounted successfully (Singleton).');
+            return;
+          }
+        }
+        setTimeout(tryMount, 40);
+      }
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        tryMount();
+      } else {
+        window.addEventListener('DOMContentLoaded', tryMount, { once: true });
+        window.addEventListener('load', tryMount, { once: true });
+      }
+    })();
+  </script>
+</body>
+</html>
