@@ -10,8 +10,8 @@ export const ENV = {
   JWT_EXPIRES_IN_DAYS: 7,
   ALLOWED_LECTURER_DOMAINS: ['@tdtu.edu.vn'],
   ALLOWED_STUDENT_DOMAINS: ['@student.tdtu.edu.vn'],
-  DB_PATH: process.env.DB_PATH || path.resolve(__dirname, '../../src/data/db_cntt.sqlite'),
-  REAL_STUDENTS_PATH: path.resolve(__dirname, '../../src/data/real-students.json'),
+  DB_PATH: process.env.DB_PATH || path.resolve(__dirname, '../data/db_cntt.sqlite'),
+  REAL_STUDENTS_PATH: process.env.REAL_STUDENTS_PATH || path.resolve(__dirname, '../data/real-students.json'),
   FRONTEND_PUBLIC_PATH: path.resolve(__dirname, '../../../frontend/public'),
   FRONTEND_DIST_PATH: path.resolve(__dirname, '../../../frontend/dist'),
   FRONTEND_SRC_PATH: path.resolve(__dirname, '../../../frontend')

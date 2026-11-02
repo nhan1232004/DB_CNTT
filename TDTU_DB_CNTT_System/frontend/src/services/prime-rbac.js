@@ -62,13 +62,13 @@
 
   // 3. Ma trận Quyền chuẩn theo Google Sheet của Thầy Phúc
   const DEFAULT_ROLE_MATRIX = {
-    // Thầy Phúc (Quản trị viên cấp cao / BCN Khoa)
+    // Thầy Phúc (Quản trị viên cấp cao / BCN Khoa - Đã bỏ Khai báo thực tập & Hồ sơ cá nhân)
     thay_phuc: {
       login: 2,
       dashboard: 22,     // 2 * 11
-      declaration: 22,   // 2 * 11
+      declaration: 1,    // 1 (None - Đã bỏ theo yêu cầu)
       students: 2310,    // 2 * 3 * 5 * 7 * 11
-      profile: 2,        // 2
+      profile: 1,        // 1 (None - Đã bỏ theo yêu cầu)
       certificates: 22,  // 2 * 11
       bulletin: 210,     // 2 * 3 * 5 * 7
       email_jd: 210,     // 2 * 3 * 5 * 7
@@ -78,19 +78,19 @@
       reporting: 22      // 2 * 11
     },
 
-    // Giảng viên thông thường
+    // Giảng viên thông thường (Bỏ Khai báo thực tập, Hồ sơ cá nhân, Duyệt JD, Quản lý học kỳ, Import, Export)
     giang_vien: {
       login: 2,
       dashboard: 22,     // 2 * 11
-      declaration: 22,   // 2 * 11
+      declaration: 1,    // 1 (None - Đã xóa theo yêu cầu)
       students: 22,      // 2 * 11
-      profile: 2,        // 2
+      profile: 1,        // 1 (None - Đã bỏ theo yêu cầu)
       certificates: 22,  // 2 * 11
       bulletin: 2,       // 2
-      email_jd: 2,       // 2
-      semesters: 22,     // 2 * 11
-      import: 1,         // None
-      export: 1,         // None
+      email_jd: 1,       // 1 (None - Đã bỏ theo yêu cầu)
+      semesters: 1,      // 1 (None - Đã bỏ theo yêu cầu)
+      import: 1,         // 1 (None - Không có quyền)
+      export: 1,         // 1 (None - Không có quyền)
       reporting: 22      // 2 * 11
     },
 
@@ -189,12 +189,37 @@
   }
 
   // Khởi tạo và Lưu trữ Ma trận Quyền
+  // Tự động làm sạch localStorage cũ nếu chưa cập nhật quyền giảng viên mới
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('tdtu_prime_roles_matrix');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.thay_phuc?.declaration !== 1 || parsed?.thay_phuc?.profile !== 1 || parsed?.giang_vien?.declaration !== 1 || parsed?.giang_vien?.profile !== 1 || parsed?.giang_vien?.email_jd !== 1 || parsed?.giang_vien?.semesters !== 1) {
+          localStorage.removeItem('tdtu_prime_roles_matrix');
+        }
+      }
+    }
+  } catch {}
+
   function getCustomRoleMatrix() {
     try {
       const saved = localStorage.getItem('tdtu_prime_roles_matrix');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
+          if (parsed.thay_phuc) {
+            parsed.thay_phuc.declaration = 1;
+            parsed.thay_phuc.profile = 1;
+          }
+          if (parsed.giang_vien) {
+            parsed.giang_vien.declaration = 1;
+            parsed.giang_vien.profile = 1;
+            parsed.giang_vien.email_jd = 1;
+            parsed.giang_vien.semesters = 1;
+            parsed.giang_vien.import = 1;
+            parsed.giang_vien.export = 1;
+          }
           return { ...DEFAULT_ROLE_MATRIX, ...parsed };
         }
       }
@@ -222,6 +247,47 @@
     return matrix;
   }
 
+  // Helper: Xác định RoleKey từ thông tin User
+  function getUserRoleKey(user) {
+    if (!user) return 'sv_trong_ky';
+    if (user.roleKey) return user.roleKey;
+    // Nguyenvana là Giảng viên (không phải Admin)
+    if (user.email === 'nguyenvana@tdtu.edu.vn') {
+      return 'giang_vien';
+    }
+    // Chỉ duy nhất Thầy Phúc hoặc email phamvanc mới là thay_phuc
+    if (user.email === 'phamvanc@tdtu.edu.vn' || user.role === 'admin' || (user.isAdmin && user.role !== 'lecturer')) {
+      return 'thay_phuc';
+    }
+    if (user.role === 'lecturer') {
+      return 'giang_vien';
+    }
+    if (user.role === 'student') {
+      if (user.isEnrolledThisSemester === false || user.isEnrolled === false || user.mssv === '52100999') {
+        return 'sv_ngoai_ky';
+      }
+      return 'sv_trong_ky';
+    }
+    if (user.role === 'partner') {
+      return 'partner';
+    }
+    return 'sv_trong_ky';
+  }
+
+  // Helper: Lấy Mask của User cho 1 tính năng
+  function getFeatureMask(user, featureKey) {
+    const roleKey = getUserRoleKey(user);
+    const matrix = getCustomRoleMatrix();
+    const rolePermissions = matrix[roleKey] || DEFAULT_ROLE_MATRIX[roleKey] || DEFAULT_ROLE_MATRIX.sv_trong_ky;
+    return rolePermissions[featureKey] ?? 1;
+  }
+
+  // Helper: Kiểm tra quyền User đối với Action trên Feature
+  function checkUserPermission(user, featureKey, actionPrime) {
+    const mask = getFeatureMask(user, featureKey);
+    return hasPrimePermission(mask, actionPrime);
+  }
+
   // Xuất module cho Browser Window & NodeJS Module
   const PrimeRbac = {
     PRIME_ACTIONS,
@@ -235,7 +301,10 @@
     calculateMaskFromActions,
     explainPermissionMask,
     getCustomRoleMatrix,
-    saveCustomRoleMatrix
+    saveCustomRoleMatrix,
+    getUserRoleKey,
+    getFeatureMask,
+    checkUserPermission
   };
 
   if (typeof module !== 'undefined' && module.exports) {

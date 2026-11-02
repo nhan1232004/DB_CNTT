@@ -1,0 +1,205 @@
+// ============================================================================
+// PRISMA DATABASE SCHEMA (PostgreSQL 17 / SQLite Synchronized)
+// Hệ thống Quản lý Thực tập & Dashboard TSNN (DB_CNTT) - Khoa CNTT TDTU
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GV
+  SV
+}
+
+enum InternshipStatus {
+  CO_DOANH_NGHIEP
+  DANG_CHO_PV
+  CHUA_CO_DOANH_NGHIEP
+  CAN_KHOA_HO_TRO
+}
+
+enum JdStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String                 @id @default(uuid())
+  email         String                 @unique // Chỉ chấp nhận @tdtu.edu.vn hoặc @student.tdtu.edu.vn
+  fullName      String                 @map("full_name")
+  role          Role
+  isAdmin       Boolean                @default(false) @map("is_admin") // Quyền Admin toàn quyền có thể cấp/chuyển cho GV khác
+  department    String                 @default("Khoa Công Nghệ Thông Tin - TDTU")
+  grantedBy     String?                @map("granted_by")
+  firebaseUid   String?                @unique @map("firebase_uid")
+  authProvider  String                 @default("google.com") @map("auth_provider")
+  isActive      Boolean                @default(true) @map("is_active")
+  lastLoginAt   DateTime?              @map("last_login_at")
+  loginCount    Int                    @default(0) @map("login_count")
+  photoUrl      String?                @map("photo_url")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  student       Student?
+  announcements LecturerAnnouncement[]
+
+  @@map("users")
+}
+
+model Student {
+  studentId    String                    @id @map("student_id") // MSSV (VD: 51900839)
+  stt          Int                       @default(0)
+  lastName     String                    @map("last_name")
+  firstName    String                    @map("first_name")
+  fullName     String                    @map("full_name")
+  birthDate    DateTime                  @map("birth_date")
+  birthPlace   String                    @map("birth_place")
+  gender       String
+  className    String                    @map("class_name")
+  campus       String                    @default("0 - TP. Hồ Chí Minh")
+  major        String
+  gpa          Float                     @default(3.0)
+  userId       String?                   @unique @map("user_id")
+  user         User?                     @relation(fields: [userId], references: [id])
+  enrollments  CourseEnrollment[]
+  declaration  InternshipDeclaration?
+  certificates GraduationLanguageCert[]
+  applications JdApplication[]
+
+  @@map("students")
+}
+
+model CourseEnrollment {
+  id           String   @id @default(uuid())
+  studentId    String   @map("student_id")
+  courseCode   String   @map("course_code") // 504074 (KTCN), 502090/503090/504090 (TSNN), 504078/504083/504041 (DA CNTT 1)
+  courseName   String   @map("course_name")
+  groupCode    String   @map("group_code")
+  campus       String   @default("0 - TP. Hồ Chí Minh")
+  semester     String   @default("HK1_2026-2027")
+  registeredAt DateTime @map("registered_at")
+  student      Student  @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@unique([studentId, courseCode, semester])
+  @@map("course_enrollments")
+}
+
+model InternshipDeclaration {
+  id                    String           @id @default(uuid())
+  studentId             String           @unique @map("student_id")
+  enrolledCourseNames   String[]         @map("enrolled_course_names") // Cho phép chọn 1 môn HOẶC cả 2 môn cùng lúc
+  hasCompany            Boolean          @default(false) @map("has_company")
+  taxCode               String?          @map("tax_code")
+  companyName           String?          @map("company_name")
+  companyAddress        String?          @map("company_address")
+  representative        String?
+  industry              String?
+  internPosition        String?          @map("intern_position")
+  mentorContact         String?          @map("mentor_contact")
+  status                InternshipStatus @default(CHUA_CO_DOANH_NGHIEP)
+  supportOption         String?          @map("support_option") // 'self' | 'faculty'
+  preferredField        String?          @map("preferred_field")
+  isConfirmedByStudent  Boolean          @default(false) @map("is_confirmed_by_student")
+  confirmedAt           DateTime?        @map("confirmed_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  student               Student          @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@map("internship_declarations")
+}
+
+model GraduationLanguageCert {
+  id                 String    @id @default(uuid())
+  studentId          String    @map("student_id")
+  certType           String    @map("cert_type") // Chỉ nhận danh mục chuẩn đầu ra TDTU
+  certName           String    @map("cert_name")
+  scoreOrLevel       String    @map("score_or_level")
+  certNumber         String?   @map("cert_number")
+  examDate           DateTime? @map("exam_date")
+  commitmentDeadline DateTime? @map("commitment_deadline")
+  proofImageUrl      String?   @map("proof_image_url")
+  status             String    @default("Đã thẩm định")
+  isVerified         Boolean   @default(false) @map("is_verified")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  student            Student   @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@map("graduation_language_certs")
+}
+
+model LecturerAnnouncement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  category    String   @default("Hướng dẫn")
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdBy   String   @map("created_by")
+  authorName  String   @map("author_name")
+  authorEmail String   @map("author_email")
+  author      User     @relation(fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("lecturer_announcements")
+}
+
+model JdPosting {
+  id                 String          @id @default(uuid())
+  companyName        String          @map("company_name")
+  taxCode            String          @map("tax_code")
+  jobTitle           String          @map("job_title")
+  description        String          @db.Text
+  skills             String[]
+  stipend            String
+  quota              Int             @default(5)
+  acceptsBothCourses Boolean         @default(true) @map("accepts_both_courses")
+  deadline           String
+  contactEmail       String?         @map("contact_email")
+  location           String?
+  status             JdStatus        @default(PENDING)
+  sourceEmail        String          @map("source_email")
+  forwardedBy        String?         @map("forwarded_by")
+  rawEmailSubject    String?         @map("raw_email_subject")
+  rawEmailBody       String?         @db.Text @map("raw_email_body")
+  approvedBy         String?         @map("approved_by")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  applications       JdApplication[]
+
+  @@map("jd_postings")
+}
+
+model JdApplication {
+  id              String    @id @default(uuid())
+  jdId            String    @map("jd_id")
+  studentId       String    @map("student_id")
+  studentName     String    @map("student_name")
+  studentEmail    String    @map("student_email")
+  selectedCourses String[]  @map("selected_courses")
+  cvNote          String?   @map("cv_note")
+  status          String    @default("APPLIED")
+  appliedAt       DateTime  @default(now()) @map("applied_at")
+  jd              JdPosting @relation(fields: [jdId], references: [id], onDelete: Cascade)
+  student         Student   @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@unique([jdId, studentId])
+  @@map("jd_applications")
+}
+
+model EmailForwardLog {
+  id                String   @id @default(uuid())
+  senderEmail       String   @map("sender_email")
+  originalFrom      String   @map("original_from")
+  subject           String
+  rawBody           String   @db.Text @map("raw_body")
+  extractedTaxCode  String?  @map("extracted_tax_code")
+  extractedCompany  String?  @map("extracted_company")
+  extractedJobTitle String?  @map("extracted_job_title")
+  extractedStipend  String?  @map("extracted_stipend")
+  extractedDeadline String?  @map("extracted_deadline")
+  jdId              String?  @map("jd_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("email_forward_logs")
+}

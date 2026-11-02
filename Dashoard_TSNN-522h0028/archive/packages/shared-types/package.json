@@ -1,0 +1,7 @@
+{
+  "name": "@db-cntt/shared-types",
+  "version": "3.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

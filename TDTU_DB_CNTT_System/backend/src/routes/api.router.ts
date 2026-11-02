@@ -1,26 +1,27 @@
-import { HttpRouter } from '../core/http-router.ts';
+import { HttpRouter } from './http-router.ts';
 import {
   corsMiddleware,
   bodyParserMiddleware,
   authMiddleware,
   requireAuth,
   requireRole
-} from '../core/middleware.ts';
+} from '../middlewares/middleware.ts';
 
 // Controllers
-import * as authCtrl from '../modules/auth/auth.controller.ts';
-import * as studentsCtrl from '../modules/students/students.controller.ts';
-import * as internshipCtrl from '../modules/internship/internship.controller.ts';
-import * as bulletinCtrl from '../modules/bulletin/bulletin.controller.ts';
-import * as documentsCtrl from '../modules/documents/documents.controller.ts';
-import * as certCtrl from '../modules/certificates/certificates.controller.ts';
-import * as reportingCtrl from '../modules/reporting/reporting.controller.ts';
+import * as authCtrl from '../controllers/auth.controller.ts';
+import * as studentsCtrl from '../controllers/students.controller.ts';
+import * as internshipCtrl from '../controllers/internship.controller.ts';
+import * as bulletinCtrl from '../controllers/bulletin.controller.ts';
+import * as documentsCtrl from '../controllers/documents.controller.ts';
+import * as certCtrl from '../controllers/certificates.controller.ts';
+import * as reportingCtrl from '../controllers/reporting.controller.ts';
+import * as notifCtrl from '../controllers/notification.controller.ts';
 
-// Import plugins to ensure auto-registration
-import '../plugins/charts/top-companies.plugin.ts';
-import '../plugins/charts/status-pie.plugin.ts';
-import '../plugins/charts/major-distribution.plugin.ts';
-import '../plugins/charts/salary-trend.plugin.ts';
+// Import plugins to ensure auto-registration in WidgetRegistry
+import '../services/charts/top-companies.plugin.ts';
+import '../services/charts/status-pie.plugin.ts';
+import '../services/charts/major-distribution.plugin.ts';
+import '../services/charts/salary-trend.plugin.ts';
 
 export function createApiRouter(): HttpRouter {
   const router = new HttpRouter();
@@ -39,21 +40,28 @@ export function createApiRouter(): HttpRouter {
   router.put('/api/auth/firebase-users/:uid/status', requireRole(['lecturer'], true), authCtrl.toggleUserStatusHandler);
   router.post('/api/auth/admin-role', requireRole(['lecturer'], true), authCtrl.updateAdminRoleHandler);
 
-  // 3. Student Tracking & Eligibility Routes (AUTH-03)
+  // 3. Student Tracking & Eligibility Routes (AUTH-03 + Full CRUD)
   router.get('/api/students', studentsCtrl.getStudentsHandler);
+  router.post('/api/students', studentsCtrl.createStudentHandler);
+  router.post('/api/students/bulk-import', studentsCtrl.bulkImportStudentsHandler);
+  router.delete('/api/students', studentsCtrl.clearAllStudentsHandler);
   router.get('/api/students/summary', studentsCtrl.getSummaryHandler);
   router.get('/api/students/eligibility/:studentId', studentsCtrl.checkEligibilityHandler);
   router.get('/api/students/:studentId', studentsCtrl.getStudentDetailHandler);
+  router.put('/api/students/:studentId', studentsCtrl.updateStudentHandler);
+  router.delete('/api/students/:studentId', studentsCtrl.deleteStudentHandler);
 
   // 4. Internship Declaration & Tax Lookup Routes
   router.get('/api/internship/company-lookup/:taxCode', internshipCtrl.companyLookupHandler);
   router.post('/api/internship/declare', requireAuth, internshipCtrl.declareInternshipHandler);
   router.get('/api/internship/declaration/:studentId', requireAuth, internshipCtrl.getDeclarationHandler);
+  router.delete('/api/internship/declaration/:studentId', requireAuth, internshipCtrl.deleteDeclarationHandler);
 
   // 5. Two-Tier Bulletin Board & Inbound Email Parser Routes
   router.get('/api/bulletin', bulletinCtrl.getBulletinPostsHandler);
   router.post('/api/bulletin', requireRole(['lecturer']), bulletinCtrl.createBulletinPostHandler);
   router.put('/api/bulletin/:id/status', requireRole(['lecturer']), bulletinCtrl.updateBulletinStatusHandler);
+  router.delete('/api/bulletin/:id', requireRole(['lecturer']), bulletinCtrl.deleteBulletinPostHandler);
   router.post('/api/bulletin/parse-email', requireRole(['lecturer']), bulletinCtrl.parseEmailForwardHandler);
   router.post('/api/bulletin/apply', requireAuth, bulletinCtrl.applyToJobHandler);
   router.get('/api/bulletin/applications', requireRole(['lecturer']), bulletinCtrl.getApplicationsHandler);
@@ -65,11 +73,24 @@ export function createApiRouter(): HttpRouter {
   // 7. Language Certificates Standards Routes (CERT-01)
   router.get('/api/certificates/standards', certCtrl.getStandardsHandler);
   router.post('/api/certificates/validate', certCtrl.validateCertificateHandler);
+  router.get('/api/certificates', certCtrl.getAllCertificatesHandler);
+  router.get('/api/certificates/:studentId', certCtrl.getStudentCertificatesHandler);
+  router.post('/api/certificates', certCtrl.addCertificateHandler);
+  router.put('/api/certificates/:id', certCtrl.updateCertificateHandler);
+  router.delete('/api/certificates/:id', certCtrl.deleteCertificateHandler);
 
   // 8. Reporting Microservice Engine (Chart Router & Widget Registry)
   router.get('/api/dashboard/widgets', reportingCtrl.listWidgetsHandler);
   router.post('/api/dashboard/chart/dispatch', reportingCtrl.dispatchChartHandler);
   router.get('/api/dashboard/chart/:widgetId', reportingCtrl.getChartByIdHandler);
+
+  // 9. Targeted Notifications & Anti-Spam Routes
+  router.get('/api/notifications', notifCtrl.getNotificationsHandler);
+  router.post('/api/notifications', requireAuth, notifCtrl.createNotificationHandler);
+  router.post('/api/notifications/:id/read', requireAuth, notifCtrl.markAsReadHandler);
+  router.post('/api/notifications/mark-all-read', requireAuth, notifCtrl.markAllAsReadHandler);
+  router.delete('/api/notifications/:id', requireRole(['lecturer']), notifCtrl.deleteNotificationHandler);
+  router.get('/api/notifications/audience-count', requireRole(['lecturer']), notifCtrl.getAudienceCountHandler);
 
   return router;
 }

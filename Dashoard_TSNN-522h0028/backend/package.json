@@ -1,0 +1,21 @@
+{
+  "name": "tdtu-internship-portal-backend",
+  "version": "1.0.0",
+  "description": "Backend API Server - Clean Architecture for TDTU Internship Portal & Decision Support System",
+  "main": "src/server.ts",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.ts",
+    "dev": "node --watch src/server.ts",
+    "test": "node --test tests/api.test.ts"
+  },
+  "keywords": [
+    "tdtu",
+    "clean-architecture",
+    "nodejs",
+    "sqlite",
+    "rbac"
+  ],
+  "author": "Khoa CNTT - ĐH Tôn Đức Thắng",
+  "license": "UNLICENSED"
+}

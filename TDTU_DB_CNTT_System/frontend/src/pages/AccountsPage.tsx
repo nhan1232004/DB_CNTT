@@ -9,7 +9,8 @@ const AccountsPage = ({ currentUser }) => {
   const [users, setUsers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
-  const [roleFilter, setRoleFilter] = React.useState('all'); // 'all' | 'lecturer' | 'student' | 'partner'
+  const [roleFilter, setRoleFilter] = React.useState('all');
+   // 'all' | 'lecturer' | 'student' | 'partner'
   const [message, setMessage] = React.useState(null);
 
   // Modal Tạo tài khoản Đối tác bên ngoài
@@ -26,12 +27,12 @@ const AccountsPage = ({ currentUser }) => {
 
   // Form Cấu hình Mốc thời gian & Hạn chót (Deadlines)
   const [deadlinesForm, setDeadlinesForm] = React.useState({
-    semesterName: 'HK1 2025–2026',
-    declarationDeadline: '2025-09-30',
-    certDeadline: '2025-10-15',
-    reviewDeadline: '2025-10-20',
-    reportDeadline: '2026-01-05',
-    regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 30/09/2025 để Khoa kịp thời thẩm định.'
+    semesterName: 'HK1 2026–2027',
+    declarationDeadline: '2026-11-15',
+    certDeadline: '2026-11-30',
+    reviewDeadline: '2026-12-05',
+    reportDeadline: '2027-01-10',
+    regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước hạn chót để Khoa CNTT kịp thời thẩm định.'
   });
   const [savingDeadlines, setSavingDeadlines] = React.useState(false);
 
@@ -133,7 +134,7 @@ const AccountsPage = ({ currentUser }) => {
       });
       setMessage({
         type: 'success',
-        text: `✓ Đã tạo thành công tài khoản đối tác: ${partnerForm.companyName} (${partnerForm.email})`
+        text: ` Đã tạo thành công tài khoản đối tác: ${partnerForm.companyName} (${partnerForm.email})`
       });
       setShowPartnerModal(false);
       setPartnerForm({
@@ -159,7 +160,7 @@ const AccountsPage = ({ currentUser }) => {
       window.ApiClient.saveSystemDeadlines(deadlinesForm);
       setMessage({
         type: 'success',
-        text: '✓ Đã cập nhật thành công các mốc thời gian & hạn chót học kỳ! Toàn bộ đồng hồ đếm ngược và bảng theo dõi trên hệ thống đã được đồng bộ.'
+        text: ' Đã cập nhật thành công các mốc thời gian & hạn chót học kỳ! Toàn bộ đồng hồ đếm ngược và bảng theo dõi trên hệ thống đã được đồng bộ.'
       });
     } catch (err) {
       setMessage({ type: 'error', text: 'Lỗi lưu hạn chót: ' + err.message });
@@ -195,7 +196,7 @@ const AccountsPage = ({ currentUser }) => {
       }
       setMessage({
         type: 'success',
-        text: '✓ Đã lưu thành công Ma trận Phân quyền Nguyên tố lên Cloud Firestore & Hệ thống!'
+        text: ' Đã lưu thành công Ma trận Phân quyền Nguyên tố lên Cloud Firestore & Hệ thống!'
       });
     } catch (err) {
       setMessage({ type: 'error', text: 'Lỗi lưu ma trận quyền: ' + err.message });
@@ -212,7 +213,7 @@ const AccountsPage = ({ currentUser }) => {
       if (window.ApiClient?.savePrimeRoleMatrix) {
         window.ApiClient.savePrimeRoleMatrix(def);
       }
-      setMessage({ type: 'success', text: '✓ Đã khôi phục Ma trận Phân quyền mặc định của Thầy Phúc thành công!' });
+      setMessage({ type: 'success', text: ' Đã khôi phục Ma trận Phân quyền mặc định của Thầy Phúc thành công!' });
     }
   };
 
@@ -243,7 +244,7 @@ const AccountsPage = ({ currentUser }) => {
     setNewRoleForm({ roleId: '', roleName: '' });
     setMessage({
       type: 'success',
-      text: `✓ Đã tạo thành công Role mới: "${newRoleForm.roleName || cleanId}". Hãy tùy biến các quyền bên dưới!`
+      text: ` Đã tạo thành công Role mới: "${newRoleForm.roleName || cleanId}". Hãy tùy biến các quyền bên dưới!`
     });
   };
 
@@ -261,66 +262,61 @@ const AccountsPage = ({ currentUser }) => {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 w-full pb-12">
       
       {/* Header & Sub-Tabs */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
+      <div className="bg-white  p-6 rounded-xl border border-[#e5e7eb]  shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1f2937] ">
             Quản trị Tài khoản & Cấu hình Hạn chót
           </h1>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Hệ thống trực tuyến (Online)
-            </span>
-          </div>
+          
         </div>
 
-        {/* Tab switchers */}
-        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+        {/* Tab switchers (Sạch sẽ, rộng rãi, chuẩn SaaS) */}
+        <div className="inline-flex p-2 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0] gap-3 flex-wrap items-center">
           <button
             type="button"
             onClick={() => setActiveSubTab('accounts')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[150px] text-center shadow-xs ${
               activeSubTab === 'accounts'
-                ? 'bg-[#003087] text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                ? 'bg-[#003087] text-white'
+                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
             }`}
           >
-            👥 Tài khoản & Phân quyền
+            Tài khoản & Phân quyền
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('deadlines')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[130px] text-center shadow-xs ${
               activeSubTab === 'deadlines'
-                ? 'bg-[#003087] text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                ? 'bg-[#003087] text-white'
+                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
             }`}
           >
-            ⏱️ Tùy chỉnh Hạn chót
+            Tùy chỉnh
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('prime_matrix')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[130px] text-center shadow-xs ${
               activeSubTab === 'prime_matrix'
-                ? 'bg-[#003087] text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                ? 'bg-[#003087] text-white'
+                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
             }`}
           >
-            🔢 Ma trận Quyền Nguyên tố (Thầy Phúc)
+            Phân quyền
           </button>
         </div>
       </div>
 
       {/* Global Toast Alert */}
       {message && (
-        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between ${
+        <div className={`p-3.5 rounded-xl border text-[14px] font-semibold flex items-center justify-between ${
           message.type === 'success' 
-            ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' 
-            : 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+            ? 'bg-[#ebf3ff]  border-[#bfdbfe]  text-[#003087] ' 
+            : 'bg-[#fef2f2]  border-[#fecaca]  text-[#dc2626] '
         }`}>
           <span>{message.text}</span>
           <button onClick={() => setMessage(null)} className="underline ml-4 font-bold">Đóng</button>
@@ -328,170 +324,205 @@ const AccountsPage = ({ currentUser }) => {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 1: QUẢN LÝ TÀI KHOẢN & TẠO ĐỐI TÁC BÊN NGOÀI          */}
+      {/* TAB 1: QUẢN LÝ TÀI KHOẢN (Bảng dữ liệu chuẩn mực, không màu mè dư thừa) */}
       {/* ======================================================== */}
       {activeSubTab === 'accounts' && (
         <div className="space-y-4">
           
-          {/* Action Bar: Search, Filters & Button "Tạo tài khoản đối tác" */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Action Bar: Lọc vai trò, Ô Tìm kiếm & Nút Tạo Đối tác */}
+          <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
-            {/* Filter chips */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Bộ nút lọc vai trò (Thuần chữ, không icon rườm rà) */}
+            <div className="inline-flex p-1.5 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0] gap-1.5 flex-wrap">
               <button
                 type="button"
                 onClick={() => setRoleFilter('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
                   roleFilter === 'all'
                     ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
                 }`}
               >
-                Tất cả ({users.length})
+                <span>Tất cả</span>
+                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
+                  roleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
+                }`}>{users.length}</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setRoleFilter('lecturer')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
                   roleFilter === 'lecturer'
                     ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
                 }`}
               >
-                Giảng viên ({users.filter(u => u.role === 'lecturer').length})
+                <span>Giảng viên</span>
+                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
+                  roleFilter === 'lecturer' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
+                }`}>{users.filter(u => u.role === 'lecturer').length}</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setRoleFilter('student')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
                   roleFilter === 'student'
                     ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
                 }`}
               >
-                Sinh viên ({users.filter(u => u.role === 'student').length})
+                <span>Sinh viên</span>
+                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
+                  roleFilter === 'student' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
+                }`}>{users.filter(u => u.role === 'student').length}</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setRoleFilter('partner')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
                   roleFilter === 'partner'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100'
+                    ? 'bg-[#003087] text-white shadow-xs'
+                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
                 }`}
               >
-                🏢 Đối tác Doanh nghiệp ({users.filter(u => u.role === 'partner').length})
+                <span>Đối tác Doanh nghiệp</span>
+                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
+                  roleFilter === 'partner' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
+                }`}>{users.filter(u => u.role === 'partner').length}</span>
               </button>
             </div>
 
-            {/* Search Box & Create Partner Button */}
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Tìm theo tên, email, MST..."
-                className="px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-[#003087] w-full sm:w-56"
-              />
+            {/* Ô Tìm kiếm (chuẩn padding không đè chữ) & Nút Tạo Đối tác */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-full sm:w-72 flex items-center">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#4b5563]">
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm..."
+                  style={{ paddingLeft: '44px' }}
+                  className="w-full pr-3.5 py-2.5 text-[14.5px] bg-[#f8fafc] border border-[#cbd5e1] rounded-xl outline-none focus:bg-white focus:border-[#003087] focus:ring-2 focus:ring-[#003087] text-[#1f2937]"
+                />
+              </div>
 
               <button
                 type="button"
                 onClick={() => setShowPartnerModal(true)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0"
+                className="px-6 py-2.5 min-w-[200px] h-[40px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer"
               >
-                <span>+</span>
+                <span className="text-base leading-none font-bold">+</span>
                 <span>Tạo tài khoản Đối tác</span>
               </button>
             </div>
 
           </div>
 
-          {/* User Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-colors">
+          {/* Bảng dữ liệu duy nhất (Table View chuẩn mực, không nhồi nhét, không chia thẻ card dư thừa) */}
+          <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-xs overflow-hidden">
             {loading ? (
-              <div className="p-8 text-center text-xs text-slate-500">Đang tải danh sách tài khoản...</div>
+              <div className="p-12 text-center text-[#4b5563] text-[15px] font-semibold">
+                Đang tải danh sách tài khoản...
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 uppercase tracking-wider font-bold text-[10px] border-b border-slate-200 dark:border-slate-700">
+                <table className="w-full text-left text-[14px] table-fixed min-w-[1100px]">
+                  <thead className="bg-[#f8fafc] text-[#1f2937] uppercase tracking-wider font-extrabold text-[12.5px] border-b border-[#e2e8f0]">
                     <tr>
-                      <th className="p-3.5">Người dùng / Đơn vị</th>
-                      <th className="p-3.5">Email đăng nhập</th>
-                      <th className="p-3.5">Vai trò</th>
-                      <th className="p-3.5">Phân quyền Admin</th>
-                      <th className="p-3.5">Trạng thái</th>
-                      <th className="p-3.5 text-right">Tác vụ Quản trị</th>
+                      <th className="p-4 w-72">Họ tên / Đơn vị</th>
+                      <th className="p-4 w-44">Mã định danh</th>
+                      <th className="p-4 w-80">Email đăng nhập</th>
+                      <th className="p-4 w-48 text-center">Vai trò hệ thống</th>
+                      <th className="p-4 w-32 text-center">Phân quyền</th>
+                      <th className="p-4 w-36 text-center">Trạng thái</th>
+                      <th className="p-4 w-48 text-right">Tác vụ Quản trị</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium">
+                  <tbody className="divide-y divide-[#f1f5f9] font-medium">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="6" className="p-8 text-center text-slate-400">
+                        <td colSpan="7" className="p-10 text-center text-[#4b5563]">
                           Không tìm thấy tài khoản nào khớp với bộ lọc.
                         </td>
                       </tr>
                     ) : (
                       filteredUsers.map(u => (
-                        <tr key={u.uid} className="hover:bg-slate-50 dark:hover:bg-slate-750 transition">
-                          <td className="p-3.5">
-                            <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                              <span>{u.name || u.displayName}</span>
-                              {u.role === 'partner' && (
-                                <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] font-bold rounded">DN</span>
-                              )}
+                        <tr key={u.uid} className="hover:bg-[#f8fafc] transition">
+                          <td className="p-4">
+                            <div className="font-bold text-[#1f2937] text-[14.5px]">
+                              {u.name || u.displayName}
                             </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">
-                              {u.role === 'partner' 
-                                ? `MST: ${u.taxCode || 'Chưa cập nhật'} · LH: ${u.contactName || 'Người đại diện'}`
-                                : (u.department || (u.studentId ? `MSSV: ${u.studentId}` : 'Khoa CNTT'))}
+                            <div className="text-[12.5px] text-[#4b5563] mt-0.5">
+                              {u.role === 'partner' ? (u.contactName ? `LH: ${u.contactName}` : 'Đối tác') : (u.department || 'Khoa CNTT')}
                             </div>
                           </td>
 
-                          <td className="p-3.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                            {u.email}
-                          </td>
-
-                          <td className="p-3.5">
-                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${
-                              u.role === 'partner'
-                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200'
-                                : u.role === 'lecturer'
-                                  ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
-                                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
-                            }`}>
-                              {u.role === 'partner' ? '🏢 Đối tác Doanh nghiệp' : (u.role === 'lecturer' ? 'Giảng viên' : 'Sinh viên')}
+                          <td className="p-4">
+                            <span className="font-mono text-[13px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
+                              {u.role === 'partner'
+                                ? (u.taxCode ? `MST: ${u.taxCode}` : 'Chưa cập nhật')
+                                : (u.studentId ? `MSSV: ${u.studentId}` : (u.lecturerCode ? `MGV: ${u.lecturerCode}` : 'Khoa CNTT'))}
                             </span>
                           </td>
 
-                          <td className="p-3.5">
+                          <td className="p-4 font-mono text-[13.5px] text-[#1f2937] whitespace-nowrap">
+                            {u.email}
+                          </td>
+
+                          <td className="p-4 text-center">
+                            {u.role === 'partner' ? (
+                              <span className="inline-block px-3 py-1 rounded-full text-[12.5px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                                Đối tác Doanh nghiệp
+                              </span>
+                            ) : u.role === 'lecturer' ? (
+                              <span className="inline-block px-3 py-1 rounded-full text-[12.5px] font-bold bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0]">
+                                Giảng viên
+                              </span>
+                            ) : (
+                              <span className="inline-block px-3 py-1 rounded-full text-[12.5px] font-bold bg-[#f8fafc] text-[#1f2937] border border-[#e2e8f0]">
+                                Sinh viên
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-4 text-center">
                             {u.isAdmin ? (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200">
-                                ★ ADMIN
+                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-black bg-[#dc2626] text-white">
+                                ADMIN
                               </span>
                             ) : (
-                              <span className="text-[10px] text-slate-400">—</span>
+                              <span className="text-[13px] text-[#9ca3af] font-mono">—</span>
                             )}
                           </td>
 
-                          <td className="p-3.5">
+                          <td className="p-4 text-center">
                             {u.isActive ? (
-                              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Hoạt động
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                                <span>Hoạt động</span>
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> Đã khóa
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>
+                                <span>Đã khóa</span>
                               </span>
                             )}
                           </td>
 
-                          <td className="p-3.5 text-right space-x-2">
+                          <td className="p-4 text-right space-x-2">
                             {u.role === 'lecturer' && (
                               <button
                                 type="button"
                                 onClick={() => handleToggleAdmin(u.email, Boolean(u.isAdmin))}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                                  u.isAdmin ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200' : 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 hover:bg-purple-200'
+                                className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[95px] whitespace-nowrap ${
+                                  u.isAdmin ? 'bg-[#f1f5f9] text-[#1f2937] hover:bg-[#e2e8f0]' : 'bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] hover:bg-[#dbeafe]'
                                 }`}
                               >
                                 {u.isAdmin ? 'Hủy Admin' : 'Cấp Admin'}
@@ -501,8 +532,8 @@ const AccountsPage = ({ currentUser }) => {
                             <button
                               type="button"
                               onClick={() => handleToggleStatus(u.uid, Boolean(u.isActive))}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                                u.isActive ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+                              className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[90px] whitespace-nowrap ${
+                                u.isActive ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] hover:bg-[#fee2e2]' : 'bg-[#003087] text-white hover:bg-[#002266]'
                               }`}
                             >
                               {u.isActive ? 'Khóa' : 'Mở khóa'}
@@ -512,10 +543,10 @@ const AccountsPage = ({ currentUser }) => {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteUser(u.uid, u.name)}
-                                className="px-2 py-1 rounded-lg text-[11px] font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                className="px-3.5 py-2 rounded-lg text-[12.5px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] hover:bg-[#fee2e2] transition cursor-pointer whitespace-nowrap"
                                 title="Xóa tài khoản đối tác"
                               >
-                                ✕
+                                Xóa
                               </button>
                             )}
                           </td>
@@ -535,13 +566,13 @@ const AccountsPage = ({ currentUser }) => {
       {/* TAB 2: TÙY CHỈNH CẤU HÌNH HẠN CHÓT & MỐC THỜI GIAN       */}
       {/* ======================================================== */}
       {activeSubTab === 'deadlines' && (
-        <div className="bg-white dark:bg-slate-800 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div className="bg-white  p-6 md:p-8 rounded-xl border border-[#e5e7eb]  shadow-sm space-y-6">
           
-          <div className="border-b border-slate-100 dark:border-slate-700 pb-4">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+          <div className="border-b border-[#e5e7eb]  pb-4">
+            <h2 className="text-base font-bold text-[#1f2937] ">
               Cấu hình Mốc thời gian & Hạn chót học kỳ
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-[14px] text-[#1f2937]  mt-1">
               Quản trị viên có toàn quyền thay đổi các mốc ngày hạn chót. Khi lưu, các đồng hồ đếm ngược và bảng theo dõi của sinh viên, giảng viên sẽ được cập nhật đồng bộ tức thì.
             </p>
           </div>
@@ -549,7 +580,7 @@ const AccountsPage = ({ currentUser }) => {
           <form onSubmit={handleSaveDeadlines} className="space-y-5 max-w-3xl">
             
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[14px] font-bold uppercase tracking-wider text-[#1f2937]  mb-1">
                 Tên học kỳ áp dụng *
               </label>
               <input
@@ -557,61 +588,61 @@ const AccountsPage = ({ currentUser }) => {
                 value={deadlinesForm.semesterName}
                 onChange={e => setDeadlinesForm({ ...deadlinesForm, semesterName: e.target.value })}
                 placeholder="VD: HK1 2025–2026"
-                className="w-full px-4 py-2 text-sm font-semibold rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                className="w-full px-4 py-2 text-sm font-semibold rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               
-              <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-900/40 space-y-2">
-                <label className="block text-xs font-bold text-blue-900 dark:text-blue-300">
+              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
+                <label className="block text-[14px] font-bold text-blue-900 ">
                   1. Hạn chót Khai báo Doanh nghiệp (Sinh viên) *
                 </label>
                 <input
                   type="date"
                   value={deadlinesForm.declarationDeadline}
                   onChange={e => setDeadlinesForm({ ...deadlinesForm, declarationDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-blue-300  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-blue-600"
                   required
                 />
               </div>
 
-              <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/40 space-y-2">
-                <label className="block text-xs font-bold text-amber-900 dark:text-amber-300">
+              <div className="p-4 bg-[#f8fafc]/50  rounded-xl border border-[#e5e7eb]  space-y-2">
+                <label className="block text-[14px] font-bold text-[#1f2937] ">
                   2. Hạn chót Nộp Chứng chỉ ngoại ngữ & Tin học *
                 </label>
                 <input
                   type="date"
                   value={deadlinesForm.certDeadline}
                   onChange={e => setDeadlinesForm({ ...deadlinesForm, certDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-amber-600"
+                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   required
                 />
               </div>
 
-              <div className="p-4 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/40 space-y-2">
-                <label className="block text-xs font-bold text-purple-900 dark:text-purple-300">
+              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
+                <label className="block text-[14px] font-bold text-[#003087] ">
                   3. Hạn chót Giảng viên Thẩm định hồ sơ *
                 </label>
                 <input
                   type="date"
                   value={deadlinesForm.reviewDeadline}
                   onChange={e => setDeadlinesForm({ ...deadlinesForm, reviewDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-purple-300 dark:border-purple-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-600"
+                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#bfdbfe]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   required
                 />
               </div>
 
-              <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-900/40 space-y-2">
-                <label className="block text-xs font-bold text-emerald-900 dark:text-emerald-300">
+              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
+                <label className="block text-[14px] font-bold text-[#003087] ">
                   4. Hạn chót Nộp Báo cáo Tổng kết thực tập *
                 </label>
                 <input
                   type="date"
                   value={deadlinesForm.reportDeadline}
                   onChange={e => setDeadlinesForm({ ...deadlinesForm, reportDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-bold rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-600"
+                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#bfdbfe]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   required
                 />
               </div>
@@ -619,14 +650,14 @@ const AccountsPage = ({ currentUser }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[14px] font-bold uppercase tracking-wider text-[#1f2937]  mb-1">
                 Ghi chú / Quy chế mốc thời gian học kỳ
               </label>
               <textarea
                 rows={3}
                 value={deadlinesForm.regulationNote}
                 onChange={e => setDeadlinesForm({ ...deadlinesForm, regulationNote: e.target.value })}
-                className="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                className="w-full px-4 py-2.5 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
               ></textarea>
             </div>
 
@@ -634,9 +665,9 @@ const AccountsPage = ({ currentUser }) => {
               <button
                 type="submit"
                 disabled={savingDeadlines}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-md flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 bg-[#003087] hover:bg-[#002266] text-white text-[14px] font-bold rounded-xl transition shadow-md flex items-center gap-2 disabled:opacity-50"
               >
-                {savingDeadlines ? 'Đang lưu...' : '✓ Lưu cấu hình Mốc thời gian'}
+                {savingDeadlines ? 'Đang lưu...' : ' Lưu cấu hình Mốc thời gian'}
               </button>
             </div>
 
@@ -651,42 +682,17 @@ const AccountsPage = ({ currentUser }) => {
       {activeSubTab === 'prime_matrix' && (
         <div className="space-y-6">
           
-          {/* Top Banner Explaining the Concept */}
-          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-6 rounded-2xl shadow-md border border-blue-800 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-blue-800 text-blue-200 border border-blue-700">
-                ⭐ Thiết kế bởi Thầy Phúc — Fundamental Theorem of Arithmetic
-              </span>
-              <span className="text-[11px] font-mono text-blue-300">
-                Độ phức tạp: O(1) Modulo (M % P === 0)
-              </span>
-            </div>
-            <h2 className="text-lg font-black tracking-tight text-white">
-              Ma trận Phân quyền Chức năng bằng Tích các Thừa số Nguyên tố
+          {/* Top Banner */}
+          <div className="bg-gradient-to-r from-[#003087] to-[#001a4d] text-white p-6 rounded-xl shadow-md border border-blue-800">
+            <h2 className="text-xl font-bold tracking-tight text-white">
+              Ma trận Phân quyền Chức năng
             </h2>
-            <p className="text-xs text-blue-100 leading-relaxed max-w-4xl">
-              Mỗi hành động nghiệp vụ được gán duy nhất 1 số nguyên tố. Mã quyền trên chức năng (M) bằng tích các quyền được cấp.
-              Khi người dùng thao tác, hệ thống chỉ cần thực hiện 1 phép tính chia lấy dư <code className="bg-blue-950 px-1.5 py-0.5 rounded text-amber-300 font-mono">M % P === 0</code> để xác định thẩm quyền ngay tức thì.
-            </p>
-
-            {/* Quick Prime Numbers Legend */}
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-800/80 text-[11px]">
-              <span className="font-bold text-blue-300 mr-1">Quy ước số nguyên tố:</span>
-              <span className="px-2 py-0.5 rounded bg-blue-800 text-blue-200 font-mono">2: Xem</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-800 text-emerald-200 font-mono">3: Thêm</span>
-              <span className="px-2 py-0.5 rounded bg-amber-800 text-amber-200 font-mono">5: Sửa</span>
-              <span className="px-2 py-0.5 rounded bg-rose-800 text-rose-200 font-mono">7: Xóa</span>
-              <span className="px-2 py-0.5 rounded bg-purple-800 text-purple-200 font-mono">11: Scope All</span>
-              <span className="px-2 py-0.5 rounded bg-indigo-800 text-indigo-200 font-mono">13: Import</span>
-              <span className="px-2 py-0.5 rounded bg-teal-800 text-teal-200 font-mono">17: Export</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">1: Không quyền</span>
-            </div>
           </div>
 
           {/* Role Selector Pills & Button "Thêm Role Mới" */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="bg-white  p-4 rounded-xl border border-[#e5e7eb]  shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 mr-1">Chọn vai trò tùy chỉnh:</span>
+              <span className="text-[14px] font-bold text-[#1f2937] mr-1">Chọn vai trò tùy chỉnh:</span>
               {Object.keys(primeMatrix).map(rId => {
                 const roleLabels = {
                   thay_phuc: 'Thầy Phúc (Admin)',
@@ -701,10 +707,10 @@ const AccountsPage = ({ currentUser }) => {
                     key={rId}
                     type="button"
                     onClick={() => setSelectedRoleForMatrix(rId)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-[14px] font-bold transition flex items-center gap-1.5 cursor-pointer ${
                       isSelected
                         ? 'bg-[#003087] text-white shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                        : 'bg-white text-[#1f2937] border border-[#e5e7eb] hover:bg-[#ebf3ff] hover:text-[#003087]'
                     }`}
                   >
                     <span>{roleLabels[rId] || rId}</span>
@@ -716,20 +722,20 @@ const AccountsPage = ({ currentUser }) => {
             <button
               type="button"
               onClick={() => setShowNewRoleModal(true)}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-3.5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14px] font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              <span>➕ Thêm Role Mới</span>
+              <span>+ Thêm Role Mới</span>
             </button>
           </div>
 
           {/* Main Matrix Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="bg-white  rounded-xl border border-[#e5e7eb]  shadow-sm overflow-hidden">
+            <div className="p-4 bg-[#f8fafc]  border-b border-[#e5e7eb]  flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                  Bảng ma trận chức năng cho Role: <span className="text-[#003087] dark:text-blue-400">[{selectedRoleForMatrix}]</span>
+                <h3 className="text-sm font-black text-[#1f2937]  uppercase tracking-wider">
+                  Bảng ma trận chức năng cho Role: <span className="text-[#003087] ">[{selectedRoleForMatrix}]</span>
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[13px] text-[#1f2937]">
                   Tích chọn để cấp quyền (nhân thừa số nguyên tố), bỏ tích để thu hồi quyền (chia bớt thừa số).
                 </p>
               </div>
@@ -738,7 +744,7 @@ const AccountsPage = ({ currentUser }) => {
                 <button
                   type="button"
                   onClick={handleResetPrimeMatrix}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl text-[14px] font-semibold border border-[#e5e7eb]  hover:bg-[#f8fafc]  text-[#1f2937]  transition cursor-pointer"
                 >
                   ↺ Mặc định Thầy Phúc
                 </button>
@@ -746,29 +752,28 @@ const AccountsPage = ({ currentUser }) => {
                   type="button"
                   onClick={handleSavePrimeMatrix}
                   disabled={savingMatrix}
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14px] font-bold transition shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
-                  <span>{savingMatrix ? 'Đang lưu...' : '💾 Lưu lên Cloud Firestore'}</span>
+                  <span>{savingMatrix ? 'Đang lưu...' : ' Lưu lên Cloud Firestore'}</span>
                 </button>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-[14px]">
                 <thead>
-                  <tr className="bg-slate-100/80 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-400">
-                    <th className="py-3 px-4">Chức năng hệ thống</th>
-                    <th className="py-3 px-3 text-center">Xem (2)</th>
-                    <th className="py-3 px-3 text-center">Thêm (3)</th>
-                    <th className="py-3 px-3 text-center">Sửa (5)</th>
-                    <th className="py-3 px-3 text-center">Xóa (7)</th>
-                    <th className="py-3 px-3 text-center">Scope All (11)</th>
-                    <th className="py-3 px-3 text-center">Import (13)</th>
-                    <th className="py-3 px-3 text-center">Export (17)</th>
-                    <th className="py-3 px-4 text-right">Mã quyền tích (M)</th>
+                  <tr className="bg-[#f8fafc] border-b border-[#e5e7eb] font-bold text-[#1f2937] text-[13.5px]">
+                    <th className="py-3 px-4 text-left">Chức năng hệ thống</th>
+                    <th className="py-3 px-3 text-center">Xem</th>
+                    <th className="py-3 px-3 text-center">Thêm</th>
+                    <th className="py-3 px-3 text-center">Sửa</th>
+                    <th className="py-3 px-3 text-center">Xóa</th>
+                    <th className="py-3 px-3 text-center">Scope All</th>
+                    <th className="py-3 px-3 text-center">Import</th>
+                    <th className="py-3 px-3 text-center">Export</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100 ">
                   {[
                     { id: 'login', name: '1. Đăng nhập hệ thống' },
                     { id: 'dashboard', name: '2. Bảng điều khiển (Dashboard)' },
@@ -784,18 +789,10 @@ const AccountsPage = ({ currentUser }) => {
                     { id: 'reporting', name: '12. Thống kê & Đồ thị báo cáo' }
                   ].map(feat => {
                     const mask = primeMatrix[selectedRoleForMatrix]?.[feat.id] || 1;
-                    const breakdown = [];
-                    if (mask % 2 === 0) breakdown.push('2');
-                    if (mask % 3 === 0) breakdown.push('3');
-                    if (mask % 5 === 0) breakdown.push('5');
-                    if (mask % 7 === 0) breakdown.push('7');
-                    if (mask % 11 === 0) breakdown.push('11');
-                    if (mask % 13 === 0) breakdown.push('13');
-                    if (mask % 17 === 0) breakdown.push('17');
 
                     return (
-                      <tr key={feat.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                        <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                      <tr key={feat.id} className="hover:bg-[#f8fafc]  transition">
+                        <td className="py-3 px-4 font-semibold text-[#1f2937] ">
                           {feat.name}
                         </td>
                         
@@ -808,29 +805,11 @@ const AccountsPage = ({ currentUser }) => {
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleTogglePrimePermission(feat.id, primeVal)}
-                                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 dark:bg-slate-900 border-slate-300 dark:border-slate-600 cursor-pointer"
+                                className="w-4 h-4 rounded text-[#003087] focus:ring-blue-500 border-[#e5e7eb] cursor-pointer"
                               />
                             </td>
                           );
                         })}
-
-                        {/* Calculated Prime Product M */}
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex flex-col items-end">
-                            <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${
-                              mask === 1
-                                ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-                                : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                            }`}>
-                              M = {mask}
-                            </span>
-                            {mask > 1 && breakdown.length > 1 && (
-                              <span className="text-[10px] font-mono text-slate-400 mt-0.5">
-                                = {breakdown.join(' × ')}
-                              </span>
-                            )}
-                          </div>
-                        </td>
                       </tr>
                     );
                   })}
@@ -842,17 +821,17 @@ const AccountsPage = ({ currentUser }) => {
           {/* Modal Tạo Role Mới */}
           {showNewRoleModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full shadow-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    ➕ Thêm Role Mới vào Hệ thống
+              <div className="bg-white  rounded-xl border border-[#e5e7eb]  p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-[#e5e7eb]  pb-3">
+                  <h3 className="text-base font-bold text-[#1f2937] ">
+                    + Thêm Role Mới vào Hệ thống
                   </h3>
-                  <button onClick={() => setShowNewRoleModal(false)} className="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+                  <button onClick={() => setShowNewRoleModal(false)} className="text-[#1f2937] hover:text-[#1f2937] font-bold">✕</button>
                 </div>
 
                 <form onSubmit={handleCreateNewRole} className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+                    <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                       Mã định danh vai trò (Role ID) *
                     </label>
                     <input
@@ -860,14 +839,14 @@ const AccountsPage = ({ currentUser }) => {
                       placeholder="Ví dụ: truong_bo_mon, tro_ly_khoa"
                       value={newRoleForm.roleId}
                       onChange={e => setNewRoleForm({ ...newRoleForm, roleId: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                      className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                       required
                     />
-                    <span className="text-[10px] text-slate-400">Viết liền không dấu, chữ thường và dấu gạch dưới.</span>
+                    <span className="text-[12.5px] text-[#1f2937]">Viết liền không dấu, chữ thường và dấu gạch dưới.</span>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">
+                    <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                       Tên hiển thị vai trò (Role Name)
                     </label>
                     <input
@@ -875,21 +854,21 @@ const AccountsPage = ({ currentUser }) => {
                       placeholder="Ví dụ: Trưởng Bộ môn, Cán bộ Khảo thí"
                       value={newRoleForm.roleName}
                       onChange={e => setNewRoleForm({ ...newRoleForm, roleName: e.target.value })}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                      className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                     />
                   </div>
 
-                  <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-700">
+                  <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#e5e7eb] ">
                     <button
                       type="button"
                       onClick={() => setShowNewRoleModal(false)}
-                      className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition"
+                      className="px-4 py-2 text-[14px] font-bold rounded-xl border border-[#e5e7eb]  text-[#1f2937]  hover:bg-[#f8fafc] transition"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                      className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white text-[14px] font-bold rounded-xl transition shadow-xs"
                     >
                       Khởi tạo Role
                     </button>
@@ -907,21 +886,21 @@ const AccountsPage = ({ currentUser }) => {
       {/* ======================================================== */}
       {showPartnerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-lg w-full shadow-2xl space-y-4">
+          <div className="bg-white  rounded-2xl border border-[#e5e7eb]  p-7 max-w-2xl w-full shadow-2xl space-y-5">
             
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+            <div className="flex items-center justify-between border-b border-[#e5e7eb]  pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-[#1f2937] ">
                   Tạo tài khoản Đối tác Doanh nghiệp
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-[14px] text-[#1f2937]">
                   Cấp tài khoản đăng nhập cho đơn vị tuyển dụng bên ngoài vào hệ thống thực tập TDTU.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPartnerModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-[#1f2937] hover:text-[#1f2937] text-lg font-bold"
               >
                 ✕
               </button>
@@ -930,7 +909,7 @@ const AccountsPage = ({ currentUser }) => {
             <form onSubmit={handleCreatePartnerSubmit} className="space-y-3.5">
               
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                   Tên Doanh nghiệp / Tổ chức Đối tác *
                 </label>
                 <input
@@ -938,14 +917,14 @@ const AccountsPage = ({ currentUser }) => {
                   value={partnerForm.companyName}
                   onChange={e => setPartnerForm({ ...partnerForm, companyName: e.target.value })}
                   placeholder="VD: FPT Software, KMS Technology, Viettel..."
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                  className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                     Người đại diện / HR liên hệ
                   </label>
                   <input
@@ -953,12 +932,12 @@ const AccountsPage = ({ currentUser }) => {
                     value={partnerForm.contactName}
                     onChange={e => setPartnerForm({ ...partnerForm, contactName: e.target.value })}
                     placeholder="VD: Trần Thị Bích Thảo"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                    className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                     Mã số thuế (MST)
                   </label>
                   <input
@@ -966,13 +945,13 @@ const AccountsPage = ({ currentUser }) => {
                     value={partnerForm.taxCode}
                     onChange={e => setPartnerForm({ ...partnerForm, taxCode: e.target.value })}
                     placeholder="VD: 0101778115"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                    className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                   Email đăng nhập đối tác *
                 </label>
                 <input
@@ -980,15 +959,15 @@ const AccountsPage = ({ currentUser }) => {
                   value={partnerForm.email}
                   onChange={e => setPartnerForm({ ...partnerForm, email: e.target.value })}
                   placeholder="VD: tuyendung@fpt.com hoặc hr@kms-technology.com"
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                  className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   required
                 />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Email công ty bên ngoài, không cần đuôi @tdtu.edu.vn</span>
+                <span className="text-[12.5px] text-[#1f2937] mt-0.5 block">Email công ty bên ngoài, không cần đuôi @tdtu.edu.vn</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                     Mật khẩu khởi tạo
                   </label>
                   <input
@@ -996,18 +975,18 @@ const AccountsPage = ({ currentUser }) => {
                     value={partnerForm.password}
                     onChange={e => setPartnerForm({ ...partnerForm, password: e.target.value })}
                     placeholder="Mặc định: Partner@2026"
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                    className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                     Lĩnh vực hoạt động
                   </label>
                   <select
                     value={partnerForm.industry}
                     onChange={e => setPartnerForm({ ...partnerForm, industry: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003087]"
+                    className="w-full px-3 py-2 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
                   >
                     <option value="Phát triển phần mềm">Phát triển phần mềm</option>
                     <option value="Trí tuệ nhân tạo & Dữ liệu">Trí tuệ nhân tạo & Dữ liệu</option>
@@ -1019,18 +998,18 @@ const AccountsPage = ({ currentUser }) => {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2.5">
+              <div className="pt-3 border-t border-[#e5e7eb]  flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setShowPartnerModal(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+                  className="px-4 py-2 bg-[#f8fafc]  hover:bg-[#e5e7eb] text-[#1f2937]  text-[14px] font-bold rounded-xl transition"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={creatingPartner}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs disabled:opacity-50"
+                  className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white text-[14px] font-bold rounded-xl transition shadow-xs disabled:opacity-50"
                 >
                   {creatingPartner ? 'Đang tạo...' : 'Xác nhận tạo tài khoản'}
                 </button>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" class="notranslate" translate="no">
+<html lang="vi" class="notranslate light" translate="no" style="color-scheme: light;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   
+  <!-- TDTU Official Design System CSS -->
+  <link rel="stylesheet" href="./src/index.css?v=20261102_v53_publish_jd_sync">
+
   <!-- Tailwind CSS CDN with Official TDTU Design Tokens -->
+  <script>
+    window.tailwind = {
+      darkMode: 'class'
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -29,22 +37,13 @@
               primary: '#003087',
               primaryLight: '#0052cc',
               primarySubtle: '#ebf3ff',
-              accent: '#e31837',
+              accent: '#dc2626',
               accentSubtle: '#fef2f2',
-              success: '#16a34a',
-              successSubtle: '#f0fdf4',
-              warning: '#d97706',
-              warningSubtle: '#fffbeb',
-              danger: '#dc2626',
-              dangerSubtle: '#fef2f2',
-              info: '#0284c7',
-              infoSubtle: '#f0f9ff',
-              bg: '#f0f4f8',
+              bg: '#ffffff',
               surface: '#ffffff',
-              border: '#e2e8f0',
-              textMain: '#0f172a',
-              textSub: '#64748b',
-              textMuted: '#94a3b8'
+              border: '#e5e7eb',
+              textMain: '#1f2937',
+              textAlert: '#dc2626'
             }
           },
           fontFamily: {
@@ -52,51 +51,78 @@
             mono: ['JetBrains Mono', 'Roboto Mono', 'monospace']
           },
           boxShadow: {
-            card: '0 2px 12px rgba(0, 48, 135, 0.08)',
-            cardHover: '0 6px 24px rgba(0, 48, 135, 0.14)',
+            card: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            cardHover: '0 6px 20px rgba(0, 48, 135, 0.08)',
             modal: '0 20px 40px rgba(0, 15, 45, 0.2)'
           }
         }
       }
     };
-    if (localStorage.getItem('tdtu_theme') === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
   </script>
 
-  <!-- Global Theme Styles conforming to Dashoard_TSNN-frontend_qvinh template -->
+  <!-- Global Theme Styles conforming to Strict Design System Guidelines -->
   <style>
     :root {
       --color-primary: #003087;
       --color-primary-light: #0052cc;
       --color-primary-subtle: #ebf3ff;
-      --color-accent: #e31837;
+      --color-accent: #dc2626;
       --color-accent-subtle: #fef2f2;
-      --color-success: #16a34a;
-      --color-warning: #d97706;
-      --color-danger: #dc2626;
-      --color-bg: #f0f4f8;
+      --color-bg: #ffffff;
       --color-surface: #ffffff;
-      --color-border: #e2e8f0;
+      --color-border: #e5e7eb;
       --font-main: 'Inter', 'Be Vietnam Pro', system-ui, sans-serif;
       --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
     }
 
     body {
       font-family: var(--font-main);
-      background-color: var(--color-bg);
-      color: #0f172a;
+      background-color: #ffffff;
+      color: #1f2937;
+      font-size: 12.5px;
+      line-height: 1.6;
     }
 
-    /* Custom thin scrollbar matching template */
+    /* Paragraphs & body content must be justified */
+    p, .prose p, .body-content, .body-desc {
+      text-align: justify !important;
+      text-justify: inter-word !important;
+      font-size: 12.5px !important;
+      line-height: 1.6;
+    }
+
+    /* Strict Headings Hierarchy (H1: 24-28px, H2: 18-20px, H3: 14-16px, Font-Weight: 700) */
+    h1, .h1 {
+      font-size: 26px !important;
+      font-weight: 700 !important;
+      line-height: 1.3 !important;
+      color: #1f2937;
+    }
+    h2, .h2 {
+      font-size: 19px !important;
+      font-weight: 700 !important;
+      line-height: 1.35 !important;
+      color: #1f2937;
+    }
+    h3, .h3, .section-title {
+      font-size: 15px !important;
+      font-weight: 700 !important;
+      line-height: 1.4 !important;
+      color: #1f2937;
+    }
+
+    /* High contrast text white on dark/blue surfaces */
+    .text-white {
+      color: #ffffff !important;
+    }
+
+    /* Custom thin scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #f1f5f9;
+      background: #ffffff;
     }
     ::-webkit-scrollbar-thumb {
       background: #cbd5e1;
@@ -130,33 +156,39 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-  <script src="./src/config/firebase.config.js?v=20261029_1155"></script>
+  <script src="./src/config/firebase.config.js?v=20261030_v7_1452"></script>
 
   <!-- SheetJS for Client-Side Excel (.xlsx, .xls, .csv) Import & Multi-tab Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Modular Frontend Services & Components with Cache-Busting Versioning -->
-  <script src="./src/services/prime-rbac.js?v=20261029_1335"></script>
-  <script src="./src/services/api.client.js?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/components/common/Navbar.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/components/common/Sidebar.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/components/student/StudentEligibilityBanner.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/LoginPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/DashboardPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/DeclarationPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/CertificatesPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/HandbookPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/StudentsPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/BulletinPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/DocumentsPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/pages/AccountsPage.jsx?v=20261029_1335"></script>
-  <script type="text/babel" src="./src/App.jsx?v=20261029_1335"></script>
+  <script src="./src/services/prime-rbac.js?v=20261102_v53_publish_jd_sync"></script>
+  <script src="./src/services/api.client.js?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/components/common/AdminNotificationModal.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/components/common/Navbar.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/components/common/Sidebar.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/components/student/StudentEligibilityBanner.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/LoginPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/DashboardPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/ProfilePage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/DeclarationPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/CertificatesPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/HandbookPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/StudentsPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/BulletinPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/EmailJdPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/SemestersPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/ImportDataPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/ExportDataPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/DocumentsPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/pages/AccountsPage.jsx?v=20261102_v53_publish_jd_sync"></script>
+  <script type="text/babel" src="./src/App.jsx?v=20261102_v53_publish_jd_sync"></script>
 </head>
-<body class="bg-[#f0f4f8] text-[#0f172a] dark:bg-slate-900 dark:text-slate-100 antialiased selection:bg-[#003087] selection:text-white">
+<body class="bg-white text-[#1f2937] antialiased selection:bg-[#003087] selection:text-white">
   <div id="root">
-    <div class="min-h-screen flex items-center justify-center text-slate-500 text-xs">
+    <div class="min-h-screen flex items-center justify-center text-[#1f2937] text-xs">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#003087] mr-3"></div>
-      <span>Đang khởi động Cổng Thực tập TDTU...</span>
+      <span class="font-bold">Đang khởi động Cổng Thực tập TDTU...</span>
     </div>
   </div>
 
