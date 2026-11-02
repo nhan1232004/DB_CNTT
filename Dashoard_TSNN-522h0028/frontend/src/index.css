@@ -628,6 +628,7 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   /* Phần ký tên cuối trang in */
   .print-signatures {
     page-break-inside: avoid;
+    break-inside: avoid;
     margin-top: 25px;
     display: flex !important;
     justify-content: space-between !important;
@@ -637,5 +638,28 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
 
   .print-signatures > div {
     flex: 1;
+  }
+
+  /* Chế độ in biểu mẫu giảng viên chuyên biệt (Print Document Template) */
+  .print-active-document {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .page-break-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
   }
 }

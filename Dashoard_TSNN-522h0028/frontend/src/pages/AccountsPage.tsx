@@ -416,9 +416,9 @@ const AccountsPage = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setShowPartnerModal(true)}
-                className="px-6 py-2.5 min-w-[200px] h-[40px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl transition shadow-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                className="px-8 py-3 min-w-[240px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl transition shadow-sm hover:shadow-md flex items-center justify-center gap-2.5 shrink-0 cursor-pointer"
               >
-                <span className="text-base leading-none font-bold">+</span>
+                <span className="text-lg leading-none font-bold">+</span>
                 <span>Tạo tài khoản Đối tác</span>
               </button>
             </div>

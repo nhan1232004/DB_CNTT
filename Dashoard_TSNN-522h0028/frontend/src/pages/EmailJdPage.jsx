@@ -284,11 +284,11 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                   </div>
 
                   {/* Action Buttons for Thầy Phúc */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0 flex-wrap">
                     <button
                       type="button"
                       onClick={() => setSelectedJd(jd)}
-                      className="px-5 py-2.5 min-w-[150px] h-[38px] whitespace-nowrap bg-[#f8fafc] hover:bg-[#e5e7eb] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer"
+                      className="px-7 py-3 min-w-[170px] whitespace-nowrap bg-[#f8fafc] hover:bg-[#e5e7eb] text-[#1f2937] border border-[#cbd5e1] rounded-xl text-[13px] font-bold transition cursor-pointer flex items-center justify-center"
                     >
                       Xem chi tiết email
                     </button>
@@ -296,7 +296,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                       <button
                         type="button"
                         onClick={() => handleApproveJd(jd)}
-                        className="px-6 py-2.5 min-w-[150px] h-[38px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                        className="px-8 py-3 min-w-[170px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
                       >
                         Duyệt đăng tin
                       </button>
@@ -305,7 +305,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                       <button
                         type="button"
                         onClick={() => handleDeleteJd(jd.id)}
-                        className="px-4 py-2 min-w-[80px] h-[38px] whitespace-nowrap hover:bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] rounded-xl text-[12.5px] font-bold transition cursor-pointer flex items-center justify-center"
+                        className="px-6 py-3 min-w-[100px] whitespace-nowrap hover:bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] rounded-xl text-[12.5px] font-bold transition cursor-pointer flex items-center justify-center"
                         title="Xóa email"
                       >
                         Xóa tin
@@ -387,9 +387,9 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                 <button
                   type="button"
                   onClick={() => handleApproveJd(selectedJd)}
-                  className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                  className="px-8 py-3 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition shadow-sm hover:shadow-md cursor-pointer whitespace-nowrap min-w-[180px]"
                 >
-                   Duyệt & Công bố JD
+                  Duyệt & Công bố JD
                 </button>
               )}
             </div>

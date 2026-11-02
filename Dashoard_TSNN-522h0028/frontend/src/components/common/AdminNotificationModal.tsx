@@ -233,17 +233,17 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
               
               {/* 1. Chọn Đối tượng nhận (Target Audience) */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  1. Phân quyền Đối tượng Nhận thông báo <span className="text-rose-500">*</span>
+                <label className="block text-[13px] font-bold text-[#1f2937] mb-2">
+                  1. Phân quyền đối tượng nhận thông báo <span className="text-[#dc2626]">*</span>
                 </label>
                 <select
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-[#003087]"
+                  className="w-full px-4 py-3 text-[13px] rounded-xl border border-[#cbd5e1] bg-white text-[#1f2937] font-bold focus:outline-none focus:border-[#003087] focus:ring-2 focus:ring-[#003087] cursor-pointer shadow-xs"
                 >
                   {TARGET_AUDIENCE_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label} — {opt.desc}
+                      {opt.label} ({opt.desc})
                     </option>
                   ))}
                 </select>
