@@ -5,35 +5,26 @@
 
 FROM node:24-alpine AS base
 
-# Install curl for healthcheck
 RUN apk add --no-cache curl tzdata
 ENV TZ=Asia/Ho_Chi_Minh
 
 WORKDIR /app
 
-# Copy dependency manifests
 COPY package.json ./
-COPY packages/shared-types/package.json ./packages/shared-types/
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
+COPY TDTU_DB_CNTT_System/ ./TDTU_DB_CNTT_System/
+COPY Adapter_Code/ ./Adapter_Code/
+COPY docs/ ./docs/
 
-# Copy source code and data files
-COPY packages/ ./packages/
-COPY apps/ ./apps/
-COPY index.html ./
-COPY demo_dashboard/ ./demo_dashboard/
-COPY data_sinhvien.csv ./
-
-# Ensure data directory exists and has persistent volume
-RUN mkdir -p /app/apps/api/src/data
+# Ensure data directory exists
+RUN mkdir -p /app/TDTU_DB_CNTT_System/backend/src/data
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DB_PATH=/app/apps/api/src/data/db_cntt.sqlite
+ENV DB_PATH=/app/TDTU_DB_CNTT_System/backend/src/data/db_cntt.sqlite
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/api/students/summary || exit 1
 
-CMD ["node", "apps/api/src/main.ts"]
+CMD ["node", "--experimental-strip-types", "TDTU_DB_CNTT_System/backend/src/server.ts"]

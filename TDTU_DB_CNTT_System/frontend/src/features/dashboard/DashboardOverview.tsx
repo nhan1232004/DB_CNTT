@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ChartResponse } from '../../../../../packages/shared-types/src/index';
+import type { ChartResponse } from '../../types/index';
 
 interface DashboardOverviewProps {
   metrics: {

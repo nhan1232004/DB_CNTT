@@ -3,7 +3,7 @@ import type {
   IntroductionLetterRecord,
   UserProfile,
   StudentRecord,
-} from '../../../../../packages/shared-types/src/index';
+} from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 interface IntroductionLettersProps {
@@ -117,7 +117,7 @@ export const IntroductionLetters: React.FC<IntroductionLettersProps> = ({
       <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-xs text-sky-200">
-            <span>🏛️ Khoa Công Nghệ Thông Tin - ĐH Tôn Đức Thắng</span>
+            <span>Khoa Công Nghệ Thông Tin - ĐH Tôn Đức Thắng</span>
             <span>·</span>
             <span>INT-02 &amp; INT-03</span>
           </div>
@@ -261,7 +261,7 @@ export const IntroductionLetters: React.FC<IntroductionLettersProps> = ({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-                <span>📋 Danh Sách Giấy Giới Thiệu ({letters.length})</span>
+                <span>Danh Sách Giấy Giới Thiệu ({letters.length})</span>
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 Theo dõi tiến độ ký duyệt điện tử và in bản PDF chính thức
@@ -271,7 +271,7 @@ export const IntroductionLetters: React.FC<IntroductionLettersProps> = ({
               onClick={fetchLetters}
               className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600"
             >
-              🔄 Làm Mới
+              Làm Mới
             </button>
           </div>
 
@@ -338,7 +338,7 @@ export const IntroductionLetters: React.FC<IntroductionLettersProps> = ({
                               onClick={() => handlePrint(l.id)}
                               className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-colors inline-flex items-center space-x-1 cursor-pointer"
                             >
-                              <span>🖨️ In PDF</span>
+                              <span>In PDF</span>
                             </button>
                           </div>
                         </td>

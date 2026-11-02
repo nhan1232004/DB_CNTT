@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import type { InternshipDocumentRecord } from '../../../../../packages/shared-types/src/index';
+import type { InternshipDocumentRecord } from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 export const InternshipDocuments: React.FC = () => {
@@ -76,7 +76,7 @@ export const InternshipDocuments: React.FC = () => {
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-xs text-amber-200">
-            <span>📚 Cổng Văn Bản Học Thuật Khoa CNTT</span>
+            <span>Cổng Văn Bản Học Thuật Khoa CNTT</span>
             <span>·</span>
             <span>DATA-02</span>
           </div>
@@ -147,7 +147,7 @@ export const InternshipDocuments: React.FC = () => {
       {/* Regulations Box */}
       <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 text-xs text-amber-900 space-y-2">
         <div className="font-bold text-sm text-amber-950 flex items-center space-x-2">
-          <span>⚠️ Lưu Ý Quan Trọng Về Thời Lượng &amp; Tiến Độ</span>
+          <span>Lưu Ý Quan Trọng Về Thời Lượng &amp; Tiến Độ</span>
         </div>
         <ul className="list-disc list-inside space-y-1 text-slate-700 leading-relaxed">
           <li>

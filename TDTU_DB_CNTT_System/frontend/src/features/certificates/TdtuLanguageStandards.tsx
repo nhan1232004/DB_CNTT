@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { TdtuLanguageStandard, StudentRecord } from '../../../../../packages/shared-types/src/index';
+import type { TdtuLanguageStandard, StudentRecord } from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 interface TdtuLanguageStandardsProps {

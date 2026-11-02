@@ -4,7 +4,7 @@ import type {
   JdPosting,
   UserRole,
   StudentRecord,
-} from '../../../../../packages/shared-types/src/index';
+} from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 interface TwoTierBulletinBoardProps {
@@ -136,7 +136,7 @@ Mô tả: Tuyển thực tập sinh CNTT TDTU làm đồng thời 2 môn KTCN + 
               Tầng 1 (Ở trên) · Thông báo chính thức của Giảng viên
             </span>
             <h2 className="text-lg font-bold mt-1">
-              📢 BẢNG TIN THÔNG BÁO CỦA GIẢNG VIÊN & KHOA CNTT
+              BẢNG TIN THÔNG BÁO CỦA GIẢNG VIÊN & KHOA CNTT
             </h2>
           </div>
 
@@ -212,7 +212,7 @@ Mô tả: Tuyển thực tập sinh CNTT TDTU làm đồng thời 2 môn KTCN + 
                 <div className="flex items-center space-x-2">
                   {ann.isPinned && (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 uppercase">
-                      📌 Đã ghim
+                      Đã ghim
                     </span>
                   )}
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
@@ -249,7 +249,7 @@ Mô tả: Tuyển thực tập sinh CNTT TDTU làm đồng thời 2 môn KTCN + 
               Tầng 2 (Ở dưới) · Email Forward Parser & Tuyển dụng JD
             </span>
             <h2 className="text-lg font-bold text-slate-900 mt-1">
-              💼 BẢNG TIN TUYỂN DỤNG THỰC TẬP (TỰ ĐỘNG BÓC TÁCH TỪ EMAIL FORWARD)
+              BẢNG TIN TUYỂN DỤNG THỰC TẬP (TỰ ĐỘNG BÓC TÁCH TỪ EMAIL FORWARD)
             </h2>
           </div>
 
@@ -259,7 +259,7 @@ Mô tả: Tuyển thực tập sinh CNTT TDTU làm đồng thời 2 môn KTCN + 
               onClick={() => setShowForwardModal(!showForwardModal)}
               className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl"
             >
-              📬 Chuyển Tiếp (Forward) Email JD Doanh Nghiệp
+              Chuyển Tiếp (Forward) Email JD Doanh Nghiệp
             </button>
           )}
         </div>
@@ -364,9 +364,12 @@ Mô tả: Tuyển thực tập sinh CNTT TDTU làm đồng thời 2 môn KTCN + 
                     <button
                       type="button"
                       onClick={() => handleApproveJd(jd.id)}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl whitespace-nowrap"
+                      className="px-5 py-2.5 h-10 bg-[#003087] hover:bg-[#002266] text-white font-bold text-xs rounded-xl whitespace-nowrap inline-flex items-center gap-1.5 transition shadow-2xs"
                     >
-                      ✓ Duyệt 1-Click & Công Khai
+                      <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Duyệt & Công Khai</span>
                     </button>
                     <button
                       type="button"

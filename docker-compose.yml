@@ -1,6 +1,6 @@
 # ============================================================================
 # DOCKER COMPOSE: DB_CNTT Hệ Thống Quản Lý Thực Tập & Tập Sự Nghề Nghiệp TDTU
-# Chạy đầy đủ: App Gateway Server (Node 24 + SQLite) + Postgres 17 + Redis 7
+# App Gateway Server (Node 24 + SQLite)
 # ============================================================================
 
 services:
@@ -15,14 +15,9 @@ services:
     environment:
       - PORT=3000
       - NODE_ENV=production
-      - DB_PATH=/app/apps/api/src/data/db_cntt.sqlite
-      - DATABASE_URL=postgresql://tdtu_admin:tdtu_secret_password@postgres:5432/db_cntt_internship?schema=public
-      - REDIS_URL=redis://redis:6379
+      - DB_PATH=/app/TDTU_DB_CNTT_System/backend/src/data/db_cntt.sqlite
     volumes:
-      - sqlite_data:/app/apps/api/src/data
-    depends_on:
-      - postgres
-      - redis
+      - sqlite_data:/app/TDTU_DB_CNTT_System/backend/src/data
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/students/summary']
       interval: 15s
@@ -30,26 +25,5 @@ services:
       retries: 3
       start_period: 10s
 
-  postgres:
-    image: postgres:17-alpine
-    container_name: db_cntt_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: tdtu_admin
-      POSTGRES_PASSWORD: tdtu_secret_password
-      POSTGRES_DB: db_cntt_internship
-    ports:
-      - '5432:5432'
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    container_name: db_cntt_redis
-    restart: unless-stopped
-    ports:
-      - '6379:6379'
-
 volumes:
   sqlite_data:
-  pgdata:

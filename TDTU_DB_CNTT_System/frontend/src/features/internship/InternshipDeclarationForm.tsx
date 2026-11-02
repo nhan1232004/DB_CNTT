@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { CompanyTaxInfo, StudentRecord } from '../../../../../packages/shared-types/src/index';
+import type { CompanyTaxInfo, StudentRecord } from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 interface InternshipDeclarationFormProps {

@@ -998,14 +998,18 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                               e.stopPropagation();
                               setOpenActionMenuId(openActionMenuId === id ? null : id);
                             }}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition cursor-pointer border ${
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer border shadow-2xs ${
                               openActionMenuId === id
                                 ? 'bg-[#003087] text-white border-[#003087]'
                                 : 'bg-white hover:bg-[#ebf3ff] text-[#1f2937] hover:text-[#003087] border-[#cbd5e1]'
                             }`}
                             title="Tùy chọn thao tác"
                           >
-                            ···
+                            <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="5" r="1.75" />
+                              <circle cx="12" cy="12" r="1.75" />
+                              <circle cx="12" cy="19" r="1.75" />
+                            </svg>
                           </button>
 
                           {openActionMenuId === id && (

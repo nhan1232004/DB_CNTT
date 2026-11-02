@@ -1,5 +1,5 @@
 import React from 'react';
-import type { UserProfile, StudentRecord } from '../../../../../packages/shared-types/src/index';
+import type { UserProfile, StudentRecord } from '../../types/index';
 
 interface StudentEligibilityBannerProps {
   currentUser: UserProfile;
@@ -62,7 +62,7 @@ export const StudentEligibilityBanner: React.FC<StudentEligibilityBannerProps> =
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-start sm:items-center space-x-3">
             <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-sm">
-              ⚠️
+              
             </div>
             <div>
               <div className="flex items-center space-x-2">

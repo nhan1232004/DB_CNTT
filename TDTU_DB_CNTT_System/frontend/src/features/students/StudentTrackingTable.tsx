@@ -3,7 +3,7 @@ import type {
   StudentRecord,
   UserRole,
   InternshipStatus,
-} from '../../../../../packages/shared-types/src/index';
+} from '../../types/index';
 import { apiClient } from '../../services/api.client';
 
 interface StudentTrackingTableProps {
@@ -24,6 +24,7 @@ export const StudentTrackingTable: React.FC<StudentTrackingTableProps> = ({
   const [major, setMajor] = useState('');
   const [status, setStatus] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
+  const [openMenuMssv, setOpenMenuMssv] = useState<string | null>(null);
   const [editStatus, setEditStatus] = useState<InternshipStatus>('Có doanh nghiệp');
   const [editCompany, setEditCompany] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -243,14 +244,75 @@ export const StudentTrackingTable: React.FC<StudentTrackingTableProps> = ({
                 <td className="py-3 px-3 font-semibold">{s.status}</td>
                 <td className="py-3 px-3 font-medium text-slate-800">{s.company}</td>
                 <td className="py-3 px-3 font-semibold text-blue-700">{s.cert}</td>
-                <td className="py-3 px-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDetail(s)}
-                    className="px-4 py-2 min-w-[90px] whitespace-nowrap bg-[#ebf3ff] hover:bg-[#dbeafe] text-[#003087] font-bold rounded-lg text-[12px] inline-flex items-center justify-center transition"
-                  >
-                    {role === 'GV' ? 'Xem / Can thiệp' : 'Chi tiết'}
-                  </button>
+                <td className="py-3 px-3 text-center relative">
+                  <div className="relative inline-block text-left">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuMssv(openMenuMssv === s.mssv ? null : s.mssv);
+                      }}
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer border shadow-2xs ${
+                        openMenuMssv === s.mssv
+                          ? 'bg-[#003087] text-white border-[#003087]'
+                          : 'bg-white hover:bg-[#ebf3ff] text-[#1f2937] hover:text-[#003087] border-[#cbd5e1]'
+                      }`}
+                      title="Tùy chọn thao tác"
+                    >
+                      <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="5" r="1.75" />
+                        <circle cx="12" cy="12" r="1.75" />
+                        <circle cx="12" cy="19" r="1.75" />
+                      </svg>
+                    </button>
+
+                    {openMenuMssv === s.mssv && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuMssv(null);
+                          }}
+                        />
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-[#e5e7eb] py-1.5 z-40 text-left"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuMssv(null);
+                              handleOpenDetail(s);
+                            }}
+                            className="w-full px-4 py-2 text-[12.5px] font-bold text-[#1f2937] hover:bg-[#ebf3ff] hover:text-[#003087] flex items-center gap-2.5 transition text-left cursor-pointer"
+                          >
+                            <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Hồ sơ chi tiết</span>
+                          </button>
+
+                          {role === 'GV' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuMssv(null);
+                                handleOpenDetail(s);
+                              }}
+                              className="w-full px-4 py-2 text-[12.5px] font-bold text-[#1f2937] hover:bg-[#ebf3ff] hover:text-[#003087] flex items-center gap-2.5 transition text-left cursor-pointer"
+                            >
+                              <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              <span>Can thiệp / Sửa</span>
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

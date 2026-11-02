@@ -1,5 +1,5 @@
 import React from 'react';
-import type { UserProfile, UserRole } from '../../../../../packages/shared-types/src/index';
+import type { UserProfile, UserRole } from '../types/index';
 
 export type ActiveTab =
   | 'tab-overview'

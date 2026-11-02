@@ -1,31 +1,30 @@
 {
-  "name": "dashboard-tsnn-tdtu-monorepo",
-  "version": "3.0.0",
-  "description": "Hệ thống Quản lý Thực tập & Dashboard TSNN (DB_CNTT) - Khoa CNTT ĐH Tôn Đức Thắng",
+  "name": "dashboard-tsnn-tdtu",
+  "version": "3.1.0",
+  "description": "Hệ thống Quản lý Thực tập & Dashboard TSNN/KTCN (DB_CNTT) - Khoa CNTT ĐH Tôn Đức Thắng",
   "type": "module",
-  "workspaces": [
-    "apps/api",
-    "apps/web",
-    "packages/shared-types"
-  ],
   "scripts": {
-    "start": "node apps/api/src/main.ts",
-    "dev:api": "node --watch apps/api/src/main.ts",
-    "test": "node --test apps/api/tests/api.test.ts",
+    "start": "node --experimental-strip-types TDTU_DB_CNTT_System/backend/src/server.ts",
+    "dev": "node --watch --experimental-strip-types TDTU_DB_CNTT_System/backend/src/server.ts",
+    "test": "node --test TDTU_DB_CNTT_System/backend/tests/api.test.ts",
+    "test:backend": "cd TDTU_DB_CNTT_System/backend && npm test",
+    "deploy:firebase": "cd TDTU_DB_CNTT_System && npx firebase deploy --only hosting",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "deploy": "cmd /c deploy-docker.bat"
+    "docker:down": "docker compose down"
   },
   "keywords": [
     "tdtu",
     "dashboard-tsnn",
-    "internship",
-    "adapter-pattern",
+    "internship-portal",
+    "decision-support-system",
     "chart-router",
+    "plug-and-play",
+    "clean-architecture",
     "react",
-    "nodejs"
+    "nodejs",
+    "sqlite"
   ],
-  "author": "Khoa CNTT - TDTU",
+  "author": "Khoa CNTT - ĐH Tôn Đức Thắng (TDTU)",
   "license": "ISC"
 }
