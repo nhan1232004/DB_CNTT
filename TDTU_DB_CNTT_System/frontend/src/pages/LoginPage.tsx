@@ -357,7 +357,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="VD: hr@fpt.com hoặc phamvanc@tdtu.edu.vn"
+                  placeholder="VD: phamvanc@tdtu.edu.vn hoặc 522H0045@student.tdtu.edu.vn"
                   className="w-full px-3.5 py-2.5 text-[14px] bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-[#003087] outline-none text-[#1f2937]"
                   required
                 />
@@ -428,15 +428,6 @@ const LoginPage = ({ onLoginSuccess }) => {
               >
                 <span className="font-bold text-[#dc2626] block">[Ngoài kỳ] 52100999</span>
                 <span className="text-[#1f2937] block truncate">Chưa đủ điều kiện</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('hr@fpt.com', 'FPT Software HCM')}
-                className="col-span-2 p-2.5 bg-white border border-[#e5e7eb] hover:border-[#003087] rounded-lg text-left transition cursor-pointer shadow-2xs hover:bg-[#ebf3ff]"
-              >
-                <span className="font-bold text-[#003087] block">[Doanh nghiệp] hr@fpt.com</span>
-                <span className="text-[#1f2937] block truncate">FPT Software HCM · Đăng tuyển & Tiếp nhận SV</span>
               </button>
             </div>
           </div>

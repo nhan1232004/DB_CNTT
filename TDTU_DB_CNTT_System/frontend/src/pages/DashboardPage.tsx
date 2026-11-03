@@ -675,18 +675,20 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          {/* Nút Quản lý biểu đồ (Item 13) */}
-          <button
-            type="button"
-            onClick={() => setShowChartManager(true)}
-            className="px-5 py-2.5 min-w-[150px] bg-white hover:bg-[#f8fafc] text-[#003087] border border-[#003087] font-bold text-[12.5px] rounded-lg transition flex items-center justify-center gap-2 shadow-xs cursor-pointer whitespace-nowrap"
-          >
-            <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-            </svg>
-            <span>Quản lý biểu đồ</span>
-          </button>
+          {/* Nút Quản lý biểu đồ (Item 13) - Chỉ hiển thị cho Giảng viên / Ban Quản trị, ẩn đối với Sinh viên */}
+          {!isStudent && (
+            <button
+              type="button"
+              onClick={() => setShowChartManager(true)}
+              className="px-5 py-2.5 min-w-[150px] bg-white hover:bg-[#f8fafc] text-[#003087] border border-[#003087] font-bold text-[12.5px] rounded-lg transition flex items-center justify-center gap-2 shadow-xs cursor-pointer whitespace-nowrap"
+            >
+              <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+              <span>Quản lý biểu đồ</span>
+            </button>
+          )}
 
           {!isStudent && (
             <button
@@ -887,7 +889,7 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
       )}
 
       {/* 7. MODAL QUẢN LÝ BIỂU ĐỒ (ITEM 13 - ENLARGED & PROFESSIONAL DESIGN) */}
-      {showChartManager && (
+      {showChartManager && !isStudent && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-xs">
           <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[88vh]">
             <div className="p-5 border-b border-[#e5e7eb] flex items-center justify-between bg-white shrink-0">

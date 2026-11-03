@@ -645,6 +645,63 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         isConfirmed: finalConfirmed
       };
 
+      const sid = String(studentId || '').trim().toUpperCase();
+      try {
+        localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
+
+        const updateCachedList = (key) => {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const idx = list.findIndex(s => String(s.mssv || s.studentId).toUpperCase() === sid);
+              if (idx !== -1) {
+                list[idx].company = payload.companyName;
+                list[idx].companyName = payload.companyName;
+                list[idx].taxCode = payload.taxCode;
+                list[idx].position = payload.position;
+                list[idx].contactPerson = payload.contactPerson;
+                list[idx].contactPhone = payload.contactPhone;
+                list[idx].mentorName = payload.contactPerson;
+                list[idx].mentorPhone = payload.contactPhone;
+                list[idx].address = payload.address;
+                list[idx].companyAddress = payload.address;
+                list[idx].representative = payload.representative;
+                list[idx].status = 'Có doanh nghiệp';
+                list[idx].declarationData = payload;
+                list[idx].updated = new Date().toLocaleDateString('vi-VN');
+                localStorage.setItem(key, JSON.stringify(list));
+              }
+            }
+          }
+        };
+        updateCachedList('tdtu_imported_students_hk1_2026_2027');
+        updateCachedList('tdtu_live_students');
+      } catch {}
+
+      if (window.FirebaseService?.db) {
+        try {
+          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+            company: payload.companyName,
+            companyName: payload.companyName,
+            taxCode: payload.taxCode,
+            position: payload.position,
+            contactPerson: payload.contactPerson,
+            contactPhone: payload.contactPhone,
+            mentorName: payload.contactPerson,
+            mentorPhone: payload.contactPhone,
+            address: payload.address,
+            companyAddress: payload.address,
+            representative: payload.representative,
+            status: 'Có doanh nghiệp',
+            declarationData: payload,
+            updated: new Date().toLocaleDateString('vi-VN')
+          }, { merge: true });
+        } catch {}
+      }
+
       const res = await window.ApiClient.declareInternship(payload);
       if (res?.data?.declaration) {
         setServerDeclaration(res.data.declaration);

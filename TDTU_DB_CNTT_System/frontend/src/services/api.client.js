@@ -848,11 +848,12 @@ class ApiClient {
       isDualCourse: isDual,
       status: normStatus,
       company: normCompany,
-      companyName: normStatus === 'Có doanh nghiệp' ? normCompany : null,
+      companyName: s.companyName || normCompany,
       position: s.position || '',
       cert: s.cert || s.certificateDisplay || s.certName || null,
       lecturerNote: s.lecturerNote || '',
-      updated: s.updated || new Date().toLocaleDateString('vi-VN')
+      updated: s.updated || new Date().toLocaleDateString('vi-VN'),
+      declarationData: s.declarationData || null
     };
   }
 
@@ -865,6 +866,44 @@ class ApiClient {
       const sid = String(s?.mssv || s?.studentId || s?.id || '').trim();
       const sName = String(s?.name || s?.fullName || '').trim();
       return Boolean(sid && !sid.startsWith('SV_') && !sid.toLowerCase().startsWith('số lượng') && !sName.startsWith('Sinh viên 5'));
+    };
+
+    const enrichWithDeclarations = (list) => {
+      if (!Array.isArray(list)) return [];
+      return list.map(s => {
+        const sid = String(s.studentId || s.mssv || s.id || '').trim().toUpperCase();
+        if (!sid) return s;
+        try {
+          const raw = localStorage.getItem('tdtu_decl_' + sid);
+          if (raw) {
+            const decl = JSON.parse(raw);
+            if (decl) {
+              const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
+              const isWait = decl.internshipStatus === 'interviewing';
+              const isSupp = decl.internshipStatus === 'need_support';
+              return {
+                ...s,
+                company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
+                companyName: decl.companyName || s.companyName || s.company,
+                taxCode: decl.taxCode || s.taxCode,
+                position: decl.position || s.position,
+                contactPerson: decl.contactPerson || decl.mentorName || s.contactPerson,
+                mentorName: decl.contactPerson || decl.mentorName || s.mentorName,
+                contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
+                mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
+                contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
+                mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
+                address: decl.address || s.address,
+                companyAddress: decl.address || s.companyAddress,
+                representative: decl.representative || s.representative,
+                status: isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : s.status)),
+                declarationData: decl
+              };
+            }
+          }
+        } catch {}
+        return s;
+      });
     };
 
     // Nếu người dùng vừa chủ động nhấn "Xóa sạch danh sách" để test import từ đầu
@@ -889,13 +928,14 @@ class ApiClient {
             allList.sort((a, b) => (a.stt || 0) - (b.stt || 0));
             // Cách ly tuyệt đối sinh viên theo học kỳ (tránh rò rỉ danh sách sang học kỳ khác)
             const filteredBySem = allList.filter(s => (s.semester || 'hk1_2026_2027') === semester);
+            const enriched = enrichWithDeclarations(filteredBySem);
             if (semester === 'hk1_2026_2027') {
-              this.saveLiveStudents(filteredBySem);
+              this.saveLiveStudents(enriched);
             }
             try {
-              localStorage.setItem('tdtu_imported_students_' + semester, JSON.stringify(filteredBySem));
+              localStorage.setItem('tdtu_imported_students_' + semester, JSON.stringify(enriched));
             } catch {}
-            return filteredBySem;
+            return enriched;
           }
         }
       } catch (fErr) {
@@ -910,7 +950,8 @@ class ApiClient {
         const parsed = JSON.parse(savedImport);
         if (Array.isArray(parsed)) {
           const cleanList = parsed.filter(isValidStudent).map((s, i) => this._normalizeStudentRecord(s, i));
-          return cleanList.filter(s => (s.semester || 'hk1_2026_2027') === semester);
+          const filtered = cleanList.filter(s => (s.semester || 'hk1_2026_2027') === semester);
+          return enrichWithDeclarations(filtered);
         }
       }
     } catch {}
@@ -923,7 +964,8 @@ class ApiClient {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
             const cleanList = parsed.filter(isValidStudent).map((s, i) => this._normalizeStudentRecord(s, i));
-            return cleanList.filter(s => (s.semester || 'hk1_2026_2027') === 'hk1_2026_2027');
+            const filtered = cleanList.filter(s => (s.semester || 'hk1_2026_2027') === 'hk1_2026_2027');
+            return enrichWithDeclarations(filtered);
           }
         }
       } catch {}
@@ -942,8 +984,9 @@ class ApiClient {
         if (Array.isArray(items) && items.length > 0) {
           const cleanList = items.filter(isValidStudent).map((s, idx) => this._normalizeStudentRecord(s, idx));
           if (cleanList.length > 0) {
-            this.saveLiveStudents(cleanList);
-            return cleanList;
+            const enriched = enrichWithDeclarations(cleanList);
+            this.saveLiveStudents(enriched);
+            return enriched;
           }
         }
       }
@@ -956,8 +999,9 @@ class ApiClient {
         const staticJson = await staticRes.json().catch(() => null);
         if (Array.isArray(staticJson) && staticJson.length > 0) {
           const cleanList = staticJson.filter(isValidStudent).map((s, idx) => this._normalizeStudentRecord(s, idx));
-          this.saveLiveStudents(cleanList);
-          return cleanList;
+          const enriched = enrichWithDeclarations(cleanList);
+          this.saveLiveStudents(enriched);
+          return enriched;
         }
       }
     } catch {}
@@ -1293,6 +1337,9 @@ class ApiClient {
           }
           students[idx].declarationData = body;
           this.saveLiveStudents(students);
+          try {
+            localStorage.setItem('tdtu_imported_students_hk1_2026_2027', JSON.stringify(students));
+          } catch {}
 
           // Realtime Firestore write
           if (window.FirebaseService?.db) {
@@ -2199,7 +2246,7 @@ class ApiClient {
       body: JSON.stringify(declaration)
     });
 
-    const sid = declaration.studentId;
+    const sid = String(declaration.studentId || '').trim().toUpperCase();
     if (sid) {
       try {
         localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(declaration));
@@ -2209,7 +2256,7 @@ class ApiClient {
       // Update student record in live students list cache
       try {
         const students = await this.getLiveStudents('hk1_2026_2027');
-        const idx = students.findIndex(s => (s.mssv === sid || s.studentId === sid));
+        const idx = students.findIndex(s => (String(s.mssv || s.studentId).toUpperCase() === sid));
         if (idx !== -1) {
           const isComp = declaration.internshipStatus === 'has_company' || (!declaration.noCompanyOption && declaration.companyName && !declaration.companyName.includes('hỗ trợ') && !declaration.companyName.includes('Đang tìm'));
           const isWait = declaration.internshipStatus === 'interviewing' || declaration.noCompanyOption === 'self';
@@ -2223,16 +2270,32 @@ class ApiClient {
 
           students[idx].status = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần hỗ trợ' : 'Chưa có doanh nghiệp'));
           students[idx].company = isComp ? (declaration.companyName || 'Doanh nghiệp đã khai báo') : (isWait ? (declaration.companyName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : 'Chưa có'));
+          students[idx].companyName = declaration.companyName || students[idx].company;
           students[idx].position = declaration.position || '';
           students[idx].contactPerson = declaration.contactPerson || '';
           students[idx].contactPhone = declaration.contactPhone || '';
+          students[idx].mentorName = declaration.contactPerson || '';
+          students[idx].mentorPhone = declaration.contactPhone || '';
+          students[idx].address = declaration.address || '';
+          students[idx].companyAddress = declaration.address || '';
+          students[idx].representative = declaration.representative || '';
           students[idx].taxCode = declaration.taxCode || '';
           students[idx].noCompanyOption = declaration.noCompanyOption;
           students[idx].updated = new Date().toLocaleDateString('vi-VN');
           if (declaration.foreignLanguage && declaration.foreignScore) {
             students[idx].cert = `${declaration.foreignLanguage} ${declaration.foreignScore}`;
           }
+          students[idx].declarationData = declaration;
           this.saveLiveStudents(students);
+          try {
+            localStorage.setItem('tdtu_imported_students_hk1_2026_2027', JSON.stringify(students));
+          } catch {}
+          if (window.FirebaseService?.db) {
+            try {
+              window.FirebaseService.db.collection('tdtu_students').doc(sid).set(students[idx], { merge: true });
+              window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(declaration, { merge: true });
+            } catch {}
+          }
         }
       } catch {}
 
@@ -2247,15 +2310,23 @@ class ApiClient {
   }
 
   static async getDeclaration(studentId) {
+    const sid = String(studentId || '').trim().toUpperCase();
     try {
-      const res = await this.request(`/api/internship/declaration/${studentId}`);
+      const res = await this.request(`/api/internship/declaration/${sid}`);
       if (res) return res;
     } catch {}
 
     try {
-      const saved = localStorage.getItem('tdtu_decl_' + studentId);
+      const saved = localStorage.getItem('tdtu_decl_' + sid);
       if (saved) return JSON.parse(saved);
     } catch {}
+
+    if (window.FirebaseService?.db) {
+      try {
+        const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
+        if (doc.exists) return doc.data();
+      } catch {}
+    }
     return null;
   }
 

@@ -74,10 +74,63 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       setStudentCerts([]);
       return;
     }
-    const sid = selectedStudent.studentId || selectedStudent.mssv;
+    const sid = String(selectedStudent.studentId || selectedStudent.mssv || '').trim().toUpperCase();
     if (!sid) {
       setStudentCerts([]);
       return;
+    }
+
+    // Tự động làm giàu thông tin doanh nghiệp nếu chưa đầy đủ
+    if (!selectedStudent.taxCode || !selectedStudent.contactPerson || !selectedStudent.position || !selectedStudent.companyAddress) {
+      let decl = selectedStudent.declarationData;
+      if (!decl) {
+        try {
+          const raw = localStorage.getItem('tdtu_decl_' + sid);
+          if (raw) decl = JSON.parse(raw);
+        } catch {}
+      }
+      if (decl) {
+        setSelectedStudent((prev: any) => prev ? ({
+          ...prev,
+          companyName: decl.companyName || prev.companyName || prev.company,
+          company: decl.companyName || prev.company,
+          taxCode: decl.taxCode || prev.taxCode,
+          position: decl.position || prev.position,
+          companyAddress: decl.address || decl.companyAddress || prev.companyAddress,
+          address: decl.address || prev.address,
+          contactPerson: decl.contactPerson || decl.mentorName || decl.mentor || prev.contactPerson,
+          mentorName: decl.contactPerson || decl.mentorName || decl.mentor || prev.mentorName,
+          contactPhone: decl.contactPhone || decl.mentorPhone || prev.contactPhone,
+          mentorPhone: decl.contactPhone || decl.mentorPhone || prev.mentorPhone,
+          contactEmail: decl.contactEmail || decl.mentorEmail || prev.contactEmail,
+          mentorEmail: decl.mentorEmail || decl.contactEmail || prev.mentorEmail,
+          representative: decl.representative || prev.representative,
+          declarationData: decl
+        }) : null);
+      } else if (window.FirebaseService?.db) {
+        window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get().then((doc: any) => {
+          if (doc.exists) {
+            const docData = doc.data();
+            setSelectedStudent((prev: any) => prev ? ({
+              ...prev,
+              companyName: docData.companyName || prev.companyName || prev.company,
+              company: docData.companyName || prev.company,
+              taxCode: docData.taxCode || prev.taxCode,
+              position: docData.position || prev.position,
+              companyAddress: docData.address || docData.companyAddress || prev.companyAddress,
+              address: docData.address || prev.address,
+              contactPerson: docData.contactPerson || docData.mentorName || docData.mentor || prev.contactPerson,
+              mentorName: docData.contactPerson || docData.mentorName || docData.mentor || prev.mentorName,
+              contactPhone: docData.contactPhone || docData.mentorPhone || prev.contactPhone,
+              mentorPhone: docData.contactPhone || docData.mentorPhone || prev.mentorPhone,
+              contactEmail: docData.contactEmail || docData.mentorEmail || prev.contactEmail,
+              mentorEmail: docData.mentorEmail || docData.contactEmail || prev.mentorEmail,
+              representative: docData.representative || prev.representative,
+              declarationData: docData
+            }) : null);
+          }
+        }).catch(() => {});
+      }
     }
 
     setStudentCertsLoading(true);
@@ -172,7 +225,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       }
 
       // Lọc bỏ các bản ghi ảo / lỗi (SV_0_, Sinh viên 521...)
-      const cleanList = (list || []).filter(s => {
+      const cleanList = (list || []).filter((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim();
         const sname = String(s.fullName || s.name || '').trim();
         if (!sid || sid.startsWith('SV_0_') || sid.startsWith('SV_')) return false;
@@ -180,7 +233,41 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         return true;
       });
 
-      setStudents(cleanList);
+      // Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế
+      const enrichedList = cleanList.map((s: any) => {
+        const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
+        let decl = s.declarationData;
+        if (!decl) {
+          try {
+            const raw = localStorage.getItem('tdtu_decl_' + sid);
+            if (raw) decl = JSON.parse(raw);
+          } catch {}
+        }
+        if (decl) {
+          const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
+          return {
+            ...s,
+            companyName: decl.companyName || s.companyName || s.company,
+            company: isComp ? (decl.companyName || s.company) : s.company,
+            taxCode: decl.taxCode || s.taxCode,
+            position: decl.position || s.position,
+            companyAddress: decl.address || decl.companyAddress || s.companyAddress,
+            address: decl.address || s.address,
+            contactPerson: decl.contactPerson || decl.mentorName || decl.mentor || s.contactPerson,
+            mentorName: decl.contactPerson || decl.mentorName || decl.mentor || s.mentorName,
+            contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
+            mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
+            contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
+            mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
+            representative: decl.representative || s.representative,
+            declarationData: decl,
+            status: isComp ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : s.status))
+          };
+        }
+        return s;
+      });
+
+      setStudents(enrichedList);
     } catch (err) {
       console.error('Error fetching students:', err);
     } finally {
@@ -988,7 +1075,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                           </div>
                           <div>
                             <div className="font-bold text-[#1f2937] text-[14.5px] flex items-center gap-1.5 flex-wrap">
-                              <span>{displayName}</span>
+                              <span 
+                                onClick={() => handleOpenStudentDetail(sv)}
+                                className="hover:text-[#003087] hover:underline cursor-pointer transition"
+                                title="Nhấn để xem chi tiết hồ sơ sinh viên"
+                              >
+                                {displayName}
+                              </span>
                               {(sv.certificateDisplay || sv.certName || sv.cert) && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]" title="Chứng chỉ ngoại ngữ">
                                   <span>{sv.certificateDisplay || (sv.certName ? `${sv.certName} ${sv.certScore || ''}` : sv.cert)}</span>
@@ -1069,9 +1162,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                                   type="button"
                                   onClick={() => {
                                     setOpenActionMenuId(null);
-                                    setSelectedStudent(sv);
-                                    setDetailTab('personal');
-                                    setInternalNote(sv.lecturerNote || '');
+                                    handleOpenStudentDetail(sv);
                                   }}
                                   className="w-full px-4 py-2 text-[12.5px] font-bold text-[#1f2937] hover:bg-[#ebf3ff] hover:text-[#003087] flex items-center gap-2.5 transition text-left cursor-pointer"
                                 >
@@ -1388,13 +1479,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       <div>
                         <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Tên công ty tiếp nhận:</div>
                         <div className="text-[18px] md:text-[20px] font-extrabold text-[#003087] leading-snug">
-                          {selectedStudent.companyName || selectedStudent.company || selectedStudent.assignedCompany || 'Chưa khai báo'}
+                          {selectedStudent.companyName || selectedStudent.company || selectedStudent.assignedCompany || selectedStudent.declarationData?.companyName || 'Chưa khai báo'}
                         </div>
                       </div>
                       <div>
                         <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Mã số thuế (MST):</div>
                         <div className="text-[17px] font-mono font-bold text-[#1f2937]">
-                          {selectedStudent.taxCode || selectedStudent.companyTaxCode || '—'}
+                          {selectedStudent.taxCode || selectedStudent.companyTaxCode || selectedStudent.declarationData?.taxCode || '—'}
                         </div>
                       </div>
                     </div>
@@ -1403,13 +1494,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       <div>
                         <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí thực tập:</div>
                         <div className="text-[17px] font-bold text-[#1f2937]">
-                          {selectedStudent.position || '—'}
+                          {selectedStudent.position || selectedStudent.declarationData?.position || '—'}
                         </div>
                       </div>
                       <div>
                         <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Địa chỉ trụ sở doanh nghiệp:</div>
                         <div className="text-[15.5px] font-semibold text-[#1f2937] leading-relaxed">
-                          {selectedStudent.companyAddress || selectedStudent.address || '—'}
+                          {selectedStudent.companyAddress || selectedStudent.address || selectedStudent.declarationData?.address || selectedStudent.declarationData?.companyAddress || '—'}
                         </div>
                       </div>
                     </div>
@@ -1418,21 +1509,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       <div>
                         <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Cán bộ hướng dẫn (Mentor):</div>
                         <div className="text-[17px] font-extrabold text-[#003087]">
-                          {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || 'Chưa cập nhật'}
+                          {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || selectedStudent.declarationData?.contactPerson || 'Chưa cập nhật'}
                         </div>
                       </div>
                       <div>
                         <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">SĐT cán bộ hướng dẫn:</div>
                         <div className="text-[16px] font-mono font-bold text-[#1f2937]">
-                          {selectedStudent.contactPhone || selectedStudent.mentorPhone || '—'}
-                          {(selectedStudent.contactEmail || selectedStudent.mentorEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail}` : ''}
+                          {selectedStudent.contactPhone || selectedStudent.mentorPhone || selectedStudent.declarationData?.contactPhone || '—'}
+                          {(selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail}` : ''}
                         </div>
                       </div>
                     </div>
 
-                    {selectedStudent.representative && (
+                    {(selectedStudent.representative || selectedStudent.declarationData?.representative) && (
                       <div className="pt-3 border-t border-[#e5e7eb] text-[13.5px] text-[#4b5563]">
-                        Đại diện pháp luật: <strong className="text-[#1f2937]">{selectedStudent.representative}</strong>
+                        Đại diện pháp luật: <strong className="text-[#1f2937]">{selectedStudent.representative || selectedStudent.declarationData?.representative}</strong>
                       </div>
                     )}
                   </div>
