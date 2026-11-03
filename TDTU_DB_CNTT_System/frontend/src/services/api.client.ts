@@ -1063,41 +1063,90 @@ class ApiClient {
       return Boolean(sid && !sid.startsWith('SV_') && !sid.toLowerCase().startsWith('số lượng') && !sName.startsWith('Sinh viên 5'));
     };
 
+    // Quét toàn bộ declarations & certificates từ Firestore để đồng bộ theo thời gian thực
+    let firestoreDecls = new Map();
+    let firestoreCerts = new Map();
+    if (window.FirebaseService?.db) {
+      try {
+        const [declSnap, certSnap] = await Promise.all([
+          window.FirebaseService.db.collection('tdtu_declarations').get().catch(() => null),
+          window.FirebaseService.db.collection('tdtu_certificates').get().catch(() => null)
+        ]);
+
+        if (declSnap && !declSnap.empty) {
+          declSnap.forEach(d => {
+            const dData = d.data();
+            const dSid = String(d.id || dData.studentId || '').trim().toUpperCase();
+            if (dSid) firestoreDecls.set(dSid, dData);
+          });
+        }
+
+        if (certSnap && !certSnap.empty) {
+          certSnap.forEach(c => {
+            const cData = c.data();
+            const cSid = String(cData.studentId || '').trim().toUpperCase();
+            if (cSid && !firestoreCerts.has(cSid)) {
+              firestoreCerts.set(cSid, cData);
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
     const enrichWithDeclarations = (list) => {
       if (!Array.isArray(list)) return [];
       return list.map(s => {
         const sid = String(s.studentId || s.mssv || s.id || '').trim().toUpperCase();
         if (!sid) return s;
-        try {
-          const raw = localStorage.getItem('tdtu_decl_' + sid);
-          if (raw) {
-            const decl = JSON.parse(raw);
-            if (decl) {
-              const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
-              const isWait = decl.internshipStatus === 'interviewing';
-              const isSupp = decl.internshipStatus === 'need_support';
-              return {
-                ...s,
-                company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
-                companyName: decl.companyName || s.companyName || s.company,
-                taxCode: decl.taxCode || s.taxCode,
-                position: decl.position || s.position,
-                contactPerson: decl.contactPerson || decl.mentorName || s.contactPerson,
-                mentorName: decl.contactPerson || decl.mentorName || s.mentorName,
-                contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
-                mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
-                contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
-                mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
-                address: decl.address || s.address,
-                companyAddress: decl.address || s.companyAddress,
-                representative: decl.representative || s.representative,
-                status: isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : s.status)),
-                declarationData: decl
-              };
+
+        let decl = s.declarationData || firestoreDecls.get(sid);
+        if (!decl) {
+          try {
+            const raw = localStorage.getItem('tdtu_decl_' + sid);
+            if (raw) {
+              decl = JSON.parse(raw);
             }
-          }
-        } catch {}
-        return s;
+          } catch {}
+        }
+
+        const certObj = firestoreCerts.get(sid);
+        const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
+
+        if (decl) {
+          const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
+          const isWait = decl.internshipStatus === 'interviewing';
+          const isSupp = decl.internshipStatus === 'need_support';
+          return {
+            ...s,
+            company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
+            companyName: decl.companyName || s.companyName || s.company,
+            taxCode: decl.taxCode || s.taxCode,
+            position: decl.position || s.position,
+            contactPerson: decl.contactPerson || decl.mentorName || s.contactPerson,
+            mentorName: decl.contactPerson || decl.mentorName || s.mentorName,
+            contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
+            mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
+            contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
+            mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
+            address: decl.address || s.address,
+            companyAddress: decl.address || s.companyAddress,
+            representative: decl.representative || s.representative,
+            status: isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : s.status)),
+            declarationData: decl,
+            cvLink: decl.cvDriveLink || s.cvLink,
+            cert: certDisplay || s.cert,
+            certificateDisplay: certDisplay || s.certificateDisplay,
+            certName: certObj?.name || s.certName,
+            certScore: certObj?.score || s.certScore,
+          };
+        }
+        return {
+          ...s,
+          cert: certDisplay || s.cert,
+          certificateDisplay: certDisplay || s.certificateDisplay,
+          certName: certObj?.name || s.certName,
+          certScore: certObj?.score || s.certScore,
+        };
       });
     };
 
