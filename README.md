@@ -138,57 +138,62 @@ Dashoard_TSNN-main/
 │   │   │   ├── utils/                   # Phản hồi chuẩn & định dạng dữ liệu
 │   │   │   │   └── response.ts
 │   │   │   └── server.ts                # Entrypoint Backend HTTP Server (Port 3000)
-│   │   ├── tests/                       # Bộ kiểm thử tự động API
-│   │   │   └── api.test.ts
+│   │   ├── tests/                       # Bộ kiểm thử tự động API & RBAC
+│   │   │   ├── api.test.ts
+│   │   │   └── prime-rbac.test.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   ├── frontend/                        # React 18 SPA (TDTU Design System)
-│   │   ├── src/
-│   │   │   ├── components/common/       # Navbar, Sidebar, AdminNotificationModal
-│   │   │   ├── components/student/      # Banner kiểm tra điều kiện sinh viên
-│   │   │   ├── features/                # Các khối chức năng đặc thù
-│   │   │   ├── pages/                   # 12 Trang chức năng nghiệp vụ
-│   │   │   │   ├── AccountsPage.jsx     # Quản lý tài khoản & Phân quyền đối tác
-│   │   │   │   ├── BulletinPage.jsx     # Bảng tin tuyển dụng 2 tầng
-│   │   │   │   ├── CertificatesPage.jsx # Hồ sơ chứng chỉ ngoại ngữ TDTU
-│   │   │   │   ├── DashboardPage.jsx    # Bảng điều khiển ra quyết định
-│   │   │   │   ├── DeclarationPage.jsx  # Khai báo thực tập & Tra cứu MST
-│   │   │   │   ├── DocumentsPage.jsx    # Trung tâm In ấn A4 & Bộ Biểu mẫu
-│   │   │   │   ├── EmailJdPage.jsx      # Tiếp nhận & Duyệt tin từ Email
-│   │   │   │   ├── ExportDataPage.jsx   # Xuất báo cáo dữ liệu học vụ
-│   │   │   │   ├── HandbookPage.jsx     # Cẩm nang & Quy chế học phần
-│   │   │   │   ├── ImportDataPage.jsx   # Nạp dữ liệu Excel đầu kỳ
-│   │   │   │   ├── LoginPage.jsx        # Đăng nhập SSO & Firebase
-│   │   │   │   ├── ProfilePage.jsx      # Hồ sơ sinh viên cá nhân
-│   │   │   │   └── SemestersPage.jsx    # Quản lý kế hoạch học kỳ
-│   │   │   ├── services/                # API Gateway Client & Prime RBAC
-│   │   │   │   ├── api.client.js
-│   │   │   │   └── prime-rbac.js
-│   │   │   ├── types/                   # Hợp đồng kiểu dữ liệu TypeScript
-│   │   │   │   └── index.ts
-│   │   │   ├── App.jsx                  # Điều phối Router trung tâm
-│   │   │   └── index.css                # CSS Chuẩn TDTU & In ấn @media print
-│   │   └── index.html                   # HTML Host cho Single Page Application
-│   ├── deployment/                      # Dockerfile triển khai độc lập
-│   │   ├── backend.Dockerfile
-│   │   └── frontend.Dockerfile
-│   └── docs/                            # Tài liệu kỹ thuật chi tiết
-│       ├── architecture/                # Sơ đồ thiết kế Sequence & Router
-│       ├── plans/                       # Kế hoạch phát triển dự án
-│       ├── API_SPECIFICATION.md
-│       ├── HUONG_DAN_TAO_CHART_PLUGIN_MOI.md
-│       └── HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md
+│   └── frontend/                        # React 18 TypeScript SPA (TDTU Design System)
+│       ├── data/
+│       │   └── real-students.json
+│       ├── src/
+│       │   ├── assets/                  # Tài nguyên hình ảnh & Logo TDTU
+│       │   ├── components/
+│       │   │   ├── common/              # AdminNotificationModal.tsx, Navbar.tsx, Sidebar.tsx
+│       │   │   └── student/             # StudentEligibilityBanner.tsx
+│       │   ├── config/
+│       │   │   └── firebase.config.ts   # Cấu hình Firebase Auth & Firestore
+│       │   ├── pages/                   # 14 Trang chức năng nghiệp vụ (.tsx)
+│       │   │   ├── AccountsPage.tsx     # Quản lý tài khoản & Phân quyền Prime RBAC
+│       │   │   ├── BulletinPage.tsx     # Bảng tin tuyển dụng & Thông báo 2 tầng
+│       │   │   ├── CertificatesPage.tsx # Hồ sơ chứng chỉ ngoại ngữ TDTU
+│       │   │   ├── DashboardPage.tsx    # Bảng điều khiển ra quyết định & Chart Router
+│       │   │   ├── DeclarationPage.tsx  # Khai báo thực tập & Tra cứu MST
+│       │   │   ├── DocumentsPage.tsx    # Trung tâm In ấn A4 & Bộ Biểu mẫu Khoa CNTT
+│       │   │   ├── EmailJdPage.tsx      # Tiếp nhận & Duyệt tin từ Email
+│       │   │   ├── ExportDataPage.tsx   # Xuất báo cáo dữ liệu học vụ Excel
+│       │   │   ├── HandbookPage.tsx     # Cẩm nang & Quy chế học phần
+│       │   │   ├── ImportDataPage.tsx   # Nạp dữ liệu Excel đầu kỳ
+│       │   │   ├── LoginPage.tsx        # Đăng nhập SSO & Firebase
+│       │   │   ├── ProfilePage.tsx      # Hồ sơ sinh viên cá nhân
+│       │   │   ├── SemestersPage.tsx    # Quản lý kế hoạch học kỳ
+│       │   │   └── StudentsPage.tsx     # Quản lý & Thẩm định danh sách sinh viên
+│       │   ├── services/                # API Gateway Client & Prime RBAC (.ts)
+│       │   │   ├── api.client.ts
+│       │   │   └── prime-rbac.ts
+│       │   ├── types/                   # Hợp đồng kiểu dữ liệu TypeScript
+│       │   │   └── index.ts
+│       │   ├── App.tsx                  # Điều phối Router trung tâm
+│       │   └── index.css                # CSS Chuẩn TDTU & In ấn @media print
+│       ├── index.html                   # HTML Host cho Single Page Application
+│       ├── package.json
+│       └── tsconfig.json
 ├── Adapter_Code/                        # Gói Demo Độc Lập Kiến Trúc Chart Router & Adapter
 │   └── reporting-adapter-demo/
-├── docs/                                # Thư mục tài liệu tổng thể dự án
+├── docs/                                # Thư mục tài liệu kỹ thuật & báo cáo tổng thể
+│   ├── architecture/                    # Sơ đồ thiết kế Sequence & Router
+│   ├── plans/                           # Kế hoạch phát triển dự án
+│   ├── API_SPECIFICATION.md
+│   ├── BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md
+│   ├── HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md
+│   └── HUONG_DAN_TAO_CHART_PLUGIN_MOI.md
 ├── .firebaserc                          # Cấu hình dự án Firebase Hosting
-├── firebase.json                        # Quy tắc Rewrite & Hosting Cache
+├── firebase.json                        # Quy tắc Rewrite & Hosting Headers
 ├── firestore.rules                      # Bảo mật Firestore Rules
 ├── Dockerfile                           # Docker build đa tầng cho toàn bộ dự án
 ├── docker-compose.yml                   # Khởi chạy Docker tiện lợi
 ├── package.json                         # Scripts quản lý vòng đời dự án
-├── start-local.bat                      # Khởi chạy 1-Click trên Windows
-└── start-demo.bat                       # Khởi chạy bản Demo thuyết trình
+└── start-local.bat                      # Khởi chạy 1-Click trên Windows
 ```
 
 ---

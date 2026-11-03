@@ -151,38 +151,48 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    if (window.Babel && window.Babel.registerPreset) {
+      window.Babel.registerPreset('tsx', {
+        presets: [
+          [window.Babel.availablePresets['typescript'], { isTSX: true, allExtensions: true }],
+          window.Babel.availablePresets['react']
+        ]
+      });
+    }
+  </script>
 
   <!-- Firebase 10 App, Auth & Firestore SDK (Compat CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-  <script src="./src/config/firebase.config.js?v=20261030_v7_1452"></script>
 
   <!-- SheetJS for Client-Side Excel (.xlsx, .xls, .csv) Import & Multi-tab Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- Modular Frontend Services & Components with Cache-Busting Versioning -->
-  <script src="./src/services/prime-rbac.js?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script src="./src/services/api.client.js?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/components/common/AdminNotificationModal.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/components/common/Navbar.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/components/common/Sidebar.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/components/student/StudentEligibilityBanner.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/LoginPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/DashboardPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/ProfilePage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/DeclarationPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/CertificatesPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/HandbookPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/StudentsPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/BulletinPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/EmailJdPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/SemestersPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/ImportDataPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/ExportDataPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/DocumentsPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/pages/AccountsPage.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
-  <script type="text/babel" src="./src/App.jsx?v=20261103_v58_fix_chart_partner_sync"></script>
+  <!-- Modular Frontend TypeScript (.ts / .tsx) Services, Components & Pages -->
+  <script type="text/babel" data-presets="tsx" src="./src/config/firebase.config.ts?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/services/prime-rbac.ts?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/services/api.client.ts?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/AdminNotificationModal.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/Navbar.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/Sidebar.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/student/StudentEligibilityBanner.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/LoginPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DashboardPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ProfilePage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DeclarationPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/CertificatesPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/HandbookPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/StudentsPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/BulletinPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/EmailJdPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/SemestersPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ImportDataPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ExportDataPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DocumentsPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/AccountsPage.tsx?v=20261103_v59_ts"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/App.tsx?v=20261103_v59_ts"></script>
 </head>
 <body class="bg-white text-[#1f2937] antialiased selection:bg-[#003087] selection:text-white">
   <div id="root">

@@ -6,14 +6,14 @@
 // 4. Bố cục: Cân đối, văn bản mô tả căn đều (text-justify)
 // 5. Tính năng nâng cao: Xem trước (Preview & Review), chọn nhiều (Multichoice checkboxes), Không dùng Emoji/AI
 
-import React, { useState, useMemo } from 'react';
+const { useState, useMemo } = React;
 
 interface ImportDataPageProps {
   currentUser?: any;
   onNavigateTab?: (tab: string) => void;
 }
 
-export const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigateTab }) => {
+const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigateTab }) => {
   const roleKey = (window as any).PrimeRbac?.getUserRoleKey?.(currentUser) || 'thay_phuc';
   const mask = (window as any).PrimeRbac?.getFeatureMask?.(currentUser, 'import') || 26;
 
@@ -598,4 +598,4 @@ export const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onN
   );
 };
 
-export default ImportDataPage;
+(window as any).ImportDataPage = ImportDataPage;
