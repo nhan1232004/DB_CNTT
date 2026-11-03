@@ -416,7 +416,7 @@ const AccountsPage = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setShowPartnerModal(true)}
-                className="px-6 py-2.5 min-w-[220px] h-11 whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl transition shadow-xs hover:shadow-md flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                className="px-8 py-3 min-w-[250px] h-12 whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[14px] font-bold rounded-xl transition shadow-xs hover:shadow-md flex items-center justify-center gap-2.5 shrink-0 cursor-pointer"
               >
                 <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
@@ -724,7 +724,7 @@ const AccountsPage = ({ currentUser }) => {
             <button
               type="button"
               onClick={() => setShowNewRoleModal(true)}
-              className="px-3.5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14px] font-bold transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-6 py-2.5 min-w-[160px] h-11 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14px] font-bold transition shadow-xs hover:shadow-md flex items-center justify-center gap-2 shrink-0 cursor-pointer"
             >
               <span>+ Thêm Role Mới</span>
             </button>

@@ -288,7 +288,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={() => setSelectedJd(jd)}
-                      className="px-6 py-2.5 min-w-[160px] h-11 whitespace-nowrap bg-[#f8fafc] hover:bg-[#e5e7eb] text-[#1f2937] border border-[#cbd5e1] rounded-xl text-[13px] font-bold transition cursor-pointer flex items-center justify-center shadow-2xs"
+                      className="px-7 py-3 min-w-[180px] h-12 whitespace-nowrap bg-[#f8fafc] hover:bg-[#e5e7eb] text-[#1f2937] border border-[#cbd5e1] rounded-xl text-[14px] font-bold transition cursor-pointer flex items-center justify-center shadow-2xs"
                     >
                       Xem chi tiết email
                     </button>
@@ -296,7 +296,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                       <button
                         type="button"
                         onClick={() => handleApproveJd(jd)}
-                        className="px-7 py-2.5 min-w-[160px] h-11 whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer"
+                        className="px-8 py-3 min-w-[180px] h-12 whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14px] font-bold transition flex items-center justify-center gap-2.5 shadow-xs hover:shadow-md cursor-pointer"
                       >
                         <svg className="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
@@ -308,7 +308,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
                       <button
                         type="button"
                         onClick={() => handleDeleteJd(jd.id)}
-                        className="px-5 py-2.5 min-w-[90px] h-11 whitespace-nowrap bg-white hover:bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] rounded-xl text-[12.5px] font-bold transition cursor-pointer flex items-center justify-center shadow-2xs"
+                        className="px-6 py-3 min-w-[110px] h-12 whitespace-nowrap bg-white hover:bg-[#fef2f2] text-[#dc2626] border-2 border-[#fecaca] rounded-xl text-[13.5px] font-bold transition cursor-pointer flex items-center justify-center shadow-2xs"
                         title="Xóa email"
                       >
                         Xóa tin

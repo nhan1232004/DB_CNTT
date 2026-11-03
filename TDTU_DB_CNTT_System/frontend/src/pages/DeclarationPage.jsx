@@ -1984,7 +1984,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       {/* ========================================================================= */}
       {selectedDetailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 w-[95vw] max-w-6xl xl:max-w-7xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[94vh] flex flex-col">
             
             <div className="p-5 bg-[#003087] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">

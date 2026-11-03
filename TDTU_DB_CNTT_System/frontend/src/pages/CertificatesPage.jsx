@@ -645,7 +645,7 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
       {/* Modal Xem chi tiết hồ sơ chứng chỉ sinh viên (Thẩm tra Read-only) */}
       {selectedProofModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white  rounded-2xl max-w-4xl w-full border border-[#e5e7eb]  shadow-2xl p-7 space-y-5">
+          <div className="bg-white rounded-3xl max-w-6xl xl:max-w-7xl w-[95vw] border border-[#cbd5e1] shadow-2xl p-8 space-y-6">
             
             <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb] ">
               <div className="flex items-center gap-2">
@@ -1376,7 +1376,7 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
       {/* Modal Thêm mới / Chỉnh sửa Chứng chỉ tiếng Anh */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white  rounded-2xl max-w-3xl w-full border border-[#e5e7eb]  shadow-2xl p-7 space-y-5 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-5xl w-[94vw] border border-[#cbd5e1] shadow-2xl p-8 space-y-6 max-h-[94vh] overflow-y-auto">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb] ">

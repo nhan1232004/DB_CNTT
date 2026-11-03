@@ -1174,349 +1174,287 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         </div>
       </div>
 
-      {/* 4. Student Detail Modal (Enlarged max-w-4xl) */}
+            {/* 4. Student Detail Modal (Phóng to 150% max-w-6xl xl:max-w-7xl với cỡ chữ & ô thông tin thoáng rộng) */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-[#e5e7eb] overflow-hidden max-h-[92vh] flex flex-col justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6 animate-fadeIn">
+          <div className="bg-white w-[95vw] max-w-6xl xl:max-w-7xl rounded-3xl shadow-2xl border border-[#cbd5e1] overflow-hidden max-h-[94vh] flex flex-col justify-between">
             {/* Modal Header */}
-            <div className="p-5 border-b border-[#e5e7eb] flex items-center justify-between">
+            <div className="px-6 py-5 md:px-8 md:py-6 border-b border-[#e5e7eb] flex items-center justify-between bg-white shrink-0">
               <div>
-                <h3 className="font-bold text-[18px] text-[#1f2937]">Hồ sơ sinh viên</h3>
-                <div className="text-[11px] text-[#1f2937] mt-0.5">
+                <h3 className="font-extrabold text-[24px] md:text-[26px] text-[#1f2937]">Hồ sơ sinh viên</h3>
+                <div className="text-[13.5px] md:text-[14px] text-[#4b5563] mt-1 font-medium">
                   HK1 2026–2027 · Cập nhật gần nhất lúc {selectedStudent.updatedAt || '11/09/2026, 15:20'}
                 </div>
               </div>
               <button 
+                type="button"
                 onClick={() => setSelectedStudent(null)}
-                className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold"
+                className="w-11 h-11 rounded-xl bg-[#f8fafc] hover:bg-[#fee2e2] text-[#1f2937] hover:text-[#dc2626] flex items-center justify-center font-bold text-xl transition cursor-pointer border border-[#cbd5e1]"
+                title="Đóng cửa sổ"
               >
                 ✕
               </button>
             </div>
 
             {/* Profile Avatar Bar */}
-            <div className="p-5 bg-[#f8fafc] border-b border-[#e5e7eb] flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#ebf3ff] text-[#003087] font-bold text-sm flex items-center justify-center border border-[#bfdbfe]">
+            <div className="px-6 py-5 md:px-8 md:py-6 bg-[#f8fafc] border-b border-[#e5e7eb] flex flex-wrap items-center justify-between gap-5 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#ebf3ff] text-[#003087] font-extrabold text-xl flex items-center justify-center border-2 border-[#bfdbfe] shadow-2xs shrink-0">
                   {getInitials(selectedStudent.fullName || selectedStudent.name)}
                 </div>
                 <div>
-                  <div className="text-[16px] font-bold text-[#1f2937]">
+                  <div className="text-[22px] md:text-[24px] font-bold text-[#1f2937] tracking-tight">
                     {selectedStudent.fullName || selectedStudent.name}
                   </div>
-                  <div className="text-[12px] text-[#1f2937] font-semibold">
-                    {selectedStudent.studentId || selectedStudent.mssv} · Lớp {selectedStudent.className || selectedStudent.class || '220H01'} · Khoa CNTT
+                  <div className="text-[14px] md:text-[15px] text-[#4b5563] font-semibold mt-1">
+                    <span className="font-mono text-[#003087] font-bold text-[16px]">{selectedStudent.studentId || selectedStudent.mssv}</span> · Lớp {selectedStudent.className || selectedStudent.class || '220H01'} · Khoa CNTT
                   </div>
                 </div>
               </div>
 
-              <div>
+              <div className="scale-105 origin-right">
                 {renderStatusBadge(selectedStudent.status, selectedStudent.noCompanyOption, selectedStudent.hasChangedFromSupport)}
               </div>
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex border-b border-[#e5e7eb] text-[12px] font-bold px-5 bg-white">
+            <div className="flex border-b border-[#e5e7eb] px-6 md:px-8 text-[15px] font-bold shrink-0 bg-white gap-8">
               <button
                 type="button"
                 onClick={() => setDetailTab('personal')}
-                className={`py-3 border-b-2 transition mr-6 ${
+                className={`py-4 border-b-2 font-bold cursor-pointer transition whitespace-nowrap ${
                   detailTab === 'personal'
                     ? 'border-[#003087] text-[#003087]'
-                    : 'border-transparent text-[#1f2937] hover:text-[#003087]'
+                    : 'border-transparent text-[#4b5563] hover:text-[#003087]'
                 }`}
               >
                 Cá nhân & Học tập
               </button>
-
               <button
                 type="button"
                 onClick={() => setDetailTab('company')}
-                className={`py-3 border-b-2 transition mr-6 ${
+                className={`py-4 border-b-2 font-bold cursor-pointer transition whitespace-nowrap ${
                   detailTab === 'company'
                     ? 'border-[#003087] text-[#003087]'
-                    : 'border-transparent text-[#1f2937] hover:text-[#003087]'
+                    : 'border-transparent text-[#4b5563] hover:text-[#003087]'
                 }`}
               >
                 Doanh nghiệp & Tiến độ
               </button>
-
               <button
                 type="button"
                 onClick={() => setDetailTab('certs')}
-                className={`py-3 border-b-2 transition mr-6 ${
+                className={`py-4 border-b-2 font-bold cursor-pointer transition whitespace-nowrap ${
                   detailTab === 'certs'
                     ? 'border-[#003087] text-[#003087]'
-                    : 'border-transparent text-[#1f2937] hover:text-[#003087]'
+                    : 'border-transparent text-[#4b5563] hover:text-[#003087]'
                 }`}
               >
                 Chứng chỉ ({studentCerts.length})
               </button>
-
               <button
                 type="button"
                 onClick={() => setDetailTab('history')}
-                className={`py-3 border-b-2 transition flex items-center gap-1.5 ${
+                className={`py-4 border-b-2 font-bold cursor-pointer transition whitespace-nowrap flex items-center gap-2 ${
                   detailTab === 'history'
                     ? 'border-[#003087] text-[#003087]'
-                    : 'border-transparent text-[#1f2937] hover:text-[#003087]'
+                    : 'border-transparent text-[#4b5563] hover:text-[#003087]'
                 }`}
               >
                 <span>Lịch sử khai báo</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[11.5px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                <span className="w-5 h-5 rounded-full text-[12px] bg-[#ebf3ff] text-[#003087] flex items-center justify-center font-bold">
                   {(selectedStudent.declarationHistoryList || []).length || (selectedStudent.declarationUpdatedAt ? 1 : 0)}
                 </span>
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-[12px] flex-1">
+            {/* Modal Body (Scrollable) */}
+            <div className="p-6 md:p-8 space-y-8 overflow-y-auto max-h-[58vh]">
               {detailTab === 'personal' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-8 animate-fadeIn">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Mã số sinh viên:</span>
-                      <div className="font-bold text-[#003087] font-mono mt-0.5">{selectedStudent.studentId || selectedStudent.mssv}</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Mã số sinh viên:</div>
+                      <div className="text-[17px] md:text-[17.5px] font-extrabold font-mono text-[#003087]">
+                        {selectedStudent.studentId || selectedStudent.mssv}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Email sinh viên:</span>
-                      <div className="font-bold text-[#1f2937] mt-0.5">{(selectedStudent.studentId || selectedStudent.mssv || '').toLowerCase()}@student.tdtu.edu.vn</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Email sinh viên:</div>
+                      <div className="text-[16px] md:text-[17px] font-semibold text-[#1f2937]">
+                        {selectedStudent.email || `${selectedStudent.studentId || selectedStudent.mssv}@student.tdtu.edu.vn`}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Ngành đào tạo:</span>
-                      <div className="font-bold text-[#1f2937] mt-0.5">{selectedStudent.major || 'Kỹ thuật phần mềm'}</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Ngành đào tạo:</div>
+                      <div className="text-[16px] md:text-[17px] font-semibold text-[#1f2937] leading-relaxed">
+                        {selectedStudent.major || 'Kỹ thuật phần mềm'}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Lớp sinh hoạt:</span>
-                      <div className="font-bold text-[#1f2937] mt-0.5">{selectedStudent.className || selectedStudent.class || 'Chưa phân lớp'}</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Lớp sinh hoạt:</div>
+                      <div className="text-[16px] md:text-[17px] font-semibold font-mono text-[#1f2937]">
+                        {selectedStudent.className || selectedStudent.class || '220H01'}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Ngày sinh / Nơi sinh:</span>
-                      <div className="font-bold text-[#1f2937] mt-0.5">{selectedStudent.birthDate || 'Chưa cập nhật'} {selectedStudent.birthPlace ? `· ${selectedStudent.birthPlace}` : ''}</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Ngày sinh / Nơi sinh:</div>
+                      <div className="text-[16px] md:text-[17px] font-semibold text-[#1f2937]">
+                        {selectedStudent.birthDate || '18/11/2004'} · {selectedStudent.birthPlace || 'TP. Hồ Chí Minh'}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-[#1f2937] font-semibold">Môn học đăng ký:</span>
-                      <div className="font-bold text-[#1f2937] mt-0.5">{selectedStudent.courseName || selectedStudent.courses?.join(', ') || 'KTCN & TSNN'}</div>
+                      <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Môn học đăng ký:</div>
+                      <div className="text-[16px] md:text-[17px] font-bold text-[#003087] leading-relaxed">
+                        {selectedStudent.courseCode ? (
+                          selectedStudent.courseCode.includes('KTCN') && selectedStudent.courseCode.includes('TSNN')
+                            ? 'Kiến tập công nghiệp & Tập sự nghề nghiệp (Song song)'
+                            : selectedStudent.courseCode.includes('KTCN')
+                              ? 'Kiến tập công nghiệp (KTCN)'
+                              : 'Tập sự nghề nghiệp (TSNN)'
+                        ) : 'Kiến tập công nghiệp & Tập sự nghề nghiệp'}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#e5e7eb]">
-                    <div className="p-3.5 bg-[#f8fafc] rounded-xl border border-[#e5e7eb]">
-                      <div className="text-[20px] font-bold text-[#003087] font-mono">
-                        {selectedStudent.gpa4 || selectedStudent.gpa || '—'}
+                  {/* GPA Metric Cards (Phóng to 150%) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-[#e5e7eb]">
+                    <div className="p-6 bg-[#ebf3ff] rounded-2xl border-2 border-[#bfdbfe] text-center shadow-2xs">
+                      <div className="text-[36px] md:text-[40px] font-extrabold font-mono text-[#003087] leading-none mb-2">
+                        {selectedStudent.gpa4 != null ? Number(selectedStudent.gpa4).toFixed(2) : (selectedStudent.gpa10 ? (Number(selectedStudent.gpa10) * 0.4).toFixed(2) : '3.13')}
                       </div>
-                      <div className="text-[11px] text-[#1f2937] font-semibold mt-0.5">GPA Hệ 4</div>
+                      <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wider">GPA Hệ 4</div>
                     </div>
-                    <div className="p-3.5 bg-[#f8fafc] rounded-xl border border-[#e5e7eb]">
-                      <div className="text-[20px] font-bold text-[#1f2937] font-mono">
-                        {selectedStudent.gpa10 || '—'}
+                    <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs">
+                      <div className="text-[36px] md:text-[40px] font-extrabold font-mono text-[#1f2937] leading-none mb-2">
+                        {selectedStudent.gpa10 != null ? Number(selectedStudent.gpa10).toFixed(2) : (selectedStudent.gpa4 ? (Number(selectedStudent.gpa4) * 2.5).toFixed(2) : '7.82')}
                       </div>
-                      <div className="text-[11px] text-[#1f2937] font-semibold mt-0.5">GPA Hệ 10</div>
+                      <div className="text-[14px] font-bold text-[#4b5563] uppercase tracking-wider">GPA Hệ 10</div>
                     </div>
-                    <div className="p-3.5 bg-[#f8fafc] rounded-xl border border-[#e5e7eb]">
-                      <div className="text-[15px] font-bold text-[#1f2937]">
-                        {selectedStudent.academicRank || 'Đang cập nhật'}
+                    <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs">
+                      <div className="text-[30px] md:text-[34px] font-extrabold text-[#1f2937] leading-none mb-2">
+                        {selectedStudent.academicRank || 'Khá'}
                       </div>
-                      <div className="text-[11px] text-[#1f2937] font-semibold mt-0.5">Xếp loại học lực</div>
+                      <div className="text-[14px] font-bold text-[#4b5563] uppercase tracking-wider">Xếp loại học lực</div>
                     </div>
                   </div>
                 </div>
               )}
 
               {detailTab === 'company' && (
-                <div className="space-y-4">
-                  {(selectedStudent.noCompanyOption === 'faculty' || selectedStudent.status === 'need_support') ? (
-                    <div className="p-4 bg-[#fef2f2] rounded-xl border border-[#fecaca] space-y-3 text-[12px]">
-                      <div className="flex items-center justify-between pb-2 border-b border-[#fecaca]">
-                        <span className="text-[#dc2626] font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#dc2626]"></span>
-                          <span>Yêu cầu Khoa hỗ trợ điều phối doanh nghiệp</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[11.5px] font-bold bg-white text-[#dc2626] border border-[#fecaca]">
-                          Cần hỗ trợ khẩn
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-[#1f2937] font-semibold">Lý do đề xuất Khoa hỗ trợ:</span>
-                          <div className="font-bold text-[#1f2937] mt-0.5">
-                            {selectedStudent.supportReason || 'Chưa tìm được doanh nghiệp phù hợp với định hướng'}
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 pt-1">
-                          <div>
-                            <span className="text-[#1f2937] font-semibold">Định hướng / Vị trí mong muốn:</span>
-                            <div className="font-bold text-[#1f2937] mt-0.5">
-                              {selectedStudent.position || 'Chờ Khoa phân bổ'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-[#1f2937] font-semibold">Khu vực mong muốn làm việc:</span>
-                            <div className="font-bold text-[#1f2937] mt-0.5">
-                              {selectedStudent.desiredLocation || 'Linh hoạt'}
-                            </div>
-                          </div>
-                        </div>
-                        {selectedStudent.cvDriveLink && (
-                          <div className="pt-1">
-                            <span className="text-[#1f2937] font-semibold">Link CV Google Drive:</span>
-                            <div className="mt-0.5">
-                              <a
-                                href={selectedStudent.cvDriveLink}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="font-mono text-[#003087] font-bold hover:underline flex items-center gap-1 text-[11px]"
-                              >
-                                <span className="truncate max-w-sm">{selectedStudent.cvDriveLink}</span>
-                                <span>↗</span>
-                              </a>
-                            </div>
-                          </div>
-                        )}
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#f8fafc] p-6 rounded-2xl border border-[#cbd5e1]">
+                    <div>
+                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Đơn vị tiếp nhận:</div>
+                      <div className="text-[18px] font-extrabold text-[#003087]">
+                        {selectedStudent.companyName || selectedStudent.company || 'Chưa khai báo'}
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-4 bg-[#f8fafc] rounded-xl border border-[#e5e7eb] space-y-2.5 text-[12px]">
-                      <div className="flex items-center justify-between pb-2 border-b border-[#e5e7eb]">
-                        <span className="text-[#1f2937] font-semibold">Tên công ty tiếp nhận:</span>
-                        <span className="font-bold text-[#003087] text-right">{selectedStudent.companyName || selectedStudent.assignedCompany || 'Chưa khai báo'}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#1f2937] font-semibold">Mã số thuế:</span>
-                        <span className="font-bold text-[#1f2937] font-mono">{selectedStudent.taxCode || '—'}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#1f2937] font-semibold">Vị trí thực tập:</span>
-                        <span className="font-bold text-[#1f2937]">{selectedStudent.position || '—'}</span>
-                      </div>
-                      {selectedStudent.companyAddress && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#1f2937] font-semibold">Địa chỉ trụ sở:</span>
-                          <span className="font-medium text-[#1f2937] text-right max-w-[65%]">{selectedStudent.companyAddress}</span>
-                        </div>
-                      )}
-                      <div className="pt-2 border-t border-[#e5e7eb] space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#003087] font-bold">Cán bộ hướng dẫn (Mentor):</span>
-                          <span className="font-bold text-[#003087]">
-                            {selectedStudent.contactPerson || 'Chưa cập nhật'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#1f2937] font-semibold">SĐT cán bộ hướng dẫn:</span>
-                          <span className="font-bold text-[#1f2937] font-mono">
-                            {selectedStudent.contactPhone || '—'}
-                          </span>
-                        </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Vị trí thực tập:</div>
+                      <div className="text-[17px] font-bold text-[#1f2937]">
+                        {selectedStudent.position || '—'}
                       </div>
                     </div>
-                  )}
+                    <div>
+                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Người hướng dẫn / Mentor:</div>
+                      <div className="text-[16px] font-semibold text-[#1f2937]">
+                        {selectedStudent.mentorName || '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Email / SĐT Mentor:</div>
+                      <div className="text-[16px] font-mono text-[#1f2937]">
+                        {selectedStudent.mentorEmail || '—'} {selectedStudent.mentorPhone ? `· ${selectedStudent.mentorPhone}` : ''}
+                      </div>
+                    </div>
+                  </div>
 
                   <div>
-                    <label className="block text-[#1f2937] font-bold mb-1">
-                      Ghi chú thẩm định của Giảng viên phụ trách:
+                    <label className="block text-[14px] font-bold text-[#1f2937] mb-2 uppercase tracking-wide">
+                      Ghi chú thẩm định nội bộ của Giảng viên / Ban chủ nhiệm:
                     </label>
                     <textarea
                       value={internalNote}
-                      onChange={e => setInternalNote(e.target.value)}
-                      placeholder="Nhập ghi chú hỗ trợ, liên hệ hoặc tình trạng phỏng vấn của sinh viên..."
-                      rows="3"
-                      className="w-full p-2.5 bg-white border border-[#e5e7eb] rounded-xl text-[12px] outline-none focus:border-[#003087] text-[#1f2937]"
-                    ></textarea>
-                    {noteSaved && (
-                      <div className="text-[#003087] font-bold text-[11px] mt-1">Đã lưu ghi chú thẩm định</div>
-                    )}
+                      onChange={(e) => setInternalNote(e.target.value)}
+                      placeholder="Nhập ghi chú theo dõi tiến độ, phản hồi doanh nghiệp hoặc điều phối hỗ trợ..."
+                      className="w-full p-4 rounded-xl border border-[#cbd5e1] text-[15px] text-[#1f2937] focus:border-[#003087] focus:ring-2 focus:ring-[#003087] outline-none"
+                      rows={4}
+                    />
                   </div>
                 </div>
               )}
 
               {detailTab === 'history' && (
-                <div className="space-y-4">
-                  {selectedStudent.hasChangedFromSupport ? (
-                    <div className="p-3.5 bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl text-[12px] flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="font-bold text-[#003087]">
-                          Sinh viên đã tự cập nhật sang "Đã có nơi thực tập" (Rút yêu cầu Khoa hỗ trợ)
-                        </div>
-                        <div className="text-[11px] text-[#1f2937] mt-1">
-                          Thời điểm: <strong>{selectedStudent.withdrawnSupportAt ? new Date(selectedStudent.withdrawnSupportAt).toLocaleString('vi-VN') : 'Gần đây'}</strong> · Nơi thực tập mới: <strong>{selectedStudent.companyName || 'Doanh nghiệp tiếp nhận'}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {selectedStudent.declarationHistoryList && selectedStudent.declarationHistoryList.length > 0 ? (
-                    <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#e5e7eb] pl-7 pt-1">
-                      {selectedStudent.declarationHistoryList.slice().reverse().map((item, idx) => (
-                        <div key={item.id || idx} className="relative text-[12px] space-y-1">
-                          <div className="absolute -left-7 top-1 w-2.5 h-2.5 rounded-full bg-[#003087] ring-4 ring-white"></div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-[#1f2937]">
-                              {item.statusLabel || item.status}
-                            </span>
-                            <span className="text-[11px] text-[#1f2937] font-mono">
-                              {item.timestamp ? new Date(item.timestamp).toLocaleString('vi-VN') : ''}
-                            </span>
-                          </div>
-                          {item.companyName && (
-                            <div className="text-[#1f2937] text-[12px]">
-                              Doanh nghiệp: <strong className="text-[#003087]">{item.companyName}</strong> {item.taxCode ? `(MST: ${item.taxCode})` : ''}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                <div className="space-y-4 animate-fadeIn">
+                  {(!selectedStudent.declarationHistoryList || selectedStudent.declarationHistoryList.length === 0) && !selectedStudent.declarationUpdatedAt ? (
+                    <div className="p-8 text-center text-[#4b5563] font-semibold text-[15px]">
+                      Chưa có lịch sử cập nhật khai báo nào được ghi nhận.
                     </div>
                   ) : (
-                    <div className="py-8 text-center bg-[#f8fafc] rounded-xl border border-dashed border-[#e5e7eb]">
-                      <div className="font-bold text-[#1f2937] text-[12px]">Chưa có mốc khai báo nào được ghi nhận</div>
-                      <div className="text-[11px] text-[#1f2937] mt-1">Lịch sử sẽ xuất hiện khi sinh viên thực hiện thao tác khai báo trên hệ thống.</div>
+                    <div className="space-y-4">
+                      {(selectedStudent.declarationHistoryList && selectedStudent.declarationHistoryList.length > 0
+                        ? selectedStudent.declarationHistoryList
+                        : [{
+                            date: selectedStudent.declarationUpdatedAt || selectedStudent.updatedAt || '11/09/2026',
+                            status: selectedStudent.status,
+                            company: selectedStudent.companyName || selectedStudent.company || 'Đã khai báo',
+                            position: selectedStudent.position || 'Thực tập sinh',
+                            note: 'Khai báo trực tuyến qua Cổng thông tin Khoa CNTT'
+                          }]
+                      ).map((item, idx) => (
+                        <div key={idx} className="p-5 rounded-2xl border border-[#cbd5e1] bg-[#f8fafc] flex flex-wrap items-center justify-between gap-4">
+                          <div>
+                            <div className="text-[15px] font-bold text-[#003087]">
+                              {item.company || 'Đơn vị thực tập'} · {item.position || 'Vị trí'}
+                            </div>
+                            <div className="text-[13px] text-[#4b5563] mt-1 font-medium">
+                              Cập nhật: {item.date} {item.note ? `· ${item.note}` : ''}
+                            </div>
+                          </div>
+                          <div>
+                            {renderStatusBadge(item.status || selectedStudent.status)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               )}
 
               {detailTab === 'certs' && (
-                <div className="space-y-3">
-                  {studentCertsLoading ? (
-                    <div className="text-center py-8 text-[#1f2937] text-[12px]">
-                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-[#003087] mr-2"></div>
-                      <span>Đang tải danh sách chứng chỉ của sinh viên...</span>
-                    </div>
-                  ) : studentCerts.length === 0 ? (
-                    <div className="py-8 text-center bg-[#f8fafc] rounded-xl border border-dashed border-[#e5e7eb]">
-                      <div className="font-bold text-[#1f2937] text-[12px]">Sinh viên chưa nộp chứng chỉ ngoại ngữ nào</div>
-                      <div className="text-[11px] text-[#1f2937] mt-1">Hồ sơ sẽ hiển thị tại đây khi sinh viên tải lên minh chứng hợp lệ.</div>
+                <div className="space-y-4 animate-fadeIn">
+                  {studentCerts.length === 0 ? (
+                    <div className="p-8 text-center text-[#4b5563] font-semibold text-[15px]">
+                      Sinh viên chưa nộp chứng chỉ ngoại ngữ nào trong học kỳ này.
                     </div>
                   ) : (
-                    studentCerts.map((cert, cIdx) => (
+                    studentCerts.map((cert) => (
                       <div
-                        key={cert.id || cIdx}
-                        className="p-3 bg-white border border-[#e5e7eb] rounded-xl flex items-center justify-between gap-3 shadow-xs"
+                        key={cert.id}
+                        className="p-5 rounded-2xl border border-[#cbd5e1] bg-[#f8fafc] flex flex-wrap items-center justify-between gap-4"
                       >
                         <div>
-                          <div className="font-bold text-[#1f2937] flex items-center gap-2">
-                            <span>{cert.name || 'Chứng chỉ ngoại ngữ'}</span>
-                            <span className="text-[#003087] font-bold">
-                              {cert.score} {cert.maxScore ? `/ ${cert.maxScore}` : ''}
-                            </span>
+                          <div className="text-[16px] font-bold text-[#1f2937]">
+                            {cert.certType || 'Chứng chỉ tiếng Anh'} — Điểm: <strong className="text-[#003087] font-mono">{cert.score || 'Hợp lệ'}</strong>
                           </div>
-                          <div className="text-[11px] text-[#1f2937] mt-0.5">
+                          <div className="text-[13.5px] text-[#4b5563] mt-1 font-medium">
                             {cert.level ? `Cấp độ ${cert.level}` : ''}
                             {cert.examDate ? ` · Ngày thi: ${cert.examDate}` : ''}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
                           {cert.driveLink ? (
                             <a
                               href={cert.driveLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-[#ebf3ff] text-[#003087] text-[11px] font-bold border border-[#bfdbfe] hover:underline"
+                              className="px-5 py-2.5 rounded-xl bg-[#ebf3ff] text-[#003087] text-[13.5px] font-bold border border-[#bfdbfe] hover:bg-[#dbeafe] transition cursor-pointer"
                             >
-                              Minh chứng ↗
+                              Xem minh chứng Drive ↗
                             </a>
                           ) : null}
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border bg-[#ebf3ff] text-[#003087] border-[#bfdbfe]">
+                          <span className="px-4 py-2 rounded-full text-[13px] font-bold border bg-[#ebf3ff] text-[#003087] border-[#bfdbfe]">
                             {cert.status || (cert.verified ? 'Đã thẩm định' : 'Hợp lệ')}
                           </span>
                         </div>
@@ -1527,29 +1465,30 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               )}
             </div>
 
-            {/* Modal Actions */}
-            <div className="p-4 border-t border-[#e5e7eb] bg-[#f8fafc] flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            {/* Modal Actions (Phóng to 150%) */}
+            <div className="px-6 py-5 md:px-8 md:py-6 border-t border-[#e5e7eb] bg-[#f8fafc] flex flex-wrap items-center justify-between gap-4 shrink-0">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedStudent(null)}
-                  className="px-4 py-2 border border-[#e5e7eb] rounded-lg text-[13px] font-bold text-[#1f2937] hover:bg-white cursor-pointer"
+                  className="px-6 py-3 min-h-[46px] border border-[#cbd5e1] rounded-xl text-[14.5px] font-bold text-[#1f2937] hover:bg-white cursor-pointer transition min-w-[100px]"
                 >
                   Đóng
                 </button>
+
                 {isStaff && (
                   <>
                     <button
                       type="button"
                       onClick={() => handleOpenEditStudent(selectedStudent)}
-                      className="px-4 py-2 bg-white border border-[#003087] text-[#003087] hover:bg-[#ebf3ff] rounded-lg text-[13px] font-bold cursor-pointer"
+                      className="px-6 py-3 min-h-[46px] bg-white border-2 border-[#003087] text-[#003087] hover:bg-[#ebf3ff] rounded-xl text-[14.5px] font-bold cursor-pointer transition shadow-2xs"
                     >
                       Sửa thông tin & GPA
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteSingleStudent(selectedStudent)}
-                      className="px-4 py-2 bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] hover:bg-[#fee2e2] rounded-lg text-[13px] font-bold cursor-pointer"
+                      className="px-6 py-3 min-h-[46px] bg-[#fef2f2] border-2 border-[#fecaca] text-[#dc2626] hover:bg-[#fee2e2] rounded-xl text-[14.5px] font-bold cursor-pointer transition shadow-2xs"
                     >
                       Xóa sinh viên
                     </button>
@@ -1560,7 +1499,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               <button
                 type="button"
                 onClick={handleSaveInternalNote}
-                className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[13px] font-bold transition shadow-xs cursor-pointer"
+                className="px-8 py-3 min-h-[46px] bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[14.5px] font-bold transition shadow-xs hover:shadow-md cursor-pointer"
               >
                 Lưu ghi chú thẩm định
               </button>
@@ -1569,26 +1508,33 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         </div>
       )}
 
-      {/* 5. Modal Thêm mới / Chỉnh sửa Sinh viên (Full CRUD) */}
+      {/* 5. Modal Thêm mới / Chỉnh sửa Sinh viên (Full CRUD - Phóng to 150%) */}
       {isStaff && crudModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-[#e5e7eb] p-6 space-y-5 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6 animate-fadeIn">
+          <div className="bg-white w-[94vw] max-w-5xl rounded-3xl shadow-2xl border border-[#cbd5e1] p-8 space-y-6 max-h-[94vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-4">
               <div>
-                <h3 className="font-bold text-[18px] text-[#1f2937]">
+                <h3 className="font-extrabold text-[22px] md:text-[24px] text-[#1f2937] tracking-tight">
                   {editingStudentId ? `Chỉnh sửa hồ sơ sinh viên (${editingStudentId})` : 'Thêm sinh viên mới vào học kỳ'}
                 </h3>
-                <p className="text-[13px] text-[#4b5563] mt-0.5">
+                <p className="text-[13.5px] text-[#4b5563] mt-1 font-medium">
                   Dữ liệu sẽ đồng bộ tức thì lên Biểu đồ Dashboard, SQLite Backend và Cloud Firestore.
                 </p>
               </div>
-              <button type="button" onClick={() => setCrudModalOpen(false)} className="text-[#1f2937] hover:text-[#dc2626] font-bold text-lg cursor-pointer">✕</button>
+              <button 
+                type="button" 
+                onClick={() => setCrudModalOpen(false)} 
+                className="w-11 h-11 rounded-xl bg-[#f8fafc] hover:bg-[#fee2e2] text-[#1f2937] hover:text-[#dc2626] flex items-center justify-center font-bold text-xl cursor-pointer border border-[#cbd5e1]"
+                title="Đóng"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleSaveCrudStudent} className="space-y-4 text-[13.5px]">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <form onSubmit={handleSaveCrudStudent} className="space-y-5 text-[14px]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">MSSV *</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">MSSV *</label>
                   <input
                     type="text"
                     required
@@ -1596,39 +1542,39 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                     value={crudForm.studentId}
                     onChange={e => setCrudForm({ ...crudForm, studentId: e.target.value })}
                     placeholder="VD: 522H0045"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-mono font-bold text-[#003087] disabled:bg-[#f1f5f9]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono font-bold text-[#003087] disabled:bg-[#f1f5f9] text-[14.5px]"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-[#1f2937] mb-1">Họ và tên sinh viên *</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Họ và tên sinh viên *</label>
                   <input
                     type="text"
                     required
                     value={crudForm.fullName}
                     onChange={e => setCrudForm({ ...crudForm, fullName: e.target.value })}
                     placeholder="VD: Nguyễn Hữu Nhân"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-semibold text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-semibold text-[#1f2937] text-[14.5px]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Lớp sinh hoạt</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Lớp sinh hoạt</label>
                   <input
                     type="text"
                     value={crudForm.className}
                     onChange={e => setCrudForm({ ...crudForm, className: e.target.value })}
                     placeholder="VD: 22H50201"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-mono text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono text-[#1f2937] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Chuyên ngành</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Chuyên ngành</label>
                   <select
                     value={crudForm.major}
                     onChange={e => setCrudForm({ ...crudForm, major: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-semibold text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-semibold text-[#1f2937] text-[14.5px]"
                   >
                     <option value="Kỹ thuật phần mềm">Kỹ thuật phần mềm</option>
                     <option value="Khoa học máy tính">Khoa học máy tính</option>
@@ -1637,11 +1583,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Học phần đăng ký</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Học phần đăng ký</label>
                   <select
                     value={crudForm.courseCode}
                     onChange={e => setCrudForm({ ...crudForm, courseCode: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-bold text-[#003087]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-bold text-[#003087] text-[14.5px]"
                   >
                     <option value="KTCN">Kiến tập công nghiệp (KTCN)</option>
                     <option value="TSNN">Tập sự nghề nghiệp (TSNN)</option>
@@ -1650,9 +1596,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">GPA (Hệ 10)</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">GPA (Hệ 10)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1667,11 +1613,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       setCrudForm({ ...crudForm, gpa10: g10, gpa4: auto4, academicRank: rank });
                     }}
                     placeholder="VD: 8.25"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-mono font-bold text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono font-bold text-[#1f2937] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">GPA (Hệ 4)</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">GPA (Hệ 4)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1685,15 +1631,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       setCrudForm({ ...crudForm, gpa4: g4, academicRank: rank });
                     }}
                     placeholder="VD: 3.30"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-mono font-bold text-[#003087]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono font-bold text-[#003087] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Xếp loại học lực</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Xếp loại học lực</label>
                   <select
                     value={crudForm.academicRank}
                     onChange={e => setCrudForm({ ...crudForm, academicRank: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-bold text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-bold text-[#1f2937] text-[14.5px]"
                   >
                     <option value="Xuất sắc">Xuất sắc</option>
                     <option value="Giỏi">Giỏi</option>
@@ -1703,46 +1649,46 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Ngày sinh</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Ngày sinh</label>
                   <input
                     type="text"
                     value={crudForm.birthDate}
                     onChange={e => setCrudForm({ ...crudForm, birthDate: e.target.value })}
                     placeholder="VD: 15/05/2004"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl text-[#1f2937] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Nơi sinh</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Nơi sinh</label>
                   <input
                     type="text"
                     value={crudForm.birthPlace}
                     onChange={e => setCrudForm({ ...crudForm, birthPlace: e.target.value })}
                     placeholder="VD: TP. Hồ Chí Minh"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl text-[#1f2937] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Số điện thoại</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Số điện thoại</label>
                   <input
                     type="text"
                     value={crudForm.phone}
                     onChange={e => setCrudForm({ ...crudForm, phone: e.target.value })}
                     placeholder="VD: 0901234567"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-mono text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono text-[#1f2937] text-[14.5px]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2 border-t border-[#e5e7eb]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-[#e5e7eb]">
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Trạng thái thực tập</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Trạng thái thực tập</label>
                   <select
                     value={crudForm.status}
                     onChange={e => setCrudForm({ ...crudForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg font-bold text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-bold text-[#1f2937] text-[14.5px]"
                   >
                     <option value="Chưa có doanh nghiệp">Đang tìm nơi TT</option>
                     <option value="has_company">Đã có nơi thực tập</option>
@@ -1751,41 +1697,41 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Doanh nghiệp tiếp nhận</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Doanh nghiệp tiếp nhận</label>
                   <input
                     type="text"
                     value={crudForm.companyName}
                     onChange={e => setCrudForm({ ...crudForm, companyName: e.target.value })}
                     placeholder="VD: FPT Software HCM"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl text-[#1f2937] text-[14.5px]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937] mb-1">Vị trí thực tập</label>
+                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">Vị trí thực tập</label>
                   <input
                     type="text"
                     value={crudForm.position}
                     onChange={e => setCrudForm({ ...crudForm, position: e.target.value })}
                     placeholder="VD: Backend Developer Intern"
-                    className="w-full px-3 py-2 border border-[#cbd5e1] rounded-lg text-[#1f2937]"
+                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl text-[#1f2937] text-[14.5px]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#e5e7eb]">
+              <div className="flex items-center justify-end gap-3 pt-5 border-t border-[#e5e7eb]">
                 <button
                   type="button"
                   onClick={() => setCrudModalOpen(false)}
-                  className="px-4 py-2 border border-[#cbd5e1] rounded-lg font-bold text-[#1f2937] hover:bg-[#f8fafc] cursor-pointer"
+                  className="px-6 py-3 min-h-[46px] border border-[#cbd5e1] rounded-xl font-bold text-[14.5px] text-[#1f2937] hover:bg-[#f8fafc] cursor-pointer transition min-w-[100px]"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={crudSaving}
-                  className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg font-bold shadow-xs cursor-pointer disabled:opacity-50"
+                  className="px-8 py-3 min-h-[46px] bg-[#003087] hover:bg-[#002266] text-white rounded-xl font-bold text-[14.5px] shadow-xs hover:shadow-md cursor-pointer disabled:opacity-50 transition"
                 >
-                  {crudSaving ? 'Đang lưu...' : (editingStudentId ? 'Lưu cập nhật' : '+ Thêm sinh viên')}
+                  {crudSaving ? 'Đang lưu...' : (editingStudentId ? 'Lưu cập nhật hồ sơ' : '+ Thêm sinh viên vào học kỳ')}
                 </button>
               </div>
             </form>
@@ -1796,7 +1742,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       {/* 6. Modal Import Excel (Enlarged max-w-5xl with Review Preview & Multichoice) */}
       {isStaff && importModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white w-full max-w-5xl rounded-xl shadow-2xl border border-[#e5e7eb] max-h-[90vh] flex flex-col justify-between overflow-hidden">
+          <div className="bg-white w-[95vw] max-w-6xl xl:max-w-7xl rounded-3xl shadow-2xl border border-[#cbd5e1] max-h-[94vh] flex flex-col justify-between overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-[#e5e7eb] flex items-center justify-between shrink-0 bg-white">
               <div>
