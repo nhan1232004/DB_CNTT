@@ -476,8 +476,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
           <h1 className="text-[26px] font-bold text-[#1f2937] mt-1.5 leading-tight">
             Trung tâm Biểu mẫu & Báo cáo Giảng viên
           </h1>
-          <p className="text-[12.5px] text-[#4b5563] mt-1 text-justify leading-relaxed max-w-2xl">
-            Hệ thống thiết kế, quản lý và kết xuất các mẫu văn bản hành chính, bảng điểm đánh giá, công văn phân bổ doanh nghiệp và giấy giới thiệu thực tập chuẩn thể thức văn bản lưu trữ của Trường Đại học Tôn Đức Thắng.
+          <p className="text-[12.5px] text-[#4b5563] mt-1 leading-relaxed max-w-2xl break-words">
+            Kết xuất và in ấn các mẫu biểu hành chính, bảng điểm đánh giá và giấy giới thiệu thực tập chuẩn thể thức TDTU.
           </p>
         </div>
 
@@ -537,12 +537,12 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
 
           {/* Thanh chọn 6 Mẫu in chuẩn nghiệp vụ */}
           <div className="no-print bg-white rounded-2xl border border-[#e5e7eb] p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-3">
-              <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wide">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e5e7eb] pb-3">
+              <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wide shrink-0">
                 1. Chọn Mẫu File cần in ra:
               </div>
               <div className="text-[12px] text-[#4b5563] font-medium">
-                Khổ giấy chuẩn: A4 Quốc tế · Thể thức hành chính chuẩn Nghị định 30/2020/NĐ-CP
+                Khổ A4 Quốc tế · Chuẩn Nghị định 30/2020/NĐ-CP
               </div>
             </div>
 
@@ -552,22 +552,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_tong_ket')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_tong_ket'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 1</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">A4 Ngang</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 1</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Báo cáo Tổng kết & Xét duyệt
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Dùng trong cuộc họp Ban Chủ nhiệm Khoa: Thống kê chỉ số, duyệt danh sách sinh viên đủ điều kiện thực tập, chữ ký 3 bên.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Thống kê chỉ số, duyệt danh sách đủ điều kiện & chữ ký 3 bên.
                   </p>
                 </div>
               </button>
@@ -576,22 +576,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_phan_bo')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_phan_bo'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 2</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">A4 Ngang/Đứng</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 2</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang/Đứng</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Phân bổ theo Doanh nghiệp
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Công văn bàn giao danh sách sinh viên thực tập cho từng Doanh nghiệp đối tác (FPT, VNG, Viettel, KMS...) kèm thông tin mentor.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Bàn giao danh sách sinh viên cho từng Doanh nghiệp & mentor.
                   </p>
                 </div>
               </button>
@@ -600,22 +600,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bang_diem')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_bang_diem'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 3</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">A4 Ngang</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 3</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Điểm & Đánh giá Cuối kỳ
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Dành cho Giảng viên chấm thi và Hội đồng xét tốt nghiệp: Điểm Nhật ký (20%), Điểm DN (40%), Điểm Báo cáo (40%), Điểm Chữ.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Bảng điểm tổng hợp cuối kỳ (Nhật ký 20%, DN 40%, Báo cáo 40%).
                   </p>
                 </div>
               </button>
@@ -624,22 +624,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_giay_gioi_thieu')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_giay_gioi_thieu'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 4</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">A4 Đứng</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 4</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Đứng</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Giấy Giới Thiệu Thực Tập (GGT)
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Văn bản trang trọng cấp cho sinh viên mang đến Doanh nghiệp tiếp nhận, có số hiệu công văn và chữ ký phê duyệt của Trưởng Khoa.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Giấy giới thiệu cấp cho sinh viên nộp cho Doanh nghiệp tiếp nhận.
                   </p>
                 </div>
               </button>
@@ -648,22 +648,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_dieu_phoi')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_dieu_phoi'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 5</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">A4 Ngang</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 5</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Danh sách SV Cần hỗ trợ Điều phối
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Dành cho Giảng viên phụ trách Doanh nghiệp: Danh sách SV có điểm GPA, xếp loại, kỹ năng, SĐT để gửi DN đối tác phỏng vấn tuyển dụng.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Danh sách sinh viên kèm GPA, kỹ năng cần Khoa kết nối DN.
                   </p>
                 </div>
               </button>
@@ -672,22 +672,22 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bieu_mau_bm')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
                   selectedTemplate === 'mau_bieu_mau_bm'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white">MẪU 6</span>
-                    <span className="text-[11px] text-[#4b5563] font-bold">Biểu mẫu BM-01..04</span>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 6</span>
+                    <span className="text-[11px] text-[#4b5563] font-bold shrink-0">BM-01..04</span>
                   </div>
-                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2">
+                  <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bộ Biểu Mẫu Chuẩn Khoa CNTT
                   </h3>
-                  <p className="text-[12px] text-[#4b5563] mt-1 text-justify">
-                    Xem và in ấn trực tiếp các biểu mẫu: Phiếu tiếp nhận BM-01, Nhật ký BM-02, Phiếu đánh giá BM-03, Đề cương thực tập BM-04.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
+                    Xem & in trực tiếp các biểu mẫu: BM-01, BM-02, BM-03, BM-04.
                   </p>
                 </div>
               </button>
