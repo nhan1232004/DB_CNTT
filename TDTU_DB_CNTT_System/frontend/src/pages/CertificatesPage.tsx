@@ -792,12 +792,16 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
   React.useEffect(() => {
     const loadCerts = async () => {
       try {
-        setLoading(true);
-        if (window.ApiClient?.getStudentCerts) {
-          const cached = window.ApiClient.getStudentCerts(studentId);
+        let hasCache = false;
+        if (window.ApiClient?.getCachedCerts || window.ApiClient?.getStudentCerts) {
+          const cached = window.ApiClient.getCachedCerts ? window.ApiClient.getCachedCerts(studentId) : window.ApiClient.getStudentCerts(studentId);
           if (Array.isArray(cached) && cached.length > 0) {
             setCerts(cached);
+            hasCache = true;
           }
+        }
+        if (!hasCache) {
+          setLoading(true);
         }
         if (window.ApiClient?.fetchStudentCerts) {
           const list = await window.ApiClient.fetchStudentCerts(studentId);

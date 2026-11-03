@@ -10,6 +10,101 @@ class ApiClient {
   static notificationKey = 'tdtu_notifications';
   static _firestoreSyncInitialized = false;
 
+  // In-Memory Fast Cache Map (Zero-Latency Rendering for Certs & CV)
+  static _certsCache = new Map();
+  static _cvCache = new Map();
+  static _allCertsCache = null;
+
+  // Lấy chứng chỉ tức thì từ bộ nhớ đệm In-Memory / LocalStorage (<0.5ms)
+  static getCachedCerts(studentId = '522H0045') {
+    const sid = String(studentId || '522H0045').trim().toUpperCase();
+    if (!this._certsCache) this._certsCache = new Map();
+    const mem = this._certsCache.get(sid);
+    if (mem && Array.isArray(mem.certs) && mem.certs.length > 0) {
+      return mem.certs;
+    }
+    try {
+      const saved = localStorage.getItem('tdtu_certs_' + sid) || localStorage.getItem('tdtu_certs_' + sid.toLowerCase());
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this._certsCache.set(sid, { certs: parsed, timestamp: Date.now() });
+          return parsed;
+        }
+      }
+    } catch {}
+
+    if (sid === '522H0118') {
+      const builtins = (this.BUILTIN_STUDENT_CERTS || []).filter((c: any) => c.studentId === '522H0118');
+      if (builtins.length > 0) {
+        this.setCachedCerts(sid, builtins);
+        return builtins;
+      }
+    }
+    return [];
+  }
+
+  // Cập nhật bộ nhớ đệm chứng chỉ đồng bộ
+  static setCachedCerts(studentId = '522H0045', certs: any[] = []) {
+    const sid = String(studentId || '522H0045').trim().toUpperCase();
+    if (!this._certsCache) this._certsCache = new Map();
+    this._certsCache.set(sid, { certs, timestamp: Date.now() });
+    try {
+      localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(certs));
+      localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(certs));
+      localStorage.setItem('tdtu_certs_last_sync', String(Date.now()));
+    } catch {}
+  }
+
+  // Lấy đường link CV tức thì từ bộ nhớ đệm (<0.5ms)
+  static getCachedCv(studentId = '522H0045') {
+    const sid = String(studentId || '522H0045').trim().toUpperCase();
+    if (!this._cvCache) this._cvCache = new Map();
+    const mem = this._cvCache.get(sid);
+    if (mem && mem.cvLink) return mem.cvLink;
+
+    try {
+      const saved = localStorage.getItem('tdtu_cv_' + sid) || localStorage.getItem('tdtu_cv_' + sid.toLowerCase());
+      if (saved) {
+        this._cvCache.set(sid, { cvLink: saved, timestamp: Date.now() });
+        return saved;
+      }
+      const declRaw = localStorage.getItem('tdtu_decl_' + sid) || localStorage.getItem('tdtu_decl_' + sid.toLowerCase());
+      if (declRaw) {
+        const decl = JSON.parse(declRaw);
+        if (decl?.cvDriveLink) {
+          this.setCachedCv(sid, decl.cvDriveLink);
+          return decl.cvDriveLink;
+        }
+      }
+      const studsRaw = localStorage.getItem(this.liveStudentsKey);
+      if (studsRaw) {
+        const studs = JSON.parse(studsRaw);
+        if (Array.isArray(studs)) {
+          const found = studs.find((s: any) => String(s.mssv || s.studentId || s.id || '').toUpperCase() === sid);
+          if (found && (found.cvLink || found.cvDriveLink)) {
+            const cv = found.cvLink || found.cvDriveLink;
+            this.setCachedCv(sid, cv);
+            return cv;
+          }
+        }
+      }
+    } catch {}
+    return '';
+  }
+
+  // Cập nhật bộ nhớ đệm link CV đồng bộ
+  static setCachedCv(studentId = '522H0045', cvLink = '') {
+    const sid = String(studentId || '522H0045').trim().toUpperCase();
+    if (!cvLink) return;
+    if (!this._cvCache) this._cvCache = new Map();
+    this._cvCache.set(sid, { cvLink, timestamp: Date.now() });
+    try {
+      localStorage.setItem('tdtu_cv_' + sid, cvLink);
+      localStorage.setItem('tdtu_cv_' + sid.toLowerCase(), cvLink);
+    } catch {}
+  }
+
   static isTdtuEmail(email) {
     const clean = String(email || '').trim().toLowerCase();
     return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
@@ -294,16 +389,21 @@ class ApiClient {
         }
       }, err => {});
 
-      // 1.5 Lắng nghe hồ sơ khai báo doanh nghiệp thời gian thực (tdtu_declarations)
+      // 1.5 Lắng nghe hồ sơ khai báo doanh nghiệp & CV thời gian thực (tdtu_declarations)
       db.collection('tdtu_declarations').onSnapshot(snapshot => {
         if (!snapshot.empty) {
           snapshot.forEach(doc => {
             const data = doc.data();
             if (doc.id && data) {
+              const sid = String(doc.id).trim().toUpperCase();
               localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
+              if (data.cvDriveLink) {
+                ApiClient.setCachedCv(sid, data.cvDriveLink);
+              }
             }
           });
           window.dispatchEvent(new CustomEvent('tdtu_declarations_updated'));
+          window.dispatchEvent(new CustomEvent('tdtu_cv_updated'));
         }
       }, err => {});
 
@@ -311,6 +411,7 @@ class ApiClient {
       db.collection('tdtu_certificates').onSnapshot(snapshot => {
         if (!snapshot.empty) {
           const certMap = {};
+          const allList = [];
           snapshot.forEach(doc => {
             const data = doc.data();
             const c = { id: doc.id, ...data };
@@ -318,16 +419,14 @@ class ApiClient {
             c.studentId = sid;
             if (!certMap[sid]) certMap[sid] = [];
             certMap[sid].push(c);
+            allList.push(c);
           });
+          ApiClient._allCertsCache = { data: allList, timestamp: Date.now() };
           Object.keys(certMap).forEach(sid => {
-            try {
-              localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(certMap[sid]));
-              localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(certMap[sid]));
-            } catch {}
+            ApiClient.setCachedCerts(sid, certMap[sid]);
           });
           window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: certMap }));
         } else {
-          // Khi Firestore trống: dọn dẹp bộ nhớ cục bộ
           try {
             localStorage.setItem('tdtu_certs_522H0045', JSON.stringify([]));
           } catch {}
@@ -2646,6 +2745,11 @@ class ApiClient {
           students[idx].taxCode = declaration.taxCode || '';
           students[idx].noCompanyOption = declaration.noCompanyOption;
           students[idx].updated = new Date().toLocaleDateString('vi-VN');
+          if (declaration.cvDriveLink) {
+            students[idx].cvLink = declaration.cvDriveLink;
+            students[idx].cvDriveLink = declaration.cvDriveLink;
+            this.setCachedCv(sid, declaration.cvDriveLink);
+          }
           if (declaration.foreignLanguage && declaration.foreignScore) {
             students[idx].cert = `${declaration.foreignLanguage} ${declaration.foreignScore}`;
           }
@@ -2942,14 +3046,7 @@ class ApiClient {
   }
 
   static getStudentCerts(studentId = '522H0045') {
-    try {
-      const saved = localStorage.getItem('tdtu_certs_' + studentId);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {}
-    return [];
+    return this.getCachedCerts(studentId);
   }
 
   static formatCvPreviewUrl(url) {
@@ -2984,69 +3081,87 @@ class ApiClient {
   }
 
   static getStudentCvLink(studentId = '522H0045') {
-    const sid = String(studentId || '522H0045').trim().toUpperCase();
-    try {
-      const saved = localStorage.getItem('tdtu_cv_' + sid);
-      if (saved) return saved;
-      // Kiểm tra trong khai báo nếu có
-      const declRaw = localStorage.getItem('tdtu_decl_' + sid);
-      if (declRaw) {
-        const decl = JSON.parse(declRaw);
-        if (decl?.cvDriveLink) return decl.cvDriveLink;
-      }
-    } catch {}
-    return '';
+    return this.getCachedCv(studentId);
   }
 
   static async fetchStudentCvLink(studentId = '522H0045') {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
-    const local = this.getStudentCvLink(sid);
-    if (local) return local;
+    const local = this.getCachedCv(sid);
 
-    // Đọc từ Cloud Firestore nếu có
-    if (window.FirebaseService?.db) {
-      try {
-        const doc = await window.FirebaseService.db.collection('tdtu_students').doc(sid).get();
-        if (doc.exists) {
-          const data = doc.data();
-          const remoteCv = data?.cvLink || data?.cvDriveLink;
-          if (remoteCv) {
-            localStorage.setItem('tdtu_cv_' + sid, remoteCv);
-            return remoteCv;
+    // Revalidate ngầm với Cloud Firestore (Stale-While-Revalidate)
+    const revalidatePromise = (async () => {
+      if (window.FirebaseService?.db) {
+        try {
+          const doc = await window.FirebaseService.db.collection('tdtu_students').doc(sid).get();
+          if (doc.exists) {
+            const data = doc.data();
+            const remoteCv = data?.cvLink || data?.cvDriveLink;
+            if (remoteCv) {
+              this.setCachedCv(sid, remoteCv);
+              return remoteCv;
+            }
           }
-        }
-        // Thử tìm trong bảng tdtu_declarations
-        const declDoc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
-        if (declDoc.exists) {
-          const dData = declDoc.data();
-          if (dData?.cvDriveLink) {
-            localStorage.setItem('tdtu_cv_' + sid, dData.cvDriveLink);
-            return dData.cvDriveLink;
+          const declDoc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
+          if (declDoc.exists) {
+            const dData = declDoc.data();
+            if (dData?.cvDriveLink) {
+              this.setCachedCv(sid, dData.cvDriveLink);
+              return dData.cvDriveLink;
+            }
           }
+        } catch (e) {
+          console.warn('[ApiClient]: fetchStudentCvLink Firestore warning:', e);
         }
-      } catch (e) {
-        console.warn('[ApiClient]: fetchStudentCvLink Firestore warning:', e);
       }
+      return local;
+    })();
+
+    if (local) {
+      // Trả về ngay lập tức từ Cache (0ms), không để người dùng chờ
+      revalidatePromise.catch(() => {});
+      return local;
     }
-    return '';
+
+    return await revalidatePromise;
   }
 
   static saveStudentCvLink(studentId = '522H0045', cvLink) {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
+    // 1. Cập nhật Cache tức thì (0ms)
+    this.setCachedCv(sid, cvLink);
+    window.dispatchEvent(new CustomEvent('tdtu_cv_updated', { detail: { studentId: sid, cvLink } }));
+
+    // Cập nhật vào danh sách live students trong cache
     try {
-      localStorage.setItem('tdtu_cv_' + sid, cvLink);
-      window.dispatchEvent(new CustomEvent('tdtu_cv_updated', { detail: { studentId: sid, cvLink } }));
+      const raw = localStorage.getItem(this.liveStudentsKey);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          const idx = arr.findIndex(s => String(s.mssv || s.studentId || s.id || '').toUpperCase() === sid);
+          if (idx !== -1) {
+            arr[idx].cvLink = cvLink;
+            arr[idx].cvDriveLink = cvLink;
+            this.saveLiveStudents(arr);
+          }
+        }
+      }
     } catch {}
 
-    // Đồng bộ link CV của sinh viên lên Firestore
+    // 2. Đồng bộ ngầm lên Firestore
     if (window.FirebaseService?.db) {
       try {
         window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
           cvLink,
+          cvDriveLink: cvLink,
           updatedAt: new Date().toISOString()
         }, { merge: true })
           .then(() => console.log('[Firestore Sync]: Đã lưu link CV của sinh viên lên Firestore:', sid))
           .catch(e => console.warn('[Firestore Sync CV Warning]:', e.message));
+
+        window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({
+          cvDriveLink: cvLink,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
       } catch (err) {}
     }
     return { success: true, cvLink };
@@ -3538,33 +3653,21 @@ class ApiClient {
 
   static async fetchStudentCerts(studentId = '522H0045') {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
-    let list = [];
-    const existingIds = new Set();
+    const cached = this.getCachedCerts(sid);
 
-    // 1. Quét từ Cloud Firestore theo studentId (cả HOA lẫn thường)
-    if (window.FirebaseService?.db) {
-      try {
-        const snap = await window.FirebaseService.db.collection('tdtu_certificates')
-          .where('studentId', '==', sid)
-          .get();
-        if (snap && !snap.empty) {
-          snap.forEach(doc => {
-            const data = doc.data();
-            const id = doc.id || data.id;
-            if (id && !existingIds.has(id)) {
-              list.push({ id, ...data, studentId: sid });
-              existingIds.add(id);
-            }
-          });
-        }
+    // Revalidate ngầm với Cloud Firestore & SQLite (Stale-While-Revalidate)
+    const revalidatePromise = (async () => {
+      let list = [];
+      const existingIds = new Set();
 
-        // Tìm thêm dạng chữ thường nếu document lưu '522h0118'
-        if (list.length === 0) {
-          const snapLower = await window.FirebaseService.db.collection('tdtu_certificates')
-            .where('studentId', '==', sid.toLowerCase())
+      // 1. Quét từ Cloud Firestore theo studentId (cả HOA lẫn thường)
+      if (window.FirebaseService?.db) {
+        try {
+          const snap = await window.FirebaseService.db.collection('tdtu_certificates')
+            .where('studentId', '==', sid)
             .get();
-          if (snapLower && !snapLower.empty) {
-            snapLower.forEach(doc => {
+          if (snap && !snap.empty) {
+            snap.forEach(doc => {
               const data = doc.data();
               const id = doc.id || data.id;
               if (id && !existingIds.has(id)) {
@@ -3573,69 +3676,83 @@ class ApiClient {
               }
             });
           }
-        }
-      } catch (err) {
-        console.warn('[ApiClient]: Lỗi đọc student certs từ Firestore:', err);
-      }
-    }
 
-    // 2. Thử gọi backend REST API nếu có
-    if (list.length === 0) {
-      try {
-        const token = this.getToken();
-        const res = await fetch(`/api/certificates/${encodeURIComponent(sid)}`, {
-          headers: {
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          // Tìm thêm dạng chữ thường nếu document lưu '522h0118'
+          if (list.length === 0) {
+            const snapLower = await window.FirebaseService.db.collection('tdtu_certificates')
+              .where('studentId', '==', sid.toLowerCase())
+              .get();
+            if (snapLower && !snapLower.empty) {
+              snapLower.forEach(doc => {
+                const data = doc.data();
+                const id = doc.id || data.id;
+                if (id && !existingIds.has(id)) {
+                  list.push({ id, ...data, studentId: sid });
+                  existingIds.add(id);
+                }
+              });
+            }
           }
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
-            for (const c of json.data) {
-              if (c && c.id && !existingIds.has(c.id)) {
-                list.push({ ...c, studentId: sid });
-                existingIds.add(c.id);
+        } catch (err) {
+          console.warn('[ApiClient]: Lỗi đọc student certs từ Firestore:', err);
+        }
+      }
+
+      // 2. Thử gọi backend REST API nếu có
+      if (list.length === 0) {
+        try {
+          const token = this.getToken();
+          const res = await fetch(`/api/certificates/${encodeURIComponent(sid)}`, {
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.success && Array.isArray(json.data) && json.data.length > 0) {
+              for (const c of json.data) {
+                if (c && c.id && !existingIds.has(c.id)) {
+                  list.push({ ...c, studentId: sid });
+                  existingIds.add(c.id);
+                }
               }
             }
           }
-        }
-      } catch (e) {}
-    }
-
-    // 3. Fallback / Merge với localStorage (cả hoa lẫn thường)
-    const local = this.getStudentCerts(sid);
-    for (const c of local) {
-      if (c && c.id && !existingIds.has(c.id)) {
-        list.push({ ...c, studentId: sid });
-        existingIds.add(c.id);
+        } catch (e) {}
       }
-    }
-    const localLower = this.getStudentCerts(sid.toLowerCase());
-    for (const c of localLower) {
-      if (c && c.id && !existingIds.has(c.id)) {
-        list.push({ ...c, studentId: sid });
-        existingIds.add(c.id);
-      }
-    }
 
-    // 4. Nếu là 522H0118, luôn bảo đảm có đủ 2 chứng chỉ IELTS 6.5 & TOEIC 650
-    if (sid === '522H0118') {
-      for (const bc of this.BUILTIN_STUDENT_CERTS.filter(c => c.studentId === '522H0118')) {
-        if (!existingIds.has(bc.id)) {
-          list.push(bc);
-          existingIds.add(bc.id);
+      // 3. Fallback / Merge với cache hiện có
+      for (const c of (cached || [])) {
+        if (c && c.id && !existingIds.has(c.id)) {
+          list.push({ ...c, studentId: sid });
+          existingIds.add(c.id);
         }
       }
+
+      // 4. Nếu là 522H0118, luôn bảo đảm có đủ 2 chứng chỉ IELTS 6.5 & TOEIC 650
+      if (sid === '522H0118') {
+        for (const bc of (this.BUILTIN_STUDENT_CERTS || []).filter(c => c.studentId === '522H0118')) {
+          if (!existingIds.has(bc.id)) {
+            list.push(bc);
+            existingIds.add(bc.id);
+          }
+        }
+      }
+
+      if (list.length > 0) {
+        this.setCachedCerts(sid, list);
+        return list;
+      }
+      return cached;
+    })();
+
+    if (cached && cached.length > 0) {
+      // Trả về tức thì từ Cache cho UI hiển thị ngay lập tức (0ms)
+      revalidatePromise.catch(() => {});
+      return cached;
     }
 
-    if (list.length > 0) {
-      try {
-        localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(list));
-        localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(list));
-      } catch {}
-    }
-
-    return list;
+    return await revalidatePromise;
   }
 
   static async saveStudentCert(studentId, certData) {
@@ -3662,15 +3779,13 @@ class ApiClient {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Cập nhật localStorage đệm & broadcast realtime
+    // 1. Cập nhật Cache tức thì (0ms) & broadcast realtime
     try {
-      const list = this.getStudentCerts(item.studentId);
+      const list = this.getCachedCerts(item.studentId);
       const idx = list.findIndex(c => c.id === cid);
       if (idx !== -1) list[idx] = item;
       else list.unshift(item);
-      localStorage.setItem('tdtu_certs_' + item.studentId, JSON.stringify(list));
-      localStorage.setItem('tdtu_certs_' + item.studentId.toLowerCase(), JSON.stringify(list));
-      localStorage.setItem('tdtu_certs_last_sync', String(Date.now()));
+      this.setCachedCerts(item.studentId, list);
       window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [item.studentId]: list } }));
     } catch {}
 
@@ -3734,12 +3849,10 @@ class ApiClient {
 
   static async deleteStudentCert(studentId, certId) {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
-    // 1. Cập nhật localStorage đệm & broadcast realtime
+    // 1. Cập nhật Cache tức thì (0ms) & broadcast realtime
     try {
-      const list = this.getStudentCerts(sid).filter(c => c.id !== certId);
-      localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(list));
-      localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(list));
-      localStorage.setItem('tdtu_certs_last_sync', String(Date.now()));
+      const list = this.getCachedCerts(sid).filter(c => c.id !== certId);
+      this.setCachedCerts(sid, list);
       window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [sid]: list } }));
     } catch {}
 

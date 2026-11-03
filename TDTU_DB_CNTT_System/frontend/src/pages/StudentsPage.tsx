@@ -83,12 +83,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       return;
     }
 
-    // Tải link CV nếu có
-    if (selectedStudent.cvLink || selectedStudent.cvDriveLink) {
-      setStudentCvLink(selectedStudent.cvLink || selectedStudent.cvDriveLink);
-    } else if (window.ApiClient?.fetchStudentCvLink) {
+    // 1. Tải link CV tức thời từ Cache (0ms)
+    const cachedCv = selectedStudent.cvLink || selectedStudent.cvDriveLink || (window.ApiClient?.getCachedCv ? window.ApiClient.getCachedCv(sid) : (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : ''));
+    if (cachedCv) {
+      setStudentCvLink(cachedCv);
+    }
+    // Revalidate ngầm với Cloud Firestore
+    if (window.ApiClient?.fetchStudentCvLink) {
       window.ApiClient.fetchStudentCvLink(sid).then(cv => {
-        if (cv) setStudentCvLink(cv);
+        if (cv && cv !== cachedCv) setStudentCvLink(cv);
       });
     }
 
@@ -145,14 +148,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       }
     }
 
-    setStudentCertsLoading(true);
+    // 2. Tải danh sách chứng chỉ tức thời từ Cache (0ms không cần chờ Spinner)
+    let hasLoadedCertsFromCache = false;
+    if (window.ApiClient?.getCachedCerts || window.ApiClient?.getStudentCerts) {
+      const cachedCerts = window.ApiClient.getCachedCerts ? window.ApiClient.getCachedCerts(sid) : window.ApiClient.getStudentCerts(sid);
+      if (Array.isArray(cachedCerts) && cachedCerts.length > 0) {
+        setStudentCerts(cachedCerts);
+        setStudentCertsLoading(false);
+        hasLoadedCertsFromCache = true;
+      }
+    }
+    if (!hasLoadedCertsFromCache) {
+      setStudentCertsLoading(true);
+    }
+
+    // Revalidate ngầm với Cloud Firestore & SQLite
     if (window.ApiClient?.fetchStudentCerts) {
       window.ApiClient.fetchStudentCerts(sid)
         .then(data => {
-          setStudentCerts(Array.isArray(data) ? data : []);
+          if (Array.isArray(data)) setStudentCerts(data);
         })
         .catch(() => {
-          const fallback = window.ApiClient?.getStudentCerts ? window.ApiClient.getStudentCerts(sid) : [];
+          const fallback = window.ApiClient?.getCachedCerts ? window.ApiClient.getCachedCerts(sid) : [];
           setStudentCerts(fallback);
         })
         .finally(() => setStudentCertsLoading(false));
