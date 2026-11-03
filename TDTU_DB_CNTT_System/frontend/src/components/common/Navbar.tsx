@@ -147,27 +147,22 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
         {/* Right Side Controls: Semester Selector, Deadline Pill, Notification Bell */}
         <div className="flex items-center gap-3 sm:gap-4">
           
-          {/* Semester Selector */}
+          {/* Semester Selector cho toàn bộ người dùng (Giảng viên, Admin và Sinh viên xem lại kỳ đã học) */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#ebf3ff] rounded-lg border border-[#bfdbfe]">
             <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="text-[13px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
-            {isLecturerOrAdmin ? (
-              <select
-                value={activeSemester || 'hk1_2026_2027'}
-                onChange={e => onSemesterChange(e.target.value)}
-                className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none p-0"
-              >
-                <option value="hk1_2026_2027">HK1 2026–2027</option>
-                <option value="hk2_2025_2026">HK2 2025–2026</option>
-                <option value="hk1_2025_2026">HK1 2025–2026</option>
-              </select>
-            ) : (
-              <span className="text-[13px] font-bold text-[#003087]">
-                {activeSemester === 'hk2_2025_2026' ? 'HK2 2025–2026' : (activeSemester === 'hk1_2025_2026' ? 'HK1 2025–2026' : 'HK1 2026–2027')}
-              </span>
-            )}
+            <select
+              value={activeSemester || 'hk1_2026_2027'}
+              onChange={e => onSemesterChange(e.target.value)}
+              className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none p-0"
+              title="Chọn học kỳ để xem dữ liệu tương ứng"
+            >
+              <option value="hk1_2026_2027">HK1 2026–2027 (Hiện tại)</option>
+              <option value="hk2_2025_2026">HK2 2025–2026</option>
+              <option value="hk1_2025_2026">HK1 2025–2026</option>
+            </select>
           </div>
 
           {/* Urgent Deadline Alert Badge (Màu Đỏ cảnh báo theo quy chuẩn) */}

@@ -50,13 +50,38 @@ const BulletinPage = ({ currentUser }) => {
       if (window.ApiClient) {
         setPublishedJds(window.ApiClient.getPublishedJds());
         setReviewQueue(window.ApiClient.getJdReviewQueue());
-        setAnnouncements(window.ApiClient.getLecturerAnnouncements());
+
+        // Hợp nhất thông báo học vụ hệ thống (tdtu_notifications) và thông báo giảng viên
+        const sysNotifs = (window.ApiClient.getNotifications ? window.ApiClient.getNotifications(currentUser) : []) || [];
+        const normSysNotifs = sysNotifs.map((n: any) => ({
+          id: n.id,
+          title: n.title || n.subject || 'Thông báo học vụ',
+          content: n.content || '',
+          priority: n.priority || 'normal',
+          date: n.timestamp || n.time || (n.createdAt ? new Date(n.createdAt).toLocaleDateString('vi-VN') : '01/09/2026'),
+          author: n.senderName || 'Ban Quản trị Khoa CNTT',
+          authorRole: n.senderRole === 'admin' ? 'Ban Quản trị Khoa' : 'Giảng viên',
+          targetAudience: n.targetAudienceLabel || n.targetAudience || 'Toàn trường',
+          isBroadcast: true
+        }));
+
+        let lecturerAncs = window.ApiClient.getLecturerAnnouncements ? window.ApiClient.getLecturerAnnouncements() : [];
         if (window.ApiClient.fetchLecturerAnnouncements) {
           try {
             const remoteAncs = await window.ApiClient.fetchLecturerAnnouncements();
-            if (Array.isArray(remoteAncs)) setAnnouncements(remoteAncs);
+            if (Array.isArray(remoteAncs)) lecturerAncs = remoteAncs;
           } catch {}
         }
+
+        const seenIds = new Set();
+        const merged = [];
+        for (const item of [...normSysNotifs, ...lecturerAncs]) {
+          if (item && item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            merged.push(item);
+          }
+        }
+        setAnnouncements(merged);
       }
     };
     loadData();
@@ -70,7 +95,7 @@ const BulletinPage = ({ currentUser }) => {
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.onmessage = (msg) => {
-        if (!msg.data || msg.data.type === 'announcements_updated' || msg.data.type === 'jd_updated') {
+        if (!msg.data || msg.data.type === 'announcements_updated' || msg.data.type === 'jd_updated' || msg.data.type === 'notification_sent') {
           loadData();
         }
       };
@@ -79,17 +104,23 @@ const BulletinPage = ({ currentUser }) => {
     window.addEventListener('tdtu_jds_updated', handleJds);
     window.addEventListener('tdtu_jd_queue_updated', handleQueue);
     window.addEventListener('tdtu_announcements_updated', handleAncs);
+    window.addEventListener('tdtu_notification_sent', loadData);
+    window.addEventListener('tdtu_notification_received', loadData);
+    window.addEventListener('tdtu_notifications_updated', loadData);
     window.addEventListener('storage', handleStorage);
     window.addEventListener('focus', handleStorage);
     return () => {
       window.removeEventListener('tdtu_jds_updated', handleJds);
       window.removeEventListener('tdtu_jd_queue_updated', handleQueue);
       window.removeEventListener('tdtu_announcements_updated', handleAncs);
+      window.removeEventListener('tdtu_notification_sent', loadData);
+      window.removeEventListener('tdtu_notification_received', loadData);
+      window.removeEventListener('tdtu_notifications_updated', loadData);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('focus', handleStorage);
       if (bc) { try { bc.close(); } catch {} }
     };
-  }, []);
+  }, [currentUser]);
 
   const handleSelectAsInternship = async (jd) => {
     try {
@@ -256,9 +287,16 @@ const BulletinPage = ({ currentUser }) => {
   const handleDeleteAnnouncement = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa thông báo này?')) return;
     try {
-      if (window.ApiClient?.deleteLecturerAnnouncement) {
-        await window.ApiClient.deleteLecturerAnnouncement(id);
+      if (String(id).startsWith('notif_')) {
+        if (window.ApiClient?.deleteNotification) {
+          await window.ApiClient.deleteNotification(id, currentUser);
+        }
+      } else {
+        if (window.ApiClient?.deleteLecturerAnnouncement) {
+          await window.ApiClient.deleteLecturerAnnouncement(id);
+        }
       }
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
       setNotification({ type: 'success', text: 'Đã xóa thông báo thành công.' });
     } catch (err) {
       alert('Lỗi xóa thông báo: ' + err.message);
@@ -391,14 +429,19 @@ const BulletinPage = ({ currentUser }) => {
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`px-2 py-0.5 rounded text-[13.5px] font-bold ${
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded text-[12.5px] font-bold ${
                         anc.priority === 'high'
                           ? 'bg-white text-[#dc2626] border border-[#fecaca]'
                           : 'bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]'
                       }`}>
                         {anc.priority === 'high' ? 'Khẩn' : 'Chính thức'}
                       </span>
+                      {anc.targetAudience && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[#f1f5f9] text-[#4b5563] border border-[#e2e8f0]">
+                          {anc.targetAudience}
+                        </span>
+                      )}
                     </div>
                     <span className="text-[14px] text-[#1f2937] font-mono">{anc.date || '01/09/2026'}</span>
                   </div>

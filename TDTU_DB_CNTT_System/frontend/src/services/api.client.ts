@@ -1349,12 +1349,13 @@ class ApiClient {
         const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
 
         if (decl) {
-          const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
-          const isWait = decl.internshipStatus === 'interviewing';
-          const isSupp = decl.internshipStatus === 'need_support';
+          const declStatus = String(decl.internshipStatus || '').trim().toLowerCase();
+          const isComp = declStatus === 'has_company';
+          const isWait = declStatus === 'interviewing' || decl.noCompanyOption === 'self';
+          const isSupp = declStatus === 'need_support' || decl.noCompanyOption === 'faculty';
           return {
             ...s,
-            company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
+            company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || decl.companyName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
             companyName: decl.companyName || s.companyName || s.company,
             taxCode: decl.taxCode || s.taxCode,
             position: decl.position || s.position,
@@ -1648,10 +1649,14 @@ class ApiClient {
       let studentProfile = null;
       if (role === 'student' && studentId) {
         try {
-          const allStudents = await this.getLiveStudents();
+          const allStudents = await this.getLiveStudents('hk1_2026_2027');
           studentProfile = allStudents.find(s => String(s.mssv || s.studentId || '').toUpperCase() === studentId.toUpperCase());
           if (studentProfile) {
             userName = studentProfile.name || studentProfile.fullName || userName;
+            isEnrolledThisSemester = true;
+          } else {
+            // Không có tên trong danh sách đăng ký thực tập kỳ hiện tại
+            isEnrolledThisSemester = false;
           }
         } catch {}
       }
@@ -2841,9 +2846,10 @@ class ApiClient {
         const students = await this.getLiveStudents('hk1_2026_2027');
         const idx = students.findIndex(s => (String(s.mssv || s.studentId).toUpperCase() === sid));
         if (idx !== -1) {
-          const isComp = declaration.internshipStatus === 'has_company' || (!declaration.noCompanyOption && declaration.companyName && !declaration.companyName.includes('hỗ trợ') && !declaration.companyName.includes('Đang tìm'));
-          const isWait = declaration.internshipStatus === 'interviewing' || declaration.noCompanyOption === 'self';
-          const isSupp = declaration.internshipStatus === 'need_support' || declaration.noCompanyOption === 'faculty';
+          const dStatus = String(declaration.internshipStatus || '').trim().toLowerCase();
+          const isWait = dStatus === 'interviewing' || declaration.noCompanyOption === 'self';
+          const isSupp = dStatus === 'need_support' || declaration.noCompanyOption === 'faculty';
+          const isComp = dStatus === 'has_company' && !isWait && !isSupp;
 
           const wasFacultySupport = students[idx].noCompanyOption === 'faculty' || (students[idx].company && students[idx].company.includes('hỗ trợ'));
           if (wasFacultySupport && isComp) {

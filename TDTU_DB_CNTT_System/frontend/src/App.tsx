@@ -266,7 +266,7 @@ const AppInner = () => {
           if (u && u.role && window.ApiClient?.isTdtuEmail?.(u.email) && u.email.toLowerCase() === saved.email.toLowerCase()) {
             setCurrentUser(u);
             if (u.role === 'student' && u.isEnrolledThisSemester === false) {
-              setActiveTab('handbook');
+              setActiveTab('dashboard');
             }
           } else {
             window.ApiClient.clearToken();
@@ -278,7 +278,7 @@ const AppInner = () => {
           if (recheck && recheck.role && window.ApiClient?.isTdtuEmail?.(recheck.email)) {
             setCurrentUser(recheck);
             if (recheck.role === 'student' && recheck.isEnrolledThisSemester === false) {
-              setActiveTab('handbook');
+              setActiveTab('dashboard');
             }
           } else {
             window.ApiClient.clearToken();
@@ -319,6 +319,14 @@ const AppInner = () => {
     if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(activeTab)) {
       setActiveTab('dashboard');
       return;
+    }
+
+    // Sinh viên không có trong danh sách kỳ hiện tại: chỉ vào được dashboard, profile và bulletin
+    if (currentUser.role === 'student' && (currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
+      if (!['dashboard', 'profile', 'bulletin'].includes(activeTab)) {
+        setActiveTab('dashboard');
+        return;
+      }
     }
 
     const tabFeatureMap = {
@@ -370,11 +378,7 @@ const AppInner = () => {
       window.history.replaceState(null, '', '/');
     } catch {}
     setCurrentUser(verifiedUser);
-    if (verifiedUser.role === 'student' && verifiedUser.isEnrolledThisSemester === false) {
-      setActiveTab('handbook');
-    } else {
-      setActiveTab('dashboard');
-    }
+    setActiveTab('dashboard');
   };
 
   const handleLogout = () => {

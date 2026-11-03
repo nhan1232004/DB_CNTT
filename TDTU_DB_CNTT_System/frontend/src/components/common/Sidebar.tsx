@@ -184,9 +184,9 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
     if (item.id === 'handbook' && isLecturer) return false;
     if (isPartner) return ['dashboard', 'profile', 'bulletin', 'handbook'].includes(item.id);
 
-    // Sinh viên ngoài kỳ: chỉ có dashboard, hồ sơ cá nhân, bảng tin, tuyển dụng (email_jd), cẩm nang
-    if (isStudent && currentUser?.isEnrolledThisSemester === false) {
-      return ['dashboard', 'profile', 'bulletin', 'email_jd', 'handbook'].includes(item.id);
+    // Sinh viên không có trong danh sách kỳ thực tập hiện tại: CHỈ THẤY ĐÚNG 3 MỤC: Bảng điều khiển, Hồ sơ cá nhân & Bảng tin
+    if (isStudent && (currentUser?.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
+      return ['dashboard', 'profile', 'bulletin'].includes(item.id);
     }
 
     if (window.PrimeRbac?.checkUserPermission) {
