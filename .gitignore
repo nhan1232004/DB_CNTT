@@ -15,6 +15,9 @@ figma_dump.html
 scratch_blocks.json
 scratch_prototype.pdf
 
+# ref
+referUI
+
 # Environment / Logs
 *.log
 .DS_Store
