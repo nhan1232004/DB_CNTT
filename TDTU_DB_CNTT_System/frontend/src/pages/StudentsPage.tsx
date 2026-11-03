@@ -326,9 +326,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       const enrichedList = cleanList.map((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
         const studentCertsList = certsByStudent.get(sid) || [];
+        const certObj = studentCertsList[0] || null;
         const certDisplay = studentCertsList.length > 1
           ? studentCertsList.map((c: any) => `${c.name || 'CC'} ${c.score || ''}`.trim()).join(' · ')
-          : (studentCertsList[0] ? `${studentCertsList[0].name || 'CC'} ${studentCertsList[0].score || ''}`.trim() : (s.certificateDisplay || s.cert));
+          : (certObj ? `${certObj.name || 'CC'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert));
 
         let decl = s.declarationData || declMap.get(sid);
         if (!decl) {
