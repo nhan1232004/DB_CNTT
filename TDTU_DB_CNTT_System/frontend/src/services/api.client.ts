@@ -660,9 +660,9 @@ class ApiClient {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
-      if (res.ok) {
-        const body = await res.json();
-        if (body.success && Array.isArray(body.data)) {
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+        const body = await res.json().catch(() => null);
+        if (body && body.success && Array.isArray(body.data)) {
           // Hợp nhất với thông báo cục bộ và lọc phân quyền
           try {
             const localSaved = localStorage.getItem(this.notificationKey);
@@ -988,28 +988,68 @@ class ApiClient {
 
   // API cho Admin: Tạo và phát thông báo hướng mục tiêu
   static async createAdminNotification(payload) {
-    const token = this.getToken();
-    const res = await fetch('/api/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(payload)
-    });
-    const body = await res.json();
-    if (!res.ok || !body.success) {
-      throw new Error(body?.error || body?.message || 'Không thể phát thông báo');
-    }
-    // Ghi cache local
+    const notifId = 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + now.toLocaleDateString('vi-VN');
+
+    let notificationItem = {
+      id: notifId,
+      title: payload.title,
+      subject: payload.title,
+      content: payload.content,
+      type: payload.type || 'announcement',
+      priority: payload.priority || 'normal',
+      targetAudience: payload.targetAudience || 'all',
+      targetMajor: payload.targetMajor,
+      targetStudentId: payload.targetStudentId,
+      targetAudienceLabel: payload.targetAudienceLabel || '',
+      senderRole: payload.senderRole || 'admin',
+      senderName: payload.senderName || 'Ban Quản trị Khoa CNTT',
+      senderEmail: payload.senderEmail || 'admin-cntt@tdtu.edu.vn',
+      read: false,
+      createdAt: now.toISOString(),
+      timestamp: timeStr,
+      time: timeStr
+    };
+
+    // 1. Gửi ngầm tới Backend API nếu có server xử lý
+    try {
+      const token = this.getToken();
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+        const body = await res.json().catch(() => null);
+        if (body && body.success && body.data) {
+          notificationItem = { ...notificationItem, ...body.data };
+        }
+      }
+    } catch {}
+
+    // 2. Ghi cache local để hiển thị ngay lập tức
     try {
       const saved = localStorage.getItem(this.notificationKey);
-      const list = saved ? JSON.parse(saved) : [];
-      list.unshift(body.data);
+      let list = saved ? JSON.parse(saved) : [];
+      list = list.filter(n => n.id !== notificationItem.id);
+      list.unshift(notificationItem);
       localStorage.setItem(this.notificationKey, JSON.stringify(list.slice(0, 100)));
     } catch {}
-    window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: body.data }));
-    return body.data;
+
+    // 3. Đồng bộ lên Firestore để mọi thiết bị/tài khoản khác nhận tức thì
+    if (window.FirebaseService && window.FirebaseService.db) {
+      try {
+        await window.FirebaseService.db.collection('tdtu_notifications').doc(notificationItem.id).set(notificationItem, { merge: true }).catch(() => {});
+      } catch {}
+    }
+
+    // 4. Phát sự kiện toàn cục cập nhật chuông và danh sách
+    window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: notificationItem }));
+    return notificationItem;
   }
 
   // 3. TÍNH NĂNG XUẤT BÁO CÁO EXCEL (MULTI-TAB EXCEL EXPORT FEATURE)
