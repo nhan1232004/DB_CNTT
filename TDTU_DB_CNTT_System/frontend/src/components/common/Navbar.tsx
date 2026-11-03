@@ -10,7 +10,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
 
   const [notifications, setNotifications] = React.useState([]);
   const [showDrawer, setShowDrawer] = React.useState(false);
-  const [showAdminModal, setShowAdminModal] = React.useState(false);
   const [toast, setToast] = React.useState(null);
 
   const loadNotifications = async () => {
@@ -80,29 +79,39 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
   };
 
   const handleClearRead = async () => {
-    if (window.ApiClient && window.ApiClient.clearReadNotifications) {
-      const remaining = await window.ApiClient.clearReadNotifications();
-      setNotifications([...remaining]);
-    } else {
-      const remaining = notifications.filter(n => !n.read);
-      setNotifications(remaining);
-      try {
-        localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
-      } catch {}
+    try {
+      if (window.ApiClient && window.ApiClient.clearReadNotifications) {
+        const remaining = await window.ApiClient.clearReadNotifications(currentUser);
+        setNotifications([...remaining]);
+      } else {
+        const remaining = notifications.filter(n => !n.read);
+        setNotifications(remaining);
+        try {
+          localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
+        } catch {}
+      }
+    } catch (err) {
+      console.warn('Error clearing read notifications:', err);
     }
   };
 
   const handleDeleteSingle = async (e, id) => {
     e.stopPropagation();
-    if (window.ApiClient && window.ApiClient.deleteNotification) {
-      const remaining = await window.ApiClient.deleteNotification(id);
-      setNotifications([...remaining]);
-    } else {
-      const remaining = notifications.filter(n => n.id !== id);
-      setNotifications(remaining);
-      try {
-        localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
-      } catch {}
+    try {
+      // Cập nhật UI ngay lập tức để người dùng thấy phản hồi tức thì
+      setNotifications(prev => prev.filter(n => String(n.id) !== String(id)));
+      if (window.ApiClient && window.ApiClient.deleteNotification) {
+        const remaining = await window.ApiClient.deleteNotification(id, currentUser);
+        setNotifications([...remaining]);
+      } else {
+        const remaining = notifications.filter(n => String(n.id) !== String(id));
+        setNotifications(remaining);
+        try {
+          localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
+        } catch {}
+      }
+    } catch (err) {
+      console.warn('Error deleting notification:', err);
     }
   };
 
@@ -153,18 +162,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
             <span className="w-2 h-2 rounded-full bg-[#dc2626] animate-pulse"></span>
             <span>Hạn chót: Còn 18 ngày</span>
           </div>
-
-          {/* Nút phát thông báo phân quyền cho Giảng viên & Admin */}
-          {isLecturerOrAdmin && (
-            <button
-              type="button"
-              onClick={() => setShowAdminModal(true)}
-              title="Phát thông báo học vụ có phân quyền (Toàn trường, Giảng viên, Nhóm sinh viên...)"
-              className="hidden sm:inline-flex items-center justify-center px-4 py-2 min-w-[130px] bg-[#003087] hover:bg-[#002266] text-white font-bold text-[12.5px] rounded-lg transition shadow-xs cursor-pointer whitespace-nowrap"
-            >
-              <span>Phát thông báo</span>
-            </button>
-          )}
 
           {/* Notification Service Bell Icon */}
           <button
@@ -322,16 +319,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Admin Notification Broadcast Modal */}
-      {window.AdminNotificationModal && (
-        <window.AdminNotificationModal
-          isOpen={showAdminModal}
-          onClose={() => setShowAdminModal(false)}
-          currentUser={currentUser}
-          onNotificationSent={loadNotifications}
-        />
       )}
     </>
   );

@@ -163,9 +163,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
   const handleOpenStudentDetail = async (sv) => {
     let enriched = { ...sv };
+    const sid = String(sv.studentId || sv.mssv || '').trim().toUpperCase();
+    let decl = sv.declarationData;
+
     try {
-      const sid = String(sv.studentId || sv.mssv || '').trim().toUpperCase();
-      let decl = sv.declarationData;
       if (!decl) {
         const saved = localStorage.getItem('tdtu_decl_' + sid);
         if (saved) decl = JSON.parse(saved);
@@ -173,6 +174,14 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       if (!decl && window.FirebaseService?.db) {
         const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
         if (doc.exists) decl = doc.data();
+      }
+      if (!decl && window.FirebaseService?.db) {
+        const sDoc = await window.FirebaseService.db.collection('tdtu_students').doc(sid).get();
+        if (sDoc.exists) {
+          const sData = sDoc.data();
+          if (sData?.declarationData) decl = sData.declarationData;
+          else if (sData?.companyName || sData?.company) decl = sData;
+        }
       }
       if (decl) {
         enriched = {
@@ -190,13 +199,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           contactEmail: decl.contactEmail || decl.mentorEmail || enriched.contactEmail,
           mentorEmail: decl.mentorEmail || decl.contactEmail || enriched.mentorEmail,
           representative: decl.representative || enriched.representative,
+          declarationData: decl,
           status: (decl.internshipStatus === 'has_company' ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : enriched.status)))
         };
       }
     } catch (e) {
       console.warn('Error enriching student declaration:', e);
     }
-    let cv = sv.cvLink || sv.cvDriveLink || '';
+
+    let cv = sv.cvLink || sv.cvDriveLink || enriched.cvLink || '';
     if (!cv && decl && decl.cvDriveLink) cv = decl.cvDriveLink;
     if (!cv && window.ApiClient?.getStudentCvLink) {
       cv = window.ApiClient.getStudentCvLink(sid);
@@ -214,7 +225,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           setStudentCvLink(remoteCv);
           setSelectedStudent(prev => prev ? { ...prev, cvLink: remoteCv } : null);
         }
-      });
+      }).catch(() => {});
     }
   };
 
@@ -262,7 +273,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         return true;
       });
 
-      // Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên
+      // 1. Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên
       let allCerts = [];
       if (window.ApiClient?.fetchAllCertificates) {
         try {
@@ -279,50 +290,93 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         }
       }
 
-      // Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế & chứng chỉ
+      // 2. Quét toàn bộ khai báo từ Cloud Firestore để đồng bộ giữa Sinh viên và Giảng viên
+      const declMap = new Map();
+      const firestoreStudentsMap = new Map();
+      if (window.FirebaseService?.db) {
+        try {
+          const declSnap = await window.FirebaseService.db.collection('tdtu_declarations').get();
+          if (declSnap && !declSnap.empty) {
+            declSnap.forEach((doc: any) => {
+              const data = doc.data();
+              const dsid = String(doc.id || data.studentId || '').trim().toUpperCase();
+              if (dsid) declMap.set(dsid, data);
+            });
+          }
+        } catch (e) {
+          console.warn('[StudentsPage] Error fetching Firestore declarations:', e);
+        }
+
+        try {
+          const stSnap = await window.FirebaseService.db.collection('tdtu_students').get();
+          if (stSnap && !stSnap.empty) {
+            stSnap.forEach((doc: any) => {
+              const data = doc.data();
+              const dsid = String(doc.id || data.studentId || data.mssv || '').trim().toUpperCase();
+              if (dsid) firestoreStudentsMap.set(dsid, data);
+            });
+          }
+        } catch (e) {
+          console.warn('[StudentsPage] Error fetching Firestore students:', e);
+        }
+      }
+
+      // 3. Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế, doanh nghiệp & chứng chỉ
       const enrichedList = cleanList.map((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
         const certObj = certMap.get(sid);
         const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
-        let decl = s.declarationData;
+
+        let decl = s.declarationData || declMap.get(sid);
         if (!decl) {
           try {
             const raw = localStorage.getItem('tdtu_decl_' + sid);
             if (raw) decl = JSON.parse(raw);
           } catch {}
         }
-        if (decl) {
-          const isComp = decl.internshipStatus === 'has_company' || (!decl.noCompanyOption && decl.companyName && !decl.companyName.includes('hỗ trợ') && !decl.companyName.includes('Đang tìm'));
+        const fsStudent = firestoreStudentsMap.get(sid);
+        if (!decl && fsStudent?.declarationData) {
+          decl = fsStudent.declarationData;
+        }
+
+        const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
+
+        if (decl || fsStudent?.company || fsStudent?.companyName) {
+          const compName = decl?.companyName || fsStudent?.companyName || fsStudent?.company || s.companyName || s.company;
+          const isComp = (decl?.internshipStatus === 'has_company') || Boolean(compName && !compName.includes('hỗ trợ') && !compName.includes('Đang tìm'));
           return {
             ...s,
-            companyName: decl.companyName || s.companyName || s.company,
-            company: isComp ? (decl.companyName || s.company) : s.company,
-            taxCode: decl.taxCode || s.taxCode,
-            position: decl.position || s.position,
-            companyAddress: decl.address || decl.companyAddress || s.companyAddress,
-            address: decl.address || s.address,
-            contactPerson: decl.contactPerson || decl.mentorName || decl.mentor || s.contactPerson,
-            mentorName: decl.contactPerson || decl.mentorName || decl.mentor || s.mentorName,
-            contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
-            mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
-            contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
-            mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
-            representative: decl.representative || s.representative,
-            declarationData: decl,
-            cvLink: decl.cvDriveLink || s.cvLink,
-            cert: certDisplay || s.cert,
-            certificateDisplay: certDisplay || s.certificateDisplay,
-            certName: certObj?.name || s.certName,
-            certScore: certObj?.score || s.certScore,
-            status: isComp ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : s.status))
+            ...(fsStudent || {}),
+            companyName: compName,
+            company: isComp ? compName : (fsStudent?.company || s.company),
+            taxCode: decl?.taxCode || fsStudent?.taxCode || s.taxCode,
+            position: decl?.position || fsStudent?.position || s.position,
+            companyAddress: decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress,
+            address: decl?.address || fsStudent?.address || s.address,
+            contactPerson: decl?.contactPerson || decl?.mentorName || fsStudent?.contactPerson || fsStudent?.mentorName || s.contactPerson,
+            mentorName: decl?.contactPerson || decl?.mentorName || fsStudent?.mentorName || fsStudent?.contactPerson || s.mentorName,
+            contactPhone: decl?.contactPhone || decl?.mentorPhone || fsStudent?.contactPhone || fsStudent?.mentorPhone || s.contactPhone,
+            mentorPhone: decl?.contactPhone || decl?.mentorPhone || fsStudent?.mentorPhone || fsStudent?.contactPhone || s.mentorPhone,
+            contactEmail: decl?.contactEmail || decl?.mentorEmail || fsStudent?.contactEmail || fsStudent?.mentorEmail || s.contactEmail,
+            mentorEmail: decl?.mentorEmail || decl?.contactEmail || fsStudent?.mentorEmail || fsStudent?.contactEmail || s.mentorEmail,
+            representative: decl?.representative || fsStudent?.representative || s.representative,
+            declarationData: decl || fsStudent?.declarationData,
+            cvLink: cvLink,
+            cert: certDisplay || fsStudent?.cert || s.cert,
+            certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
+            certName: certObj?.name || fsStudent?.certName || s.certName,
+            certScore: certObj?.score || fsStudent?.certScore || s.certScore,
+            status: isComp ? 'Có doanh nghiệp' : (decl?.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl?.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : (fsStudent?.status || s.status)))
           };
         }
         return {
           ...s,
-          cert: certDisplay || s.cert,
-          certificateDisplay: certDisplay || s.certificateDisplay,
-          certName: certObj?.name || s.certName,
-          certScore: certObj?.score || s.certScore,
+          ...(fsStudent || {}),
+          cvLink: cvLink,
+          cert: certDisplay || fsStudent?.cert || s.cert,
+          certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
+          certName: certObj?.name || fsStudent?.certName || s.certName,
+          certScore: certObj?.score || fsStudent?.certScore || s.certScore,
         };
       });
 

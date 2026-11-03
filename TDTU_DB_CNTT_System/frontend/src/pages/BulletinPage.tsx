@@ -33,6 +33,7 @@ const BulletinPage = ({ currentUser }) => {
   const [publishedJds, setPublishedJds] = React.useState([]);
   const [reviewQueue, setReviewQueue] = React.useState([]);
   const [announcements, setAnnouncements] = React.useState([]);
+  const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
 
   // Modal Đăng thông báo mới từ Giảng viên / Admin
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = React.useState(false);
@@ -360,10 +361,14 @@ const BulletinPage = ({ currentUser }) => {
           {(isLecturer || isAdmin) && (
             <button
               type="button"
-              onClick={() => setIsAnnouncementModalOpen(true)}
-              className="px-5 py-2.5 min-w-[180px] h-[38px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              onClick={() => setShowBroadcastModal(true)}
+              title="Phát thông báo học vụ tới Toàn trường, Giảng viên hoặc Nhóm sinh viên"
+              className="px-5 py-2.5 min-w-[190px] h-[38px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
-              <span>+ Đăng thông báo mới</span>
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+              </svg>
+              <span>Phát thông báo học vụ</span>
             </button>
           )}
         </div>
@@ -1077,6 +1082,24 @@ const BulletinPage = ({ currentUser }) => {
             </form>
           </div>
         </div>
+      )}
+      {/* Modal Phát thông báo Học vụ / Phân quyền cho Giảng viên & Admin */}
+      {window.AdminNotificationModal && (
+        <window.AdminNotificationModal
+          isOpen={showBroadcastModal}
+          onClose={() => setShowBroadcastModal(false)}
+          currentUser={currentUser}
+          onNotificationSent={() => {
+            if (window.ApiClient) {
+              setAnnouncements(window.ApiClient.getLecturerAnnouncements());
+              if (window.ApiClient.fetchLecturerAnnouncements) {
+                window.ApiClient.fetchLecturerAnnouncements().then(res => {
+                  if (Array.isArray(res)) setAnnouncements(res);
+                });
+              }
+            }
+          }}
+        />
       )}
     </div>
   );

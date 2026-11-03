@@ -537,6 +537,15 @@ class ApiClient {
     return note;
   }
 
+  static getDeletedNotificationIds() {
+    try {
+      const raw = localStorage.getItem('tdtu_deleted_notifications');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
   // Tải danh sách thông báo từ Backend API có lọc phân quyền chặt chẽ
   static async fetchNotifications(currentUser) {
     try {
@@ -553,9 +562,12 @@ class ApiClient {
           try {
             const localSaved = localStorage.getItem(this.notificationKey);
             const localList = localSaved ? JSON.parse(localSaved) : [];
+            const deletedSet = new Set(this.getDeletedNotificationIds());
             const mergedMap = new Map();
             [...body.data, ...(Array.isArray(localList) ? localList : [])].forEach(n => {
-              if (n && n.id && !mergedMap.has(n.id)) mergedMap.set(n.id, n);
+              if (n && n.id && !deletedSet.has(String(n.id)) && !mergedMap.has(String(n.id))) {
+                mergedMap.set(String(n.id), n);
+              }
             });
             const merged = Array.from(mergedMap.values()).sort((a, b) =>
               String(b.createdAt || b.timestamp || '').localeCompare(String(a.createdAt || a.timestamp || ''))
@@ -585,8 +597,9 @@ class ApiClient {
       list = [];
     }
 
-    // Lọc bỏ thông báo mẫu ảo cũ nếu còn sót
-    list = list.filter(n => n && n.id !== 'notif_init_01' && n.id !== 'notif_init_02');
+    // Lọc bỏ thông báo mẫu ảo cũ nếu còn sót và thông báo đã xóa trong blacklist
+    const deletedSet = new Set(this.getDeletedNotificationIds());
+    list = list.filter(n => n && n.id !== 'notif_init_01' && n.id !== 'notif_init_02' && !deletedSet.has(String(n.id)));
 
     // Khi gọi nội bộ không truyền currentUser (VD: markNotificationRead), trả về nguyên danh sách để cập nhật
     if (!currentUser) {
@@ -685,19 +698,35 @@ class ApiClient {
     }
   }
 
-  static async clearReadNotifications() {
+  static async clearReadNotifications(currentUser) {
     try {
-      const list = this.getNotifications();
-      const remaining = list.filter(n => !n.read);
+      const saved = localStorage.getItem(this.notificationKey);
+      const list = saved ? JSON.parse(saved) : [];
+      const delArr = this.getDeletedNotificationIds();
+      list.filter(n => n && n.read).forEach(n => {
+        const sid = String(n.id || '');
+        if (sid && !delArr.includes(sid)) delArr.push(sid);
+      });
+      localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delArr));
+
+      const remaining = list.filter(n => n && !n.read);
       localStorage.setItem(this.notificationKey, JSON.stringify(remaining));
-      return remaining;
+      return this.getNotifications(currentUser);
     } catch {
       return [];
     }
   }
 
-  static async clearAllNotifications() {
+  static async clearAllNotifications(currentUser) {
     try {
+      const saved = localStorage.getItem(this.notificationKey);
+      const list = saved ? JSON.parse(saved) : [];
+      const delArr = this.getDeletedNotificationIds();
+      list.forEach(n => {
+        const sid = String(n?.id || '');
+        if (sid && !delArr.includes(sid)) delArr.push(sid);
+      });
+      localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delArr));
       localStorage.setItem(this.notificationKey, JSON.stringify([]));
       return [];
     } catch {
@@ -705,21 +734,44 @@ class ApiClient {
     }
   }
 
-  static async deleteNotification(id) {
+  static async deleteNotification(id, currentUser) {
+    const sId = String(id || '').trim();
+    if (!sId) return this.getNotifications(currentUser);
+
+    // 1. Thêm vào blacklist đã xóa để không bao giờ bị phục hồi lại
+    try {
+      const delArr = this.getDeletedNotificationIds();
+      if (!delArr.includes(sId)) {
+        delArr.push(sId);
+        localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delArr));
+      }
+    } catch {}
+
+    // 2. Xóa khỏi localStorage hiện tại
+    try {
+      const saved = localStorage.getItem(this.notificationKey);
+      const list = saved ? JSON.parse(saved) : [];
+      const updated = list.filter(n => n && String(n.id) !== sId);
+      localStorage.setItem(this.notificationKey, JSON.stringify(updated));
+    } catch {}
+
+    // 3. Xóa trên Cloud Firestore nếu có
+    if (window.FirebaseService?.db) {
+      try {
+        window.FirebaseService.db.collection('tdtu_notifications').doc(sId).delete().catch(() => {});
+      } catch {}
+    }
+
+    // 4. Gửi yêu cầu DELETE tới backend (nếu có server SQLite)
     try {
       const token = this.getToken();
-      fetch(`/api/notifications/${id}`, {
+      fetch(`/api/notifications/${encodeURIComponent(sId)}`, {
         method: 'DELETE',
         headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
       }).catch(() => {});
+    } catch {}
 
-      const list = this.getNotifications();
-      const updated = list.filter(n => n.id !== id);
-      localStorage.setItem(this.notificationKey, JSON.stringify(updated));
-      return updated;
-    } catch {
-      return [];
-    }
+    return this.getNotifications(currentUser);
   }
 
   // API cho Admin: Lấy dự kiến số lượng đối tượng nhận thông báo (Audience Preview)
@@ -762,24 +814,6 @@ class ApiClient {
     } catch {}
     window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: body.data }));
     return body.data;
-  }
-
-  // API cho Admin: Xóa/Thu hồi thông báo
-  static async deleteNotification(id) {
-    const token = this.getToken();
-    const res = await fetch(`/api/notifications/${id}`, {
-      method: 'DELETE',
-      headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-    });
-    const body = await res.json();
-    if (!res.ok || !body.success) {
-      throw new Error(body?.error || body?.message || 'Lỗi khi xóa thông báo');
-    }
-    try {
-      const list = this.getNotifications().filter(n => n.id !== id);
-      localStorage.setItem(this.notificationKey, JSON.stringify(list));
-    } catch {}
-    return body;
   }
 
   // 3. TÍNH NĂNG XUẤT BÁO CÁO EXCEL (MULTI-TAB EXCEL EXPORT FEATURE)
