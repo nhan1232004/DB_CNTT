@@ -543,19 +543,19 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               
               {/* Mẫu 1 */}
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_tong_ket')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_tong_ket'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 1</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
@@ -563,8 +563,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Báo cáo Tổng kết & Xét duyệt
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    Duyệt danh sách đủ điều kiện & ký 3 bên.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Duyệt danh sách đủ ĐK & biên bản 3 bên.
                   </p>
                 </div>
               </button>
@@ -573,13 +573,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_phan_bo')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_phan_bo'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 2</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang/Đứng</span>
@@ -587,8 +587,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Phân bổ theo Doanh nghiệp
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    Bàn giao danh sách SV cho từng Doanh nghiệp.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Bàn giao danh sách SV cho Doanh nghiệp.
                   </p>
                 </div>
               </button>
@@ -597,13 +597,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bang_diem')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_bang_diem'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 3</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
@@ -611,8 +611,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Điểm & Đánh giá Cuối kỳ
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    Bảng điểm tổng hợp (Nhật ký 20%, DN 40%, Báo cáo 40%).
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Điểm tổng hợp: Nhật ký, DN & Báo cáo.
                   </p>
                 </div>
               </button>
@@ -621,13 +621,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_giay_gioi_thieu')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_giay_gioi_thieu'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 4</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Đứng</span>
@@ -635,8 +635,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Giấy Giới Thiệu Thực Tập (GGT)
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    Cấp cho sinh viên mang đến Doanh nghiệp tiếp nhận.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Văn bản cấp SV gửi DN tiếp nhận.
                   </p>
                 </div>
               </button>
@@ -645,13 +645,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_dieu_phoi')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_dieu_phoi'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 5</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">A4 Ngang</span>
@@ -659,8 +659,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Danh sách SV Cần hỗ trợ Điều phối
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    Danh sách SV kèm GPA cần hỗ trợ kết nối DN.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Danh sách SV kèm GPA cần kết nối DN.
                   </p>
                 </div>
               </button>
@@ -669,13 +669,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bieu_mau_bm')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden ${
                   selectedTemplate === 'mau_bieu_mau_bm'
-                    ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
+                    ? 'border-[#003087] bg-[#ebf3ff]/70 ring-2 ring-[#003087] shadow-xs'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
                 }`}
               >
-                <div className="w-full min-w-0 overflow-hidden">
+                <div className="w-full min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#003087] text-white shrink-0">MẪU 6</span>
                     <span className="text-[11px] text-[#4b5563] font-bold shrink-0">BM-01..04</span>
@@ -683,111 +683,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bộ Biểu Mẫu Chuẩn Khoa CNTT
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
-                    In trực tiếp biểu mẫu: BM-01, BM-02, BM-03, BM-04.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 line-clamp-1 leading-snug break-words">
+                    Biểu mẫu chuẩn BM-01 đến BM-04.
                   </p>
                 </div>
               </button>
 
             </div>
-
-            {/* Thanh điều khiển in ấn & Tùy chọn phạm vi */}
-            <div className="pt-3 border-t border-[#e5e7eb] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5">
-                
-                {/* Phạm vi sinh viên */}
-                {selectedTemplate !== 'mau_giay_gioi_thieu' && selectedTemplate !== 'mau_bieu_mau_bm' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f8fafc] border border-[#cbd5e1] rounded-xl text-[12px]">
-                    <span className="font-bold text-[#1f2937]">Phạm vi dữ liệu:</span>
-                    <select
-                      value={printScope}
-                      onChange={e => setPrintScope(e.target.value)}
-                      className="bg-transparent font-bold text-[#003087] outline-none cursor-pointer border-none p-0"
-                    >
-                      <option value="all">Tất cả sinh viên ({filteredStudents.length} SV)</option>
-                      <option value="selected">Chỉ sinh viên đã chọn ({selectedIds.length} SV)</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* Chọn sinh viên riêng đối với Giấy giới thiệu (Mẫu 4) */}
-                {selectedTemplate === 'mau_giay_gioi_thieu' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl text-[12px]">
-                    <span className="font-bold text-[#003087]">Chọn Sinh viên cấp GGT:</span>
-                    <select
-                      value={selectedStudentForLetter}
-                      onChange={e => setSelectedStudentForLetter(e.target.value)}
-                      className="bg-transparent font-bold text-[#003087] outline-none cursor-pointer border-none p-0"
-                    >
-                      {studentsList.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.mssv} — {s.name} ({s.company})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Chọn mã biểu mẫu đối với Mẫu 6 */}
-                {selectedTemplate === 'mau_bieu_mau_bm' && (
-                  <div className="flex items-center gap-1.5">
-                    {['BM-01', 'BM-02', 'BM-03', 'BM-04'].map(bm => (
-                      <button
-                        key={bm}
-                        type="button"
-                        onClick={() => setSelectedBmCode(bm)}
-                        className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition cursor-pointer ${
-                          selectedBmCode === bm
-                            ? 'bg-[#003087] text-white'
-                            : 'bg-[#f1f5f9] text-[#1f2937] hover:bg-[#e2e8f0]'
-                        }`}
-                      >
-                        {bm}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Bộ lọc học phần */}
-                {selectedTemplate !== 'mau_giay_gioi_thieu' && selectedTemplate !== 'mau_bieu_mau_bm' && (
-                  <select
-                    value={courseFilter}
-                    onChange={e => setCourseFilter(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl border border-[#cbd5e1] text-[12px] font-semibold text-[#1f2937] bg-white cursor-pointer"
-                  >
-                    <option value="all">Môn học: Tất cả</option>
-                    <option value="KTCN">Chỉ môn KTCN (160h)</option>
-                    <option value="TSNN">Chỉ môn TSNN (320h)</option>
-                    <option value="dual">Học song song 2 môn</option>
-                    <option value="need_support">Cần Khoa hỗ trợ</option>
-                    <option value="has_company">Đã có nơi tiếp nhận</option>
-                  </select>
-                )}
-              </div>
-
-              {/* Các nút hành động In ấn & Xuất */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleExecutePrint}
-                  className="px-6 py-2.5 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition shadow-xs flex items-center gap-2 cursor-pointer whitespace-nowrap"
-                  title="In trực tiếp biểu mẫu đang chọn ra giấy A4 hoặc lưu file PDF"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span>Xuất PDF / In văn bản (A4)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={selectedTemplate === 'mau_phan_bo' ? handleExportCompanies : (selectedTemplate === 'mau_dieu_phoi' ? handleExportExcel : handleExportExcel)}
-                  className="px-4 py-2.5 bg-white border border-[#cbd5e1] hover:bg-[#f8fafc] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer whitespace-nowrap"
-                  title="Tải về dữ liệu của biểu mẫu này dưới dạng bảng tính Excel"
-                >
-                  Xuất Excel tương ứng
-                </button>
-              </div>
             </div>
 
           </div>
@@ -1601,7 +1503,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   onClick={handleExportExcel}
                   className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition shadow-xs flex items-center gap-2 cursor-pointer"
                 >
-                  <span>Xuất Excel Tổng kết ({selectedIds.length})</span>
+                  <span>Xuất DS tổng kết (Excel) ({selectedIds.length})</span>
                 </button>
 
                 <button
@@ -1609,7 +1511,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   onClick={handleExportCompanies}
                   className="px-4 py-2.5 bg-white border border-[#cbd5e1] hover:bg-[#f8fafc] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer"
                 >
-                  Xuất Phân bổ DN
+                  Xuất phân bổ DN (Excel)
                 </button>
 
                 <button
@@ -1617,7 +1519,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   onClick={handleExportCerts}
                   className="px-4 py-2.5 bg-white border border-[#cbd5e1] hover:bg-[#f8fafc] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer"
                 >
-                  Xuất Chứng chỉ
+                  Xuất DS chứng chỉ (Excel)
                 </button>
 
                 <button
@@ -1638,7 +1540,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
           {/* Student Data Table */}
           <div className="bg-white rounded-2xl border border-[#e5e7eb] shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-[13px]">
+              <table className="w-full text-left border-collapse text-[13.5px] table-fixed min-w-[1280px]">
                 <thead className="bg-[#f8fafc] border-b border-[#e5e7eb] text-[#1f2937]">
                   <tr>
                     <th className="py-3.5 px-4 w-12 text-center">
@@ -1649,14 +1551,14 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                         className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
                       />
                     </th>
-                    <th className="py-3.5 px-3 w-28">MSSV</th>
-                    <th className="py-3.5 px-3 w-52">HỌ VÀ TÊN</th>
-                    <th className="py-3.5 px-3 w-28">LỚP / NGÀNH</th>
-                    <th className="py-3.5 px-3 w-28">MÔN HỌC</th>
-                    <th className="py-3.5 px-3">DOANH NGHIỆP TIẾP NHẬN</th>
-                    <th className="py-3.5 px-3 w-20 text-center">GPA</th>
-                    <th className="py-3.5 px-3 w-32">CHỨNG CHỈ</th>
-                    <th className="py-3.5 px-3 w-36 text-center">TRẠNG THÁI</th>
+                    <th className="py-3.5 px-3 w-28 text-center">MSSV</th>
+                    <th className="py-3.5 px-4 w-60">HỌ VÀ TÊN</th>
+                    <th className="py-3.5 px-3 w-48">LỚP / NGÀNH</th>
+                    <th className="py-3.5 px-3 w-32 text-center">MÔN HỌC</th>
+                    <th className="py-3.5 px-4 w-64">DOANH NGHIỆP TIẾP NHẬN</th>
+                    <th className="py-3.5 px-3 w-24 text-center">GPA</th>
+                    <th className="py-3.5 px-3 w-36 text-center">CHỨNG CHỈ</th>
+                    <th className="py-3.5 px-3 w-40 text-center">TRẠNG THÁI</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5e7eb]">
@@ -1685,34 +1587,34 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                               className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
                             />
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-[#003087] text-[13.5px]">
+                          <td className="py-3.5 px-3 font-mono font-bold text-[#003087] text-[13.5px] text-center whitespace-nowrap">
                             {s.mssv}
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="font-bold text-[#1f2937] text-[13.5px]">{s.name}</div>
-                            <div className="text-[11.5px] text-[#4b5563]">{s.email}</div>
+                            <div className="text-[12px] text-[#4b5563]">{s.email}</div>
                           </td>
-                          <td className="py-3 px-3 text-[12.5px]">
-                            <div className="font-semibold text-[#1f2937]">{s.className}</div>
-                            <div className="text-[11px] text-[#4b5563]">{s.major}</div>
+                          <td className="py-3.5 px-3 text-[12.5px]">
+                            <div className="font-bold text-[#1f2937] whitespace-nowrap">{s.className}</div>
+                            <div className="text-[11.5px] text-[#4b5563] whitespace-nowrap">{s.major}</div>
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3.5 px-3 text-center whitespace-nowrap">
                             <span className="px-2.5 py-1 rounded-md text-[12px] font-bold bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1]">
                               {s.course}
                             </span>
                           </td>
-                          <td className="py-3 px-3">
-                            <div className="font-bold text-[#003087] text-[13px]">{s.company}</div>
-                            <div className="text-[12px] text-[#4b5563]">Vị trí: {s.position}</div>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-[#003087] text-[13.5px] leading-tight">{s.company}</div>
+                            <div className="text-[12px] text-[#4b5563] mt-0.5">Vị trí: {s.position}</div>
                             {s.taxCode !== '—' && (
                               <div className="text-[11px] font-mono text-[#64748b]">MST: {s.taxCode}</div>
                             )}
                           </td>
-                          <td className="py-3 px-3 text-center">
+                          <td className="py-3.5 px-3 text-center whitespace-nowrap">
                             <div className="font-bold text-[#003087] text-[13.5px]">{s.gpa}</div>
-                            <div className="text-[10.5px] font-semibold text-[#4b5563]">{s.academicRank}</div>
+                            <div className="text-[11px] font-semibold text-[#4b5563]">{s.academicRank}</div>
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3.5 px-3 text-center">
                             {s.hasCert ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
                                 {s.certificate}

@@ -248,7 +248,8 @@ const AccountsPage = ({ currentUser }) => {
     });
   };
 
-  const filteredUsers = users.filter(u => {
+  const nonStudentUsers = users.filter(u => u.role !== 'student');
+  const filteredUsers = nonStudentUsers.filter(u => {
     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
     if (!search) return true;
     const s = search.toLowerCase();
@@ -273,30 +274,20 @@ const AccountsPage = ({ currentUser }) => {
           
         </div>
 
-        {/* Tab switchers (Sạch sẽ, rộng rãi, chuẩn SaaS) */}
-        <div className="inline-flex p-2 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0] gap-3 flex-wrap items-center">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('accounts')}
-            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[150px] text-center shadow-xs ${
-              activeSubTab === 'accounts'
-                ? 'bg-[#003087] text-white'
-                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
-            }`}
+        {/* Menu chọn mục dạng danh sách Dropdown gọn gàng */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="subTabDropdown" className="text-[13.5px] font-bold text-[#4b5563] shrink-0">
+            Chế độ xem:
+          </label>
+          <select
+            id="subTabDropdown"
+            value={activeSubTab}
+            onChange={e => setActiveSubTab(e.target.value)}
+            className="px-4 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-[#003087] font-bold text-[14px] outline-none cursor-pointer focus:border-[#003087] focus:ring-2 focus:ring-[#003087] shadow-xs"
           >
-            Tài khoản & Phân quyền
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('prime_matrix')}
-            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[130px] text-center shadow-xs ${
-              activeSubTab === 'prime_matrix'
-                ? 'bg-[#003087] text-white'
-                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
-            }`}
-          >
-            Ma trận Prime RBAC
-          </button>
+            <option value="accounts">Tài khoản & Phân quyền ({nonStudentUsers.length})</option>
+            <option value="prime_matrix">Ma trận Prime RBAC (Phân quyền chi tiết)</option>
+          </select>
         </div>
       </div>
 
@@ -321,67 +312,21 @@ const AccountsPage = ({ currentUser }) => {
           {/* Action Bar: Lọc vai trò, Ô Tìm kiếm & Nút Tạo Đối tác */}
           <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
-            {/* Bộ nút lọc vai trò (Thuần chữ, không icon rườm rà) */}
-            <div className="inline-flex p-1.5 bg-[#f1f5f9] rounded-2xl border border-[#e2e8f0] gap-1.5 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setRoleFilter('all')}
-                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
-                  roleFilter === 'all'
-                    ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
-                }`}
+            {/* Dropdown chọn phân loại tài khoản: Giảng viên & Đối tác */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="roleFilterDropdown" className="text-[13.5px] font-bold text-[#4b5563] shrink-0">
+                Phân loại:
+              </label>
+              <select
+                id="roleFilterDropdown"
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                className="px-3.5 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-[#1f2937] font-bold text-[14px] outline-none cursor-pointer focus:border-[#003087] focus:ring-2 focus:ring-[#003087]"
               >
-                <span>Tất cả</span>
-                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
-                  roleFilter === 'all' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
-                }`}>{users.length}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRoleFilter('lecturer')}
-                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
-                  roleFilter === 'lecturer'
-                    ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
-                }`}
-              >
-                <span>Giảng viên</span>
-                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
-                  roleFilter === 'lecturer' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
-                }`}>{users.filter(u => u.role === 'lecturer').length}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRoleFilter('student')}
-                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
-                  roleFilter === 'student'
-                    ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
-                }`}
-              >
-                <span>Sinh viên</span>
-                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
-                  roleFilter === 'student' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
-                }`}>{users.filter(u => u.role === 'student').length}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRoleFilter('partner')}
-                className={`px-4 py-2 rounded-xl text-[14px] font-bold transition flex items-center gap-2 cursor-pointer ${
-                  roleFilter === 'partner'
-                    ? 'bg-[#003087] text-white shadow-xs'
-                    : 'bg-white text-[#1f2937] border border-[#e2e8f0] hover:bg-[#ebf3ff] hover:text-[#003087]'
-                }`}
-              >
-                <span>Đối tác Doanh nghiệp</span>
-                <span className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
-                  roleFilter === 'partner' ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#4b5563]'
-                }`}>{users.filter(u => u.role === 'partner').length}</span>
-              </button>
+                <option value="all">Tất cả tài khoản ({nonStudentUsers.length})</option>
+                <option value="lecturer">Giảng viên ({nonStudentUsers.filter(u => u.role === 'lecturer').length})</option>
+                <option value="partner">Đối tác Doanh nghiệp ({nonStudentUsers.filter(u => u.role === 'partner').length})</option>
+              </select>
             </div>
 
             {/* Ô Tìm kiếm (chuẩn padding không đè chữ) & Nút Tạo Đối tác */}
@@ -456,10 +401,8 @@ const AccountsPage = ({ currentUser }) => {
                           </td>
 
                           <td className="p-4">
-                            <span className="font-mono text-[13px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
-                              {u.role === 'partner'
-                                ? (u.taxCode ? `MST: ${u.taxCode}` : 'Chưa cập nhật')
-                                : (u.studentId ? `MSSV: ${u.studentId}` : (u.lecturerCode ? `MGV: ${u.lecturerCode}` : 'Khoa CNTT'))}
+                            <span className="font-mono text-[13.5px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
+                              {u.taxCode || u.lecturerCode || u.studentId || u.uid || '—'}
                             </span>
                           </td>
 

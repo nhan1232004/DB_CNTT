@@ -362,14 +362,31 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
         const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
 
-        if (decl || fsStudent?.company || fsStudent?.companyName) {
-          const compName = decl?.companyName || fsStudent?.companyName || fsStudent?.company || s.companyName || s.company;
-          const isComp = (decl?.internshipStatus === 'has_company') || Boolean(compName && !compName.includes('hỗ trợ') && !compName.includes('Đang tìm'));
+        const compName = decl?.companyName || fsStudent?.companyName || (fsStudent?.company !== 'Chưa có' ? fsStudent?.company : '') || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
+        const hasValidCompany = Boolean(
+          compName &&
+          compName !== 'Chưa có' &&
+          compName !== 'Chưa có doanh nghiệp' &&
+          compName !== '—' &&
+          compName !== '-' &&
+          !compName.toLowerCase().includes('chưa có') &&
+          !compName.toLowerCase().includes('đang tìm') &&
+          !compName.toLowerCase().includes('hỗ trợ') &&
+          !compName.toLowerCase().includes('khoa cntt')
+        );
+        const isComp = (decl?.internshipStatus === 'has_company') || (fsStudent?.status === 'Có doanh nghiệp') || (s.status === 'Có doanh nghiệp') || hasValidCompany;
+        const isSupport = (decl?.internshipStatus === 'need_support') || (s.status === 'Cần Khoa hỗ trợ') || (s.noCompanyOption === 'faculty') || (compName && compName.toLowerCase().includes('hỗ trợ'));
+        const isInterviewing = (decl?.internshipStatus === 'interviewing') || (s.status === 'Đang chờ PV/KQPV');
+
+        const resolvedStatus = isComp ? 'Có doanh nghiệp' : (isSupport ? 'Cần Khoa hỗ trợ' : (isInterviewing ? 'Đang chờ PV/KQPV' : 'Chưa có doanh nghiệp'));
+        const resolvedCompany = isComp ? compName : (isSupport ? 'Khoa CNTT hỗ trợ' : (isInterviewing ? (compName || 'Đang chờ PV') : 'Chưa có'));
+
+        if (decl || fsStudent?.company || fsStudent?.companyName || fsStudent?.declarationData) {
           return {
             ...s,
             ...(fsStudent || {}),
             companyName: compName,
-            company: isComp ? compName : (fsStudent?.company || s.company),
+            company: resolvedCompany,
             taxCode: decl?.taxCode || fsStudent?.taxCode || s.taxCode,
             position: decl?.position || fsStudent?.position || s.position,
             companyAddress: decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress,
@@ -387,13 +404,16 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
             certName: certObj?.name || fsStudent?.certName || s.certName,
             certScore: certObj?.score || fsStudent?.certScore || s.certScore,
-            status: isComp ? 'Có doanh nghiệp' : (decl?.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl?.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : (fsStudent?.status || s.status)))
+            status: resolvedStatus
           };
         }
         return {
           ...s,
           ...(fsStudent || {}),
           cvLink: cvLink,
+          company: resolvedCompany,
+          companyName: resolvedCompany,
+          status: resolvedStatus,
           cert: certDisplay || fsStudent?.cert || s.cert,
           certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
           certName: certObj?.name || fsStudent?.certName || s.certName,
@@ -483,7 +503,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
     if (hasChangedFromSupport) {
       return (
-        <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-col items-center justify-center gap-1">
           {mainBadge}
           <span className="bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] px-2 py-0.5 rounded text-[11px] font-bold inline-flex items-center gap-1" title="Sinh viên đã tự tìm được nơi thực tập">
             <span>Đã tự tìm được</span>
@@ -1013,7 +1033,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span>Nhập danh sách Excel</span>
+              <span>Nhập DS sinh viên (Excel)</span>
             </button>
           )}
 
@@ -1032,7 +1052,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span>Xuất danh sách Excel</span>
+            <span>Xuất DS sinh viên (Excel)</span>
           </button>
 
           {isAdmin && selectedIds.length > 0 && (
@@ -1251,8 +1271,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-3">
-                        {renderStatusBadge(sv.status, sv.noCompanyOption, sv.hasChangedFromSupport)}
+                      <td className="py-3.5 px-3 text-center">
+                        <div className="flex items-center justify-center">
+                          {renderStatusBadge(sv.status, sv.noCompanyOption, sv.hasChangedFromSupport)}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-3 text-[#1f2937]">
