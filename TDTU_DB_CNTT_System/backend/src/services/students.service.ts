@@ -3,7 +3,7 @@ import { getDatabase } from '../models/sqlite.db.ts';
 export class StudentsService {
   private db = getDatabase();
 
-  getAllStudents(query: { search?: string; status?: string; major?: string; course?: string; isDual?: string; class?: string } = {}): any[] {
+  getAllStudents(query: { search?: string; status?: string; major?: string; course?: string; isDual?: string; class?: string; semester?: string } = {}): any[] {
     let sql = `
       SELECT 
         s.*,
@@ -73,6 +73,13 @@ export class StudentsService {
       WHERE 1=1
     `;
     const params: any[] = [];
+
+    // 0. Bộ lọc học kỳ (Cách ly tuyệt đối dữ liệu sinh viên giữa các học kỳ)
+    if (query.semester && query.semester.trim()) {
+      const targetSem = query.semester.trim();
+      sql += ' AND (s.semester = ? OR (? = \'hk1_2026_2027\' AND (s.semester IS NULL OR s.semester = \'\')))';
+      params.push(targetSem, targetSem);
+    }
 
     // 1. Tìm kiếm tổng hợp theo MSSV, Họ tên, Email, Lớp, hoặc Tên doanh nghiệp, Vị trí thực tập
     if (query.search && query.search.trim()) {

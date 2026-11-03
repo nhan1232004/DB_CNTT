@@ -55,6 +55,160 @@ class ErrorBoundary extends React.Component {
 }
 
 // App Main Router Component
+// -------------------------------------------------------------
+// Component: Popup Thông Báo Nổi Góc Dưới Bên Phải Màn Hình cho Sinh Viên
+// Tự động kích hoạt khi Giảng viên đăng thông báo hoặc khi Sinh viên đăng nhập
+// -------------------------------------------------------------
+const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
+  const isStudent = currentUser?.role === 'student';
+  const studentId = String(currentUser?.studentId || currentUser?.mssv || currentUser?.uid || '522H0045').trim().toUpperCase();
+  const [activeAnnouncement, setActiveAnnouncement] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!isStudent) return;
+
+    const checkLatestAnnouncement = async () => {
+      try {
+        let list = [];
+        if (window.ApiClient?.getLecturerAnnouncements) {
+          list = window.ApiClient.getLecturerAnnouncements();
+        }
+        if ((!list || list.length === 0) && window.FirebaseService?.db) {
+          try {
+            const snap = await window.FirebaseService.db.collection('tdtu_announcements').orderBy('createdAt', 'desc').limit(5).get();
+            if (!snap.empty) {
+              list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+          } catch {}
+        }
+        if (Array.isArray(list) && list.length > 0) {
+          const unread = list.find(a => {
+            const aId = a.id || a.title;
+            const dismissed = localStorage.getItem(`tdtu_dismissed_ann_${studentId}_${aId}`);
+            return !dismissed;
+          });
+          if (unread) {
+            setActiveAnnouncement(unread);
+          }
+        }
+      } catch (err) {
+        console.warn('Error checking student announcements:', err);
+      }
+    };
+
+    // Kiểm tra ngay khi Sinh viên đăng nhập vào hệ thống
+    const timer = setTimeout(checkLatestAnnouncement, 600);
+
+    // Lắng nghe thông báo thời gian thực khi Giảng viên vừa đăng tin mới
+    const handleRealtimeUpdate = (e) => {
+      if (e?.detail) {
+        if (Array.isArray(e.detail) && e.detail.length > 0) {
+          setActiveAnnouncement(e.detail[0]);
+        } else if (e.detail.title) {
+          setActiveAnnouncement(e.detail);
+        }
+      } else {
+        checkLatestAnnouncement();
+      }
+    };
+
+    window.addEventListener('tdtu_announcements_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_broadcast_notif', handleRealtimeUpdate);
+
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (msg) => {
+        if (msg.data?.type === 'new_announcement' && msg.data?.announcement) {
+          setActiveAnnouncement(msg.data.announcement);
+        }
+      };
+    } catch {}
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('tdtu_announcements_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_broadcast_notif', handleRealtimeUpdate);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
+    };
+  }, [isStudent, studentId]);
+
+  if (!isStudent || !activeAnnouncement) return null;
+
+  const handleDismiss = () => {
+    try {
+      const aId = activeAnnouncement.id || activeAnnouncement.title;
+      localStorage.setItem(`tdtu_dismissed_ann_${studentId}_${aId}`, 'true');
+    } catch {}
+    setActiveAnnouncement(null);
+  };
+
+  const handleViewDetail = () => {
+    handleDismiss();
+    if (onNavigateToBulletin) {
+      onNavigateToBulletin('bulletin');
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 max-w-md w-[92vw] sm:w-[420px] bg-white rounded-2xl shadow-2xl border-2 border-[#003087] p-5 transition-all duration-300 animate-slideUp">
+      {/* Toast Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb] mb-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626] animate-ping shrink-0" />
+          <span className="text-[11.5px] font-extrabold uppercase tracking-wider text-[#003087] bg-[#ebf3ff] border border-[#bfdbfe] px-2.5 py-1 rounded-full">
+            Thông báo từ Giảng viên / Khoa
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="w-8 h-8 rounded-lg text-[#64748b] hover:text-[#dc2626] hover:bg-[#fee2e2] flex items-center justify-center font-bold text-sm transition cursor-pointer"
+          title="Đóng thông báo"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Toast Body */}
+      <div className="space-y-2 mb-4">
+        <h4 className="font-extrabold text-[15px] md:text-[16px] text-[#1f2937] leading-snug">
+          {activeAnnouncement.title}
+        </h4>
+        <p className="text-[12.5px] text-[#4b5563] text-justify leading-relaxed line-clamp-3">
+          {activeAnnouncement.content}
+        </p>
+      </div>
+
+      {/* Toast Footer */}
+      <div className="flex items-center justify-between pt-3 border-t border-[#f1f5f9] text-[12px]">
+        <div className="text-[#64748b] font-medium truncate max-w-[190px]">
+          {activeAnnouncement.author || 'Khoa CNTT'} · {activeAnnouncement.date || 'Vừa đăng'}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="px-3 py-1.5 text-[12.5px] font-bold text-[#64748b] hover:text-[#1f2937] cursor-pointer"
+          >
+            Đã hiểu
+          </button>
+          <button
+            type="button"
+            onClick={handleViewDetail}
+            className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[12.5px] font-bold transition shadow-xs hover:shadow-md cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Xem bảng tin</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AppInner = () => {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -309,6 +463,12 @@ const AppInner = () => {
           </div>
         </main>
       </div>
+
+      {/* Popup thông báo nổi ở góc dưới bên phải màn hình khi Giảng viên đăng bài / Sinh viên đăng nhập */}
+      <StudentNotificationToast
+        currentUser={currentUser}
+        onNavigateToBulletin={() => setActiveTab('bulletin')}
+      />
     </div>
   );
 };

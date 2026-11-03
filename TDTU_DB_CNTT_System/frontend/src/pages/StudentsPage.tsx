@@ -96,6 +96,46 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     }
   }, [selectedStudent]);
 
+  const handleOpenStudentDetail = async (sv) => {
+    let enriched = { ...sv };
+    try {
+      const sid = String(sv.studentId || sv.mssv || '').trim().toUpperCase();
+      let decl = sv.declarationData;
+      if (!decl) {
+        const saved = localStorage.getItem('tdtu_decl_' + sid);
+        if (saved) decl = JSON.parse(saved);
+      }
+      if (!decl && window.FirebaseService?.db) {
+        const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
+        if (doc.exists) decl = doc.data();
+      }
+      if (decl) {
+        enriched = {
+          ...enriched,
+          companyName: decl.companyName || enriched.companyName || enriched.company,
+          company: decl.companyName || enriched.company,
+          taxCode: decl.taxCode || enriched.taxCode,
+          position: decl.position || enriched.position,
+          companyAddress: decl.address || decl.companyAddress || enriched.companyAddress,
+          address: decl.address || enriched.address,
+          contactPerson: decl.contactPerson || decl.mentorName || decl.mentor || enriched.contactPerson,
+          mentorName: decl.contactPerson || decl.mentorName || decl.mentor || enriched.mentorName,
+          mentorPhone: decl.contactPhone || decl.mentorPhone || enriched.mentorPhone,
+          contactPhone: decl.contactPhone || decl.mentorPhone || enriched.contactPhone,
+          contactEmail: decl.contactEmail || decl.mentorEmail || enriched.contactEmail,
+          mentorEmail: decl.mentorEmail || decl.contactEmail || enriched.mentorEmail,
+          representative: decl.representative || enriched.representative,
+          status: (decl.internshipStatus === 'has_company' ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : enriched.status)))
+        };
+      }
+    } catch (e) {
+      console.warn('Error enriching student declaration:', e);
+    }
+    setSelectedStudent(enriched);
+    setDetailTab('personal');
+    setInternalNote(enriched.lecturerNote || '');
+  };
+
   const handleSaveInternalNote = async () => {
     if (!selectedStudent) return;
     try {
@@ -1343,36 +1383,63 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
               {detailTab === 'company' && (
                 <div className="space-y-6 animate-fadeIn">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#f8fafc] p-6 rounded-2xl border border-[#cbd5e1]">
-                    <div>
-                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Đơn vị tiếp nhận:</div>
-                      <div className="text-[18px] font-extrabold text-[#003087]">
-                        {selectedStudent.companyName || selectedStudent.company || 'Chưa khai báo'}
+                  <div className="bg-[#f8fafc] p-7 rounded-2xl border-2 border-[#cbd5e1] space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
+                      <div>
+                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Tên công ty tiếp nhận:</div>
+                        <div className="text-[18px] md:text-[20px] font-extrabold text-[#003087] leading-snug">
+                          {selectedStudent.companyName || selectedStudent.company || selectedStudent.assignedCompany || 'Chưa khai báo'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Mã số thuế (MST):</div>
+                        <div className="text-[17px] font-mono font-bold text-[#1f2937]">
+                          {selectedStudent.taxCode || selectedStudent.companyTaxCode || '—'}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Vị trí thực tập:</div>
-                      <div className="text-[17px] font-bold text-[#1f2937]">
-                        {selectedStudent.position || '—'}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
+                      <div>
+                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí thực tập:</div>
+                        <div className="text-[17px] font-bold text-[#1f2937]">
+                          {selectedStudent.position || '—'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Địa chỉ trụ sở doanh nghiệp:</div>
+                        <div className="text-[15.5px] font-semibold text-[#1f2937] leading-relaxed">
+                          {selectedStudent.companyAddress || selectedStudent.address || '—'}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Người hướng dẫn / Mentor:</div>
-                      <div className="text-[16px] font-semibold text-[#1f2937]">
-                        {selectedStudent.mentorName || '—'}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Cán bộ hướng dẫn (Mentor):</div>
+                        <div className="text-[17px] font-extrabold text-[#003087]">
+                          {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || 'Chưa cập nhật'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">SĐT cán bộ hướng dẫn:</div>
+                        <div className="text-[16px] font-mono font-bold text-[#1f2937]">
+                          {selectedStudent.contactPhone || selectedStudent.mentorPhone || '—'}
+                          {(selectedStudent.contactEmail || selectedStudent.mentorEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail}` : ''}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Email / SĐT Mentor:</div>
-                      <div className="text-[16px] font-mono text-[#1f2937]">
-                        {selectedStudent.mentorEmail || '—'} {selectedStudent.mentorPhone ? `· ${selectedStudent.mentorPhone}` : ''}
+
+                    {selectedStudent.representative && (
+                      <div className="pt-3 border-t border-[#e5e7eb] text-[13.5px] text-[#4b5563]">
+                        Đại diện pháp luật: <strong className="text-[#1f2937]">{selectedStudent.representative}</strong>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-[14px] font-bold text-[#1f2937] mb-2 uppercase tracking-wide">
-                      Ghi chú thẩm định nội bộ của Giảng viên / Ban chủ nhiệm:
+                      Ghi chú thẩm định của Giảng viên phụ trách:
                     </label>
                     <textarea
                       value={internalNote}

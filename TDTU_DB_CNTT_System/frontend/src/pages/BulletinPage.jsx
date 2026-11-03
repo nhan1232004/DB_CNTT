@@ -235,6 +235,13 @@ const BulletinPage = ({ currentUser }) => {
           authorRole: currentUser?.department || (isAdmin ? 'Ban Quản trị Khoa CNTT' : 'Giảng viên Hướng dẫn')
         });
       }
+      try {
+        const bc = new BroadcastChannel('tdtu_realtime_sync');
+        bc.postMessage({ type: 'new_announcement', announcement: { ...newAnnouncement, author: currentUser?.name || 'Giảng viên Khoa CNTT', date: new Date().toLocaleDateString('vi-VN') } });
+        bc.close();
+      } catch {}
+      window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: { ...newAnnouncement, author: currentUser?.name || 'Giảng viên Khoa CNTT', date: new Date().toLocaleDateString('vi-VN') } }));
+
       setNotification({ type: 'success', text: 'Đã đăng thông báo mới thành công lên Bảng tin!' });
       setIsAnnouncementModalOpen(false);
       setNewAnnouncement({ title: '', content: '', priority: 'normal', pinned: false });

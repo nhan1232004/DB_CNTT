@@ -811,6 +811,19 @@ class ApiClient {
 
     return {
       ...s,
+      semester: s.semester || 'hk1_2026_2027',
+      companyName: s.companyName || normCompany,
+      taxCode: s.taxCode || '',
+      position: s.position || '',
+      contactPerson: s.contactPerson || s.mentorName || s.mentor || '',
+      contactPhone: s.contactPhone || s.mentorPhone || '',
+      contactEmail: s.contactEmail || s.mentorEmail || '',
+      mentorName: s.mentorName || s.contactPerson || s.mentor || '',
+      mentorPhone: s.mentorPhone || s.contactPhone || '',
+      mentorEmail: s.mentorEmail || s.contactEmail || '',
+      companyAddress: s.companyAddress || s.address || '',
+      address: s.address || s.companyAddress || '',
+      representative: s.representative || '',
       stt: s.stt || (idx + 1),
       id: sid,
       mssv: sid,
@@ -864,21 +877,25 @@ class ApiClient {
       try {
         const snap = await window.FirebaseService.db.collection('tdtu_students').get();
         if (!snap.empty) {
-          const list = [];
+          const allList = [];
           snap.forEach(doc => {
             const data = doc.data();
             const sid = String(data.mssv || data.studentId || doc.id).trim();
             if (isValidStudent({ ...data, mssv: sid })) {
-              list.push(this._normalizeStudentRecord({ ...data, id: sid, mssv: sid, studentId: sid }, list.length));
+              allList.push(this._normalizeStudentRecord({ ...data, id: sid, mssv: sid, studentId: sid }, allList.length));
             }
           });
-          if (list.length > 0) {
-            list.sort((a, b) => (a.stt || 0) - (b.stt || 0));
-            this.saveLiveStudents(list);
+          if (allList.length > 0) {
+            allList.sort((a, b) => (a.stt || 0) - (b.stt || 0));
+            // Cách ly tuyệt đối sinh viên theo học kỳ (tránh rò rỉ danh sách sang học kỳ khác)
+            const filteredBySem = allList.filter(s => (s.semester || 'hk1_2026_2027') === semester);
+            if (semester === 'hk1_2026_2027') {
+              this.saveLiveStudents(filteredBySem);
+            }
             try {
-              localStorage.setItem('tdtu_imported_students_' + semester, JSON.stringify(list));
+              localStorage.setItem('tdtu_imported_students_' + semester, JSON.stringify(filteredBySem));
             } catch {}
-            return list;
+            return filteredBySem;
           }
         }
       } catch (fErr) {
@@ -886,34 +903,34 @@ class ApiClient {
       }
     }
 
-    // 2. Check imported students for specific semester in LocalStorage
-    if (semester && semester !== 'hk1_2026_2027') {
-      try {
-        const savedImport = localStorage.getItem('tdtu_imported_students_' + semester);
-        if (savedImport) {
-          const parsed = JSON.parse(savedImport);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const cleanList = parsed.filter(isValidStudent).map((s, i) => this._normalizeStudentRecord(s, i));
-            if (cleanList.length > 0) return cleanList;
-          }
-        }
-      } catch {}
-    }
-
-    // 3. Check general live students in localStorage
+    // 2. Kiểm tra bộ nhớ LocalStorage theo từng học kỳ riêng biệt
     try {
-      const cached = localStorage.getItem(this.liveStudentsKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+      const savedImport = localStorage.getItem('tdtu_imported_students_' + semester);
+      if (savedImport) {
+        const parsed = JSON.parse(savedImport);
+        if (Array.isArray(parsed)) {
           const cleanList = parsed.filter(isValidStudent).map((s, i) => this._normalizeStudentRecord(s, i));
-          if (cleanList.length !== parsed.length) {
-            this.saveLiveStudents(cleanList);
-          }
-          if (cleanList.length > 0) return cleanList;
+          return cleanList.filter(s => (s.semester || 'hk1_2026_2027') === semester);
         }
       }
     } catch {}
+
+    // 3. Nếu là HK1 2026-2027 thì kiểm tra liveStudentsKey mặc định
+    if (semester === 'hk1_2026_2027') {
+      try {
+        const cached = localStorage.getItem(this.liveStudentsKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const cleanList = parsed.filter(isValidStudent).map((s, i) => this._normalizeStudentRecord(s, i));
+            return cleanList.filter(s => (s.semester || 'hk1_2026_2027') === 'hk1_2026_2027');
+          }
+        }
+      } catch {}
+    } else {
+      // Đối với học kỳ khác nếu chưa có sinh viên nạp vào, trả về danh sách rỗng đúng chuẩn
+      return [];
+    }
 
     // 4. Truy vấn trực tiếp từ Live API Backend SQLite (Master Data)
     try {
@@ -1254,8 +1271,22 @@ class ApiClient {
         if (idx !== -1) {
           const isComp = body.internshipStatus === 'has_company';
           const isWait = body.internshipStatus === 'interviewing';
-          students[idx].status = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : 'Chưa có doanh nghiệp');
-          students[idx].company = isComp ? (body.companyName || 'Doanh nghiệp đã khai báo') : (isWait ? (body.companyName || 'Đang chờ PV') : 'Chưa có');
+          const isSupp = body.internshipStatus === 'need_support';
+          students[idx].status = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa có doanh nghiệp'));
+          students[idx].company = isComp ? (body.companyName || 'Doanh nghiệp đã khai báo') : (isWait ? (body.companyName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : 'Chưa có'));
+          students[idx].companyName = body.companyName || students[idx].company;
+          students[idx].taxCode = body.taxCode || '';
+          students[idx].position = body.position || '';
+          students[idx].contactPerson = body.contactPerson || '';
+          students[idx].contactPhone = body.contactPhone || '';
+          students[idx].contactEmail = body.contactEmail || '';
+          students[idx].mentorName = body.contactPerson || '';
+          students[idx].mentorPhone = body.contactPhone || '';
+          students[idx].mentorEmail = body.contactEmail || '';
+          students[idx].companyAddress = body.address || '';
+          students[idx].address = body.address || '';
+          students[idx].representative = body.representative || '';
+          students[idx].noCompanyOption = body.noCompanyOption;
           students[idx].updated = new Date().toLocaleDateString('vi-VN');
           if (body.foreignLanguage && body.foreignScore) {
             students[idx].cert = `${body.foreignLanguage} ${body.foreignScore}`;
