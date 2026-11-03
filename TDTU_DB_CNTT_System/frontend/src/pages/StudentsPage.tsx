@@ -280,12 +280,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           allCerts = await window.ApiClient.fetchAllCertificates();
         } catch {}
       }
-      const certMap = new Map();
+      const certsByStudent = new Map();
       if (Array.isArray(allCerts)) {
         for (const c of allCerts) {
-          const csid = String(c.studentId || '').trim().toUpperCase();
-          if (csid && !certMap.has(csid)) {
-            certMap.set(csid, c);
+          const csid = String(c?.studentId || '').trim().toUpperCase();
+          if (csid) {
+            if (!certsByStudent.has(csid)) certsByStudent.set(csid, []);
+            certsByStudent.get(csid).push(c);
           }
         }
       }
@@ -324,8 +325,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       // 3. Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế, doanh nghiệp & chứng chỉ
       const enrichedList = cleanList.map((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
-        const certObj = certMap.get(sid);
-        const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
+        const studentCertsList = certsByStudent.get(sid) || [];
+        const certDisplay = studentCertsList.length > 1
+          ? studentCertsList.map((c: any) => `${c.name || 'CC'} ${c.score || ''}`.trim()).join(' · ')
+          : (studentCertsList[0] ? `${studentCertsList[0].name || 'CC'} ${studentCertsList[0].score || ''}`.trim() : (s.certificateDisplay || s.cert));
 
         let decl = s.declarationData || declMap.get(sid);
         if (!decl) {

@@ -78,6 +78,19 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
     }
   };
 
+  const handleClearAll = async () => {
+    try {
+      setNotifications([]);
+      if (window.ApiClient && window.ApiClient.clearAllNotifications) {
+        await window.ApiClient.clearAllNotifications(currentUser);
+      } else {
+        localStorage.setItem('tdtu_notifications', JSON.stringify([]));
+      }
+    } catch (err) {
+      console.warn('Error clearing all notifications:', err);
+    }
+  };
+
   const handleClearRead = async () => {
     try {
       if (window.ApiClient && window.ApiClient.clearReadNotifications) {
@@ -206,31 +219,41 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                 </svg>
                 <span className="font-bold text-[15px] text-[#003087]">Hộp thư Thông báo Học vụ</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleMarkAllRead}
-                    className="text-[12px] text-[#003087] hover:underline font-bold cursor-pointer"
-                    title="Đánh dấu tất cả thông báo là đã đọc"
-                  >
-                    Đã đọc tất cả
-                  </button>
-                )}
-                {readCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearRead}
-                    className="text-[12px] text-[#dc2626] hover:underline font-bold cursor-pointer"
-                    title="Dọn dẹp và xóa các thông báo đã đọc khỏi danh sách"
-                  >
-                    Dọn dẹp đã đọc ({readCount})
-                  </button>
+              <div className="flex items-center gap-2">
+                {notifications.length > 0 && (
+                  <>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleMarkAllRead}
+                        className="text-[11.5px] text-[#003087] hover:underline font-bold cursor-pointer"
+                        title="Đánh dấu tất cả thông báo là đã đọc"
+                      >
+                        Đã đọc tất cả
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleClearRead}
+                      className="text-[11.5px] text-[#dc2626] hover:underline font-bold cursor-pointer"
+                      title="Dọn dẹp và xóa các thông báo đã đọc khỏi danh sách"
+                    >
+                      Dọn đã đọc
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      className="text-[11.5px] text-[#6b7280] hover:text-[#dc2626] hover:underline font-bold cursor-pointer"
+                      title="Xóa toàn bộ thông báo trong hộp thư"
+                    >
+                      Xóa tất cả
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
-                  className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold text-sm cursor-pointer"
+                  className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold text-sm cursor-pointer ml-1"
                 >
                   ✕
                 </button>
@@ -291,10 +314,13 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                         <button
                           type="button"
                           onClick={(e) => handleDeleteSingle(e, item.id)}
-                          className="w-5 h-5 rounded-md flex items-center justify-center text-[#9ca3af] hover:text-[#dc2626] hover:bg-[#fee2e2] transition text-[11px] font-bold cursor-pointer"
+                          className="px-2 py-0.5 rounded flex items-center gap-1 text-[#dc2626] hover:bg-[#fee2e2] bg-[#fef2f2] border border-[#fecaca] transition text-[10.5px] font-bold cursor-pointer shrink-0"
                           title="Xóa thông báo này"
                         >
-                          ✕
+                          <svg className="w-3 h-3 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span>Xóa</span>
                         </button>
                       </div>
                     </div>

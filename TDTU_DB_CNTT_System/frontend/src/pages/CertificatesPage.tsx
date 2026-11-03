@@ -748,8 +748,13 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
 // PHẦN 2: GIAO DIỆN QUẢN LÝ CỦA SINH VIÊN (CRUD CÁ NHÂN & NỘP CHỨNG CHỈ)
 // =========================================================================
 const StudentPersonalCertificatesView = ({ currentUser }) => {
-  const studentId = currentUser?.studentId || '522H0001';
-  const studentName = currentUser?.name || 'Nguyễn Minh Anh';
+  const studentId = String(
+    currentUser?.studentId ||
+    currentUser?.mssv ||
+    (currentUser?.email ? currentUser.email.split('@')[0] : '') ||
+    '522H0045'
+  ).trim().toUpperCase();
+  const studentName = currentUser?.fullName || currentUser?.name || currentUser?.displayName || 'Sinh viên Khoa CNTT';
 
   // State danh sách chứng chỉ tiếng Anh
   const [certs, setCerts] = React.useState([]);
@@ -984,8 +989,9 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
         fileType: 'LINK',
         fileSize: 'Google Drive',
         commitmentConfirmed: 1,
-        studentId,
-        studentName
+        studentId: studentId.toUpperCase(),
+        studentName,
+        className: currentUser?.class || currentUser?.className || 'Khoa CNTT'
       };
 
       if (editingCert) {

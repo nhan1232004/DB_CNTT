@@ -11,8 +11,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
   // Chế độ xem: 'list' (Bảng danh sách hồ sơ đã nộp) hoặc 'form' (Biểu mẫu khai báo/cập nhật 3 bước)
   const [viewMode, setViewMode] = React.useState('list');
   const [currentStep, setCurrentStep] = React.useState(1);
-  const studentId = currentUser?.studentId || '522H0045';
-  const studentName = currentUser?.name || 'Nguyễn Minh Anh';
+  const studentId = String(
+    currentUser?.studentId ||
+    currentUser?.mssv ||
+    (currentUser?.email ? currentUser.email.split('@')[0] : '') ||
+    '522H0045'
+  ).trim().toUpperCase();
+  const studentName = currentUser?.fullName || currentUser?.name || currentUser?.displayName || 'Sinh viên Khoa CNTT';
 
   // Phân quyền theo Ma trận Prime RBAC: Read (2), Create (3), Update (5), Delete (7)
   const [roleMatrixTick, setRoleMatrixTick] = React.useState(0);
