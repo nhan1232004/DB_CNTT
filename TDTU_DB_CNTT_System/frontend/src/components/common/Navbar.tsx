@@ -56,19 +56,53 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
   }, [currentUser]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const readCount = notifications.filter(n => n.read).length;
 
   const handleMarkAllRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    setNotifications(updated);
-    try {
-      localStorage.setItem('tdtu_notifications', JSON.stringify(updated));
-    } catch {}
+    if (window.ApiClient && window.ApiClient.markAllNotificationsRead) {
+      window.ApiClient.markAllNotificationsRead().then(updated => {
+        setNotifications([...updated]);
+      });
+    } else {
+      const updated = notifications.map(n => ({ ...n, read: true }));
+      setNotifications(updated);
+      try {
+        localStorage.setItem('tdtu_notifications', JSON.stringify(updated));
+      } catch {}
+    }
   };
 
   const handleMarkSingleRead = (id) => {
     if (window.ApiClient && window.ApiClient.markNotificationRead) {
       const updated = window.ApiClient.markNotificationRead(id);
       setNotifications([...updated]);
+    }
+  };
+
+  const handleClearRead = async () => {
+    if (window.ApiClient && window.ApiClient.clearReadNotifications) {
+      const remaining = await window.ApiClient.clearReadNotifications();
+      setNotifications([...remaining]);
+    } else {
+      const remaining = notifications.filter(n => !n.read);
+      setNotifications(remaining);
+      try {
+        localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
+      } catch {}
+    }
+  };
+
+  const handleDeleteSingle = async (e, id) => {
+    e.stopPropagation();
+    if (window.ApiClient && window.ApiClient.deleteNotification) {
+      const remaining = await window.ApiClient.deleteNotification(id);
+      setNotifications([...remaining]);
+    } else {
+      const remaining = notifications.filter(n => n.id !== id);
+      setNotifications(remaining);
+      try {
+        localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
+      } catch {}
     }
   };
 
@@ -175,20 +209,31 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                 </svg>
                 <span className="font-bold text-[15px] text-[#003087]">Hộp thư Thông báo Học vụ</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {unreadCount > 0 && (
                   <button
                     type="button"
                     onClick={handleMarkAllRead}
-                    className="text-[12px] text-[#003087] hover:underline font-bold"
+                    className="text-[12px] text-[#003087] hover:underline font-bold cursor-pointer"
+                    title="Đánh dấu tất cả thông báo là đã đọc"
                   >
                     Đã đọc tất cả
+                  </button>
+                )}
+                {readCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearRead}
+                    className="text-[12px] text-[#dc2626] hover:underline font-bold cursor-pointer"
+                    title="Dọn dẹp và xóa các thông báo đã đọc khỏi danh sách"
+                  >
+                    Dọn dẹp đã đọc ({readCount})
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setShowDrawer(false)}
-                  className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold text-sm"
+                  className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold text-sm cursor-pointer"
                 >
                   ✕
                 </button>
@@ -205,7 +250,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                   <div
                     key={item.id}
                     onClick={() => handleMarkSingleRead(item.id)}
-                    className={`p-3.5 rounded-xl border text-[12px] cursor-pointer transition ${
+                    className={`p-3.5 rounded-xl border text-[12px] cursor-pointer transition relative group ${
                       item.read
                         ? 'bg-white border-[#e5e7eb] text-[#1f2937]'
                         : 'bg-[#ebf3ff] border-[#bfdbfe] text-[#1f2937] font-medium'
@@ -242,9 +287,19 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] font-bold text-[#dc2626] shrink-0">
-                        {item.time || (item.timestamp || item.createdAt ? new Date(item.timestamp || item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '')}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] font-bold text-[#dc2626]">
+                          {item.time || (item.timestamp || item.createdAt ? new Date(item.timestamp || item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSingle(e, item.id)}
+                          className="w-5 h-5 rounded-md flex items-center justify-center text-[#9ca3af] hover:text-[#dc2626] hover:bg-[#fee2e2] transition text-[11px] font-bold cursor-pointer"
+                          title="Xóa thông báo này"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
 
                     <div className="font-bold text-[#003087] mb-1">

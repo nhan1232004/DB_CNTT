@@ -29,6 +29,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [internalNote, setInternalNote] = React.useState('');
   const [studentCerts, setStudentCerts] = React.useState([]);
   const [studentCertsLoading, setStudentCertsLoading] = React.useState(false);
+  const [studentCvLink, setStudentCvLink] = React.useState('');
   const [noteSaved, setNoteSaved] = React.useState(false);
   const [openActionMenuId, setOpenActionMenuId] = React.useState(null);
 
@@ -68,16 +69,27 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const isAdmin = Boolean(currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn');
   const isStaff = Boolean(isAdmin || currentUser?.role === 'lecturer');
 
-  // Tải danh sách chứng chỉ thực tế khi mở Modal
+  // Tải danh sách chứng chỉ và link CV thực tế khi mở Modal
   React.useEffect(() => {
     if (!selectedStudent) {
       setStudentCerts([]);
+      setStudentCvLink('');
       return;
     }
     const sid = String(selectedStudent.studentId || selectedStudent.mssv || '').trim().toUpperCase();
     if (!sid) {
       setStudentCerts([]);
+      setStudentCvLink('');
       return;
+    }
+
+    // Tải link CV nếu có
+    if (selectedStudent.cvLink || selectedStudent.cvDriveLink) {
+      setStudentCvLink(selectedStudent.cvLink || selectedStudent.cvDriveLink);
+    } else if (window.ApiClient?.fetchStudentCvLink) {
+      window.ApiClient.fetchStudentCvLink(sid).then(cv => {
+        if (cv) setStudentCvLink(cv);
+      });
     }
 
     // Tự động làm giàu thông tin doanh nghiệp nếu chưa đầy đủ
@@ -184,9 +196,26 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     } catch (e) {
       console.warn('Error enriching student declaration:', e);
     }
+    let cv = sv.cvLink || sv.cvDriveLink || '';
+    if (!cv && decl && decl.cvDriveLink) cv = decl.cvDriveLink;
+    if (!cv && window.ApiClient?.getStudentCvLink) {
+      cv = window.ApiClient.getStudentCvLink(sid);
+    }
+    setStudentCvLink(cv);
+    enriched.cvLink = cv;
+
     setSelectedStudent(enriched);
     setDetailTab('personal');
     setInternalNote(enriched.lecturerNote || '');
+
+    if (!cv && window.ApiClient?.fetchStudentCvLink) {
+      window.ApiClient.fetchStudentCvLink(sid).then(remoteCv => {
+        if (remoteCv) {
+          setStudentCvLink(remoteCv);
+          setSelectedStudent(prev => prev ? { ...prev, cvLink: remoteCv } : null);
+        }
+      });
+    }
   };
 
   const handleSaveInternalNote = async () => {
@@ -233,9 +262,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         return true;
       });
 
-      // Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế
+      // Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên
+      let allCerts = [];
+      if (window.ApiClient?.fetchAllCertificates) {
+        try {
+          allCerts = await window.ApiClient.fetchAllCertificates();
+        } catch {}
+      }
+      const certMap = new Map();
+      if (Array.isArray(allCerts)) {
+        for (const c of allCerts) {
+          const csid = String(c.studentId || '').trim().toUpperCase();
+          if (csid && !certMap.has(csid)) {
+            certMap.set(csid, c);
+          }
+        }
+      }
+
+      // Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế & chứng chỉ
       const enrichedList = cleanList.map((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
+        const certObj = certMap.get(sid);
+        const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
         let decl = s.declarationData;
         if (!decl) {
           try {
@@ -261,10 +309,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
             representative: decl.representative || s.representative,
             declarationData: decl,
+            cvLink: decl.cvDriveLink || s.cvLink,
+            cert: certDisplay || s.cert,
+            certificateDisplay: certDisplay || s.certificateDisplay,
+            certName: certObj?.name || s.certName,
+            certScore: certObj?.score || s.certScore,
             status: isComp ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : s.status))
           };
         }
-        return s;
+        return {
+          ...s,
+          cert: certDisplay || s.cert,
+          certificateDisplay: certDisplay || s.certificateDisplay,
+          certName: certObj?.name || s.certName,
+          certScore: certObj?.score || s.certScore,
+        };
       });
 
       setStudents(enrichedList);
@@ -853,7 +912,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {isStaff && (
+          {isAdmin && (
             <button
               type="button"
               onClick={handleOpenAddStudent}
@@ -867,7 +926,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             </button>
           )}
 
-          {isStaff && (
+          {isAdmin && (
             <button
               type="button"
               onClick={() => setImportModalOpen(true)}
@@ -899,7 +958,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             <span>Xuất Excel</span>
           </button>
 
-          {isStaff && selectedIds.length > 0 && (
+          {isAdmin && selectedIds.length > 0 && (
             <button
               type="button"
               onClick={handleBulkDeleteStudents}
@@ -1018,12 +1077,16 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             <thead>
               <tr className="bg-[#f8fafc] text-[#1f2937] text-[13.5px] uppercase tracking-wider font-bold border-b border-[#e5e7eb]">
                 <th className="py-4 px-4 w-12 text-center">
-                  <input
-                    type="checkbox"
-                    checked={paginatedStudents.length > 0 && selectedIds.length === paginatedStudents.length}
-                    onChange={handleSelectAll}
-                    className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
-                  />
+                  {isAdmin ? (
+                    <input
+                      type="checkbox"
+                      checked={paginatedStudents.length > 0 && selectedIds.length === paginatedStudents.length}
+                      onChange={handleSelectAll}
+                      className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
+                    />
+                  ) : (
+                    <span className="text-[12px] font-bold text-[#64748b]">STT</span>
+                  )}
                 </th>
                 <th className="py-4 px-3 w-28">MSSV</th>
                 <th className="py-4 px-3 w-56">HỌ VÀ TÊN</th>
@@ -1055,13 +1118,19 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         isChecked ? 'bg-[#ebf3ff]/40' : ''
                       }`}
                     >
-                      <td className="py-3.5 px-4">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleToggleSelect(id)}
-                          className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
-                        />
+                      <td className="py-3.5 px-4 text-center">
+                        {isAdmin ? (
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleSelect(id)}
+                            className="rounded border-[#cbd5e1] text-[#003087] focus:ring-[#003087]"
+                          />
+                        ) : (
+                          <span className="text-[12.5px] font-mono font-bold text-[#64748b]">
+                            {(currentPage - 1) * pageSize + idx + 1}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-3 font-bold font-mono text-[#003087] text-[14px]">
@@ -1181,7 +1250,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                                   <span>Hồ sơ</span>
                                 </button>
 
-                                {isStaff && (
+                                {isAdmin && (
                                   <>
                                     <button
                                       type="button"
@@ -1397,6 +1466,20 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 }`}
               >
                 Chứng chỉ ({studentCerts.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailTab('cv')}
+                className={`py-4 border-b-2 font-bold cursor-pointer transition whitespace-nowrap flex items-center gap-1.5 ${
+                  detailTab === 'cv'
+                    ? 'border-[#003087] text-[#003087]'
+                    : 'border-transparent text-[#4b5563] hover:text-[#003087]'
+                }`}
+              >
+                <span>Hồ sơ CV</span>
+                {(studentCvLink || selectedStudent.cvLink) && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" title="Đã có link CV trực tuyến"></span>
+                )}
               </button>
               <button
                 type="button"
@@ -1635,6 +1718,87 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                   )}
                 </div>
               )}
+
+              {/* Tab Hồ sơ CV (Review CV trực tiếp) */}
+              {detailTab === 'cv' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 bg-[#f8fafc] rounded-2xl border border-[#cbd5e1]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-[#ebf3ff] text-[#003087] flex items-center justify-center shrink-0 border border-[#bfdbfe]">
+                        <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-[16px] font-bold text-[#1f2937]">Hồ sơ CV Ứng tuyển của Sinh viên</div>
+                        <div className="text-[13px] text-[#4b5563]">
+                          {(studentCvLink || selectedStudent.cvLink) ? (
+                            <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                              Đã nộp liên kết CV trực tuyến
+                            </span>
+                          ) : (
+                            <span className="text-[#dc2626] font-bold">Chưa cập nhật liên kết CV</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {(studentCvLink || selectedStudent.cvLink) && (
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = studentCvLink || selectedStudent.cvLink;
+                            navigator.clipboard.writeText(link);
+                            alert('Đã sao chép đường link CV vào bộ nhớ tạm: ' + link);
+                          }}
+                          className="px-4 py-2 bg-white border border-[#cbd5e1] hover:bg-[#f1f5f9] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer shadow-2xs"
+                        >
+                          Sao chép link
+                        </button>
+                        <a
+                          href={studentCvLink || selectedStudent.cvLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <span>Mở tab mới</span>
+                          <span>↗</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {(studentCvLink || selectedStudent.cvLink) ? (
+                    <div className="space-y-3">
+                      <div className="w-full h-[600px] rounded-2xl border-2 border-[#cbd5e1] overflow-hidden bg-white shadow-inner relative">
+                        <iframe
+                          src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(studentCvLink || selectedStudent.cvLink) : (studentCvLink || selectedStudent.cvLink)}
+                          title={`Review CV - ${selectedStudent.fullName || selectedStudent.name}`}
+                          className="w-full h-full border-0"
+                          allow="autoplay"
+                        />
+                      </div>
+                      <p className="text-[12px] text-[#6b7280]">
+                        * Nếu khung xem trước không hiển thị do chính sách bảo mật Google Drive của trình duyệt, giảng viên có thể nhấn nút <strong>"Mở tab mới ↗"</strong> ở trên để đọc trực tiếp.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-20 text-center border-2 border-dashed border-[#cbd5e1] rounded-2xl bg-[#f8fafc] p-8">
+                      <div className="w-16 h-16 rounded-full bg-[#ebf3ff] text-[#003087] flex items-center justify-center mx-auto mb-4 border border-[#bfdbfe]">
+                        <svg className="w-8 h-8 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-[16px] font-bold text-[#1f2937] mb-1">Sinh viên chưa cập nhật CV</div>
+                      <p className="text-[13.5px] text-[#4b5563] max-w-md mx-auto">
+                        Sinh viên <strong>{selectedStudent.fullName || selectedStudent.name}</strong> (MSSV: <span className="font-mono font-bold text-[#003087]">{selectedStudent.studentId || selectedStudent.mssv}</span>) chưa cập nhật đường dẫn CV (Google Drive/PDF) trên hệ thống.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Modal Actions (Phóng to 150%) */}
@@ -1648,7 +1812,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                   Đóng
                 </button>
 
-                {isStaff && (
+                {isAdmin && (
                   <>
                     <button
                       type="button"
@@ -1681,7 +1845,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       )}
 
       {/* 5. Modal Thêm mới / Chỉnh sửa Sinh viên (Full CRUD - Phóng to 150%) */}
-      {isStaff && crudModalOpen && (
+      {isAdmin && crudModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 sm:p-6 animate-fadeIn">
           <div className="bg-white w-[94vw] max-w-5xl rounded-3xl shadow-2xl border border-[#cbd5e1] p-8 space-y-6 max-h-[94vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-4">
@@ -1894,7 +2058,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       )}
 
       {/* 6. Modal Import Excel (Enlarged max-w-5xl with Review Preview & Multichoice) */}
-      {isStaff && importModalOpen && (
+      {isAdmin && importModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="bg-white w-[95vw] max-w-6xl xl:max-w-7xl rounded-3xl shadow-2xl border border-[#cbd5e1] max-h-[94vh] flex flex-col justify-between overflow-hidden">
             {/* Modal Header */}

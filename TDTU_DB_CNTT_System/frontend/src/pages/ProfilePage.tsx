@@ -424,6 +424,41 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
             <span>{cvSavedToast}</span>
           </div>
         )}
+
+        {/* Khung Review CV trực tiếp của sinh viên */}
+        {cvLink && (
+          <div className="mt-4 pt-4 border-t border-[#e5e7eb] space-y-3 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[13.5px] font-bold text-[#003087]">
+                  Xem trước CV đã lưu (Review CV trực tuyến)
+                </span>
+              </div>
+              <a
+                href={cvLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[12.5px] font-bold text-[#003087] hover:underline flex items-center gap-1 self-start sm:self-auto"
+              >
+                <span>Mở trong thẻ mới</span>
+                <span>↗</span>
+              </a>
+            </div>
+
+            <div className="w-full h-[520px] rounded-xl border border-[#cbd5e1] overflow-hidden bg-[#f8fafc] shadow-inner relative">
+              <iframe
+                src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(cvLink) : cvLink}
+                title="Review CV Sinh viên"
+                className="w-full h-full border-0"
+                allow="autoplay"
+              />
+            </div>
+            <p className="text-[11.5px] text-[#6b7280]">
+              * Lưu ý: Hãy đảm bảo bạn đã bật quyền <strong>"Bất kỳ ai có đường liên kết đều có thể xem (Anyone with the link can view)"</strong> trên Google Drive để Giảng viên có thể xem trực tiếp hồ sơ của bạn.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ================================================================= */}
