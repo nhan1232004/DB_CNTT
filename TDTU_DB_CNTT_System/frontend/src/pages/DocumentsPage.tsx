@@ -690,7 +690,6 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               </button>
 
             </div>
-            </div>
 
           </div>
 
