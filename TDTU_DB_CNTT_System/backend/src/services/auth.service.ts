@@ -85,6 +85,45 @@ export class AuthService {
     return this.loginWithGoogle(email, name);
   }
 
+  loginWithPassword(email: string, password: string): { token: string; user: UserClaims } {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const pwd = String(password || '');
+    const domainCheck = this.validateEmailDomain(cleanEmail);
+    if (!domainCheck.isValid || !domainCheck.role) {
+      throw new Error('Từ chối truy cập: Chỉ chấp nhận email thuộc Trường Đại học Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn)');
+    }
+
+    const credentialMap: Record<string, string[]> = {
+      'phamvanc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+      'thayphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+      'admin@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+      'nguyenvana@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+      'tranminhlan@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+      'tranvanb@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+      '522h0045@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0045', 'Tdtu@2026'],
+      '51900839@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '51900839', 'Tdtu@2026'],
+      '522h0001@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0001', 'Tdtu@2026'],
+      '522h0002@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0002', 'Tdtu@2026'],
+      '52100999@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '52100999', 'Tdtu@2026']
+    };
+
+    let validPwd = false;
+    if (credentialMap[cleanEmail]) {
+      validPwd = credentialMap[cleanEmail].includes(pwd);
+    } else if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
+      const mssv = cleanEmail.split('@')[0].toUpperCase();
+      validPwd = pwd === 'Sv@123456' || pwd === 'Student@123456' || pwd === mssv || pwd === 'Tdtu@2026';
+    } else if (cleanEmail.endsWith('@tdtu.edu.vn')) {
+      validPwd = pwd === 'Gv@123456' || pwd === 'Lecturer@123456' || pwd === 'Tdtu@2026';
+    }
+
+    if (!validPwd) {
+      throw new Error('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+    }
+
+    return this.loginWithGoogle(cleanEmail);
+  }
+
   getFirebaseUsers(): any[] {
     return this.db.prepare('SELECT uid, email, name, role, isAdmin, isActive, studentId, department, avatarUrl, createdAt FROM users ORDER BY role DESC, isAdmin DESC, name ASC').all();
   }

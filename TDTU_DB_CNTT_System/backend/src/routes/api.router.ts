@@ -34,6 +34,7 @@ export function createApiRouter(): HttpRouter {
   // 2. Authentication & Firebase RBAC Routes
   router.post('/api/auth/google-sso', authCtrl.googleSsoHandler);
   router.post('/api/auth/firebase-login', authCtrl.firebaseLoginHandler);
+  router.post('/api/auth/login', authCtrl.passwordLoginHandler);
   router.get('/api/auth/me', authCtrl.getMeHandler);
   router.get('/api/auth/firebase-users', authCtrl.getFirebaseUsersHandler);
   router.post('/api/auth/firebase-users', requireRole(['lecturer'], true), authCtrl.upsertFirebaseUserHandler);

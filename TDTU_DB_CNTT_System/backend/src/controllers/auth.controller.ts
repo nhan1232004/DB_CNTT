@@ -30,6 +30,20 @@ export const firebaseLoginHandler: RouteHandler = (req, res) => {
   }
 };
 
+export const passwordLoginHandler: RouteHandler = (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      sendError(res, 400, 'Vui lòng nhập đầy đủ Email TDTU và Mật khẩu', 'CREDENTIALS_REQUIRED');
+      return;
+    }
+    const result = authService.loginWithPassword(email, password);
+    sendSuccess(res, result, 'Đăng nhập hệ thống TDTU thành công');
+  } catch (err: any) {
+    sendError(res, 401, err?.message || 'Email hoặc mật khẩu không chính xác', 'AUTH_FAILED');
+  }
+};
+
 export const getMeHandler: RouteHandler = (req, res) => {
   if (!req.user) {
     sendError(res, 401, 'Chưa đăng nhập hoặc phiên đã hết hạn', 'UNAUTHORIZED');

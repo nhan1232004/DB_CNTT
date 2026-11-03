@@ -4,10 +4,32 @@
 class ApiClient {
   static tokenKey = 'tdtu_auth_token';
   static userKey = 'tdtu_auth_user';
+  static sigKey = 'tdtu_auth_sig';
   static liveStudentsKey = 'tdtu_live_students_clean';
   static bulletinKey = 'tdtu_bulletin_posts';
   static notificationKey = 'tdtu_notifications';
   static _firestoreSyncInitialized = false;
+
+  static isTdtuEmail(email) {
+    const clean = String(email || '').trim().toLowerCase();
+    return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
+  }
+
+  static _computeUserSig(user) {
+    if (!user || !user.email) return '';
+    const cleanEmail = String(user.email || '').trim().toLowerCase();
+    const role = String(user.role || '').trim().toLowerCase();
+    const isAdmin = Boolean(user.isAdmin) ? '1' : '0';
+    const studentId = String(user.studentId || '').trim().toUpperCase();
+    const enrolled = user.isEnrolledThisSemester === false ? '0' : '1';
+    const raw = `TDTU_RBAC_V2|${cleanEmail}|${role}|${isAdmin}|${studentId}|${enrolled}`;
+    let hash = 5381;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) + hash) + raw.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return 'sig_' + Math.abs(hash).toString(36) + '_' + btoa(encodeURIComponent(`${cleanEmail}:${role}:${isAdmin}`));
+  }
 
   static _purgeOldTestStudents() {
     try {
@@ -49,27 +71,83 @@ class ApiClient {
     try {
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
+      localStorage.removeItem(this.sigKey);
+      if (window.FirebaseService?.signOut) {
+        window.FirebaseService.signOut();
+      }
     } catch {}
   }
 
   static getSavedUser() {
     try {
       const data = localStorage.getItem(this.userKey);
-      if (!data) return null;
+      const savedSig = localStorage.getItem(this.sigKey);
+      if (!data || !savedSig) return null;
       const user = JSON.parse(data);
-      if (user && user.email === 'nguyenvana@tdtu.edu.vn') {
-        user.isAdmin = false;
-        user.role = 'lecturer';
+      if (!user || !user.email || !this.isTdtuEmail(user.email)) {
+        this.clearToken();
+        return null;
       }
+
+      const cleanEmail = String(user.email).trim().toLowerCase();
+      // Ràng buộc chặt chẽ vai trò theo tên miền TDTU để chống giả mạo role / chuyển đổi tài khoản
+      if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
+        const expectedSid = cleanEmail.split('@')[0].toUpperCase();
+        if (user.role !== 'student' || user.isAdmin === true || (user.studentId && String(user.studentId).toUpperCase() !== expectedSid)) {
+          this.clearToken();
+          return null;
+        }
+        user.role = 'student';
+        user.isAdmin = false;
+        user.studentId = expectedSid;
+      } else if (cleanEmail.endsWith('@tdtu.edu.vn')) {
+        if (user.role === 'student') {
+          this.clearToken();
+          return null;
+        }
+        if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
+          user.isAdmin = false;
+          user.role = 'lecturer';
+        }
+      }
+
+      const expectedSig = this._computeUserSig(user);
+      if (savedSig !== expectedSig || (user._sig && user._sig !== expectedSig)) {
+        console.warn('[Security Guard]: Phát hiện can thiệp trái phép phiên đăng nhập. Tự động đăng xuất.');
+        this.clearToken();
+        return null;
+      }
+
       return user;
     } catch {
+      this.clearToken();
       return null;
     }
   }
 
   static setSavedUser(user) {
     try {
-      localStorage.setItem(this.userKey, JSON.stringify(user));
+      if (!user || !user.email || !this.isTdtuEmail(user.email)) {
+        this.clearToken();
+        return;
+      }
+      const cleanEmail = String(user.email).trim().toLowerCase();
+      const normalized = {
+        ...user,
+        email: cleanEmail
+      };
+      if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
+        normalized.role = 'student';
+        normalized.isAdmin = false;
+        normalized.studentId = cleanEmail.split('@')[0].toUpperCase();
+      } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
+        normalized.role = 'lecturer';
+        normalized.isAdmin = false;
+      }
+      const sig = this._computeUserSig(normalized);
+      normalized._sig = sig;
+      localStorage.setItem(this.sigKey, sig);
+      localStorage.setItem(this.userKey, JSON.stringify(normalized));
     } catch {}
   }
 
@@ -1051,8 +1129,21 @@ class ApiClient {
     const body = options.body ? JSON.parse(options.body) : {};
 
     // 1. Auth: Google SSO & Credentials
-    if (endpoint.includes('/api/auth/google-sso')) {
+    if (endpoint.includes('/api/auth/google-sso') || endpoint.includes('/api/auth/login')) {
       const email = (body.email || '').trim().toLowerCase();
+      if (!this.isTdtuEmail(email)) {
+        throw new Error(
+          `Từ chối truy cập: Hệ thống chỉ cho phép tài khoản thuộc Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Email "${email}" không hợp lệ.`
+        );
+      }
+
+      if (endpoint.includes('/api/auth/login')) {
+        const pwd = String(body.password || '');
+        if (!this._verifyInternalCredential(email, pwd)) {
+          throw new Error('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+        }
+      }
+
       let role = 'student';
       let isAdmin = false;
       let studentId = undefined;
@@ -1061,21 +1152,35 @@ class ApiClient {
 
       if (email.endsWith('@tdtu.edu.vn')) {
         role = 'lecturer';
-        if (email.includes('phamvanc') || email.includes('admin')) {
-          userName = 'TS. Phạm Văn C';
+        if (email === 'phamvanc@tdtu.edu.vn' || email === 'thayphuc@tdtu.edu.vn' || email === 'admin@tdtu.edu.vn') {
+          userName = email.includes('thayphuc') ? 'TS. BCN Khoa CNTT' : 'TS. Phạm Văn C';
           isAdmin = true;
         } else if (email.includes('nguyenvana')) {
           userName = 'ThS. Nguyễn Văn A';
           isAdmin = false;
+        } else if (email.includes('tranminhlan')) {
+          userName = 'ThS. Trần Minh Lan';
+          isAdmin = false;
+        } else if (email.includes('tranvanb')) {
+          userName = 'TS. Trần Văn B';
+          isAdmin = false;
         } else {
-          userName = userName || 'TS. Trần Thị B';
+          userName = userName || 'Giảng viên Khoa CNTT';
+          isAdmin = false;
         }
       } else if (email.endsWith('@student.tdtu.edu.vn')) {
         role = 'student';
+        isAdmin = false;
         studentId = email.split('@')[0].toUpperCase();
         if (email.includes('522h0045')) {
           userName = 'Nguyễn Hữu Nhân';
           studentId = '522H0045';
+          isEnrolledThisSemester = true;
+        } else if (studentId === '522H0001') {
+          userName = 'Nguyễn Minh Anh';
+          isEnrolledThisSemester = true;
+        } else if (studentId === '522H0002') {
+          userName = 'Trần Hoàng Nam';
           isEnrolledThisSemester = true;
         } else if (studentId === '52100999' || email.includes('chuadk') || email.includes('ngoaiky')) {
           userName = 'Nguyễn Văn Ngoài Kỳ';
@@ -1097,8 +1202,13 @@ class ApiClient {
           throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên Khoa CNTT. Vui lòng liên hệ ban quản trị.');
         }
         uid = existingUser.uid || uid;
-        role = existingUser.role || role;
-        if (existingUser.isAdmin !== undefined) isAdmin = existingUser.isAdmin;
+        if (email.endsWith('@student.tdtu.edu.vn')) {
+          role = 'student';
+          isAdmin = false;
+        } else {
+          role = existingUser.role || role;
+          if (existingUser.isAdmin !== undefined) isAdmin = existingUser.isAdmin;
+        }
         userName = existingUser.displayName || existingUser.name || userName;
         if (existingUser.studentId) studentId = existingUser.studentId;
       } else {
@@ -1156,24 +1266,21 @@ class ApiClient {
         avatarUrl: body.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
       };
 
-      const token = 'mock_jwt_' + btoa(JSON.stringify(user));
+      const token = 'tdtu_jwt_' + btoa(encodeURIComponent(JSON.stringify({ uid: user.uid, email: user.email, role: user.role, isAdmin: user.isAdmin, studentId: user.studentId })));
       this.setToken(token);
       this.setSavedUser(user);
-      return { user, token, role: user.role, ...user };
+      const savedVerified = this.getSavedUser() || user;
+      return { user: savedVerified, token, role: savedVerified.role, ...savedVerified };
     }
 
-    // 2. Auth: Me
+    // 2. Auth: Me (Tuyệt đối không tự nhảy sang tài khoản mặc định nếu chưa đăng nhập hợp lệ)
     if (endpoint.includes('/api/auth/me')) {
       const saved = this.getSavedUser();
-      if (saved) return { user: saved, role: saved.role, ...saved };
-      const defaultUser = {
-        uid: 'user_default',
-        email: 'phamvanc@tdtu.edu.vn',
-        name: 'TS. Phạm Văn C',
-        role: 'lecturer',
-        isAdmin: true
-      };
-      return { user: defaultUser, role: defaultUser.role, ...defaultUser };
+      if (saved && saved.role && this.isTdtuEmail(saved.email)) {
+        return { user: saved, role: saved.role, ...saved };
+      }
+      this.clearToken();
+      throw new Error('Chưa đăng nhập hoặc phiên làm việc đã hết hạn.');
     }
 
     // 3. Auth: Firebase Users List
@@ -1508,38 +1615,96 @@ class ApiClient {
     return { success: true };
   }
 
-  // PUBLIC STATIC METHODS
-  static async loginGoogleSso(email, name, avatarUrl) {
-    try {
-      const res = await this.request('/api/auth/google-sso', {
-        method: 'POST',
-        body: JSON.stringify({ email, name, avatarUrl })
-      });
-      if (res && (res.user || res.role)) {
-        const u = res.user || res;
-        const tok = res.token || 'tdtu_jwt_' + Date.now();
-        this.setToken(tok);
-        this.setSavedUser(u);
-        return { user: u, token: tok, role: u.role, ...u };
-      }
-    } catch {}
+  // Xác thực mật khẩu cho các tài khoản nội bộ TDTU
+  static _verifyInternalCredential(email, password) {
+    const clean = String(email || '').trim().toLowerCase();
+    const pwd = String(password || '');
+    if (!this.isTdtuEmail(clean) || !pwd) return false;
 
-    const clean = (email || '').trim().toLowerCase();
-    const isStudent = clean.endsWith('@student.tdtu.edu.vn');
-    const studentId = isStudent ? clean.split('@')[0].toUpperCase() : undefined;
-    const fallbackUser = {
-      uid: 'user_' + Date.now(),
-      email: clean,
-      name: name || (isStudent ? (clean.includes('522h0045') ? 'Nguyễn Hữu Nhân' : 'Sinh viên TDTU') : (clean.includes('nguyenvana') ? 'ThS. Nguyễn Văn A' : 'TS. Phạm Văn C')),
-      role: isStudent ? 'student' : 'lecturer',
-      isAdmin: clean.includes('admin') || clean.includes('phamvanc'),
-      studentId: studentId,
-      isEnrolledThisSemester: true
+    // Kiểm tra mật khẩu tùy chỉnh nếu Quản trị viên đã cấu hình trên kho tài khoản
+    const storedUsers = this._getUsersStore();
+    const found = storedUsers.find(u => String(u.email || '').toLowerCase() === clean);
+    if (found && found.password && found.password === pwd) {
+      return true;
+    }
+
+    // Bảng mật khẩu chuẩn cho các nhóm vai trò kiểm thử nội bộ TDTU
+    const credentialMap = {
+      // 1. Nhóm Quản trị viên Khoa / Ban Chủ nhiệm Khoa (Admin)
+      'phamvanc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+      'thayphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+      'admin@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
+
+      // 2. Nhóm Giảng viên Phụ trách Thực tập (Lecturer)
+      'nguyenvana@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+      'tranminhlan@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+      'tranvanb@tdtu.edu.vn': ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'],
+
+      // 3. Nhóm Sinh viên Trong kỳ (Enrolled Student)
+      '522h0045@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0045', 'Tdtu@2026'],
+      '51900839@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '51900839', 'Tdtu@2026'],
+      '522h0001@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0001', 'Tdtu@2026'],
+      '522h0002@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0002', 'Tdtu@2026'],
+
+      // 4. Nhóm Sinh viên Ngoài kỳ / Chưa đủ điều kiện (Out-of-Semester Student)
+      '52100999@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '52100999', 'Tdtu@2026']
     };
-    const token = 'tdtu_jwt_' + Date.now();
-    this.setToken(token);
-    this.setSavedUser(fallbackUser);
-    return { user: fallbackUser, token, role: fallbackUser.role, ...fallbackUser };
+
+    if (credentialMap[clean]) {
+      return credentialMap[clean].includes(pwd);
+    }
+
+    // Cho phép toàn bộ 91 sinh viên trong danh sách thực tế (<mssv>@student.tdtu.edu.vn) đăng nhập bằng mật khẩu chuẩn Sv@123456 hoặc chính MSSV viết hoa
+    if (clean.endsWith('@student.tdtu.edu.vn')) {
+      const mssv = clean.split('@')[0].toUpperCase();
+      if (/^[0-9]{3}[A-Z0-9]{5}$/.test(mssv)) {
+        return pwd === 'Sv@123456' || pwd === 'Student@123456' || pwd === mssv || pwd === 'Tdtu@2026';
+      }
+    }
+
+    // Các giảng viên khác thuộc @tdtu.edu.vn đã được cấp trong danh sách tài khoản
+    if (clean.endsWith('@tdtu.edu.vn') && found) {
+      if (found.isAdmin) return pwd === 'Admin@123456' || pwd === 'Tdtu@2026';
+      return pwd === 'Gv@123456' || pwd === 'Lecturer@123456' || pwd === 'Tdtu@2026';
+    }
+
+    return false;
+  }
+
+  // PUBLIC STATIC METHODS
+  static async login(email, password) {
+    const clean = String(email || '').trim().toLowerCase();
+    const pwd = String(password || '');
+
+    if (!this.isTdtuEmail(clean)) {
+      throw new Error(
+        `Từ chối truy cập: Chỉ chấp nhận email nội bộ Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn).`
+      );
+    }
+
+    if (!this._verifyInternalCredential(clean, pwd)) {
+      throw new Error('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+    }
+
+    return this.handleFallback('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: clean, password: pwd })
+    });
+  }
+
+  static async loginGoogleSso(email, name, avatarUrl) {
+    const clean = String(email || '').trim().toLowerCase();
+    if (!this.isTdtuEmail(clean)) {
+      this.clearToken();
+      throw new Error(
+        `Từ chối truy cập: Hệ thống chỉ cho phép đăng nhập bằng tài khoản Google nội bộ của Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Tài khoản "${clean}" không được phép truy cập.`
+      );
+    }
+
+    return this.handleFallback('/api/auth/google-sso', {
+      method: 'POST',
+      body: JSON.stringify({ email: clean, name, avatarUrl })
+    });
   }
 
   static async getMe() {

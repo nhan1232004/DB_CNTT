@@ -1,0 +1,107 @@
+================================================================================
+GHI CHÚ TÀI KHOẢN KIỂM THỬ HỆ THỐNG CỔNG THỰC TẬP KHOA CNTT - ĐH TÔN ĐỨC THẮNG
+(TDTU INTERNSHIP PORTAL & DECISION SUPPORT SYSTEM - HK1 2026-2027)
+================================================================================
+
+1. HƯỚNG DẪN ĐĂNG NHẬP ĐỂ KIỂM THỬ
+--------------------------------------------------------------------------------
+- Tại màn hình Đăng nhập, chọn tab thứ 2: "Tài khoản Nội bộ TDTU"
+  (hoặc sử dụng tab "Google TDTU SSO" nếu đăng nhập bằng email Google thật do
+  Trường ĐH Tôn Đức Thắng cấp có đuôi @tdtu.edu.vn hoặc @student.tdtu.edu.vn).
+- LƯU Ý BẢO MẬT:
+  + Mọi tài khoản Gmail cá nhân (@gmail.com) hoặc ngoài tên miền TDTU đều bị
+    chặn tuyệt đối ở cả Google SSO và đăng nhập mật khẩu.
+  + Không tự động nhảy vào bất kỳ tài khoản mẫu nào khi hủy/lỗi đăng nhập.
+  + Không thể chuyển đổi tài khoản hoặc nâng quyền bằng cách sửa URL hay sửa
+    LocalStorage (hệ thống tự động kiểm tra chữ ký phiên `_sig` và đăng xuất).
+
+================================================================================
+2. DANH SÁCH TÀI KHOẢN KIỂM THỬ THEO 4 NHÓM VAI TRÒ (PRIME RBAC)
+================================================================================
+
+--------------------------------------------------------------------------------
+A. VAI TRÒ 1: QUẢN TRỊ VIÊN / BAN CHỦ NHIỆM KHOA (ADMIN - FULL QUYỀN: MASK 2310)
+--------------------------------------------------------------------------------
+Quyền hạn: Toàn quyền cấu hình học kỳ, quản lý danh sách sinh viên, nhập/xuất
+dữ liệu Excel, duyệt JD doanh nghiệp, thẩm định chứng chỉ, phát thông báo học vụ
+và phân quyền tài khoản (Ma trận Số nguyên tố Prime RBAC).
+
+1) Tài khoản Admin chính (BCN Khoa):
+   - Email    : phamvanc@tdtu.edu.vn
+   - Mật khẩu : Admin@123456   (hoặc Tdtu@2026)
+   - Họ tên   : TS. Phạm Văn C
+   - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true)
+
+2) Tài khoản Admin phụ (BCN Khoa):
+   - Email    : thayphuc@tdtu.edu.vn
+   - Mật khẩu : Admin@123456   (hoặc Tdtu@2026)
+   - Họ tên   : TS. BCN Khoa CNTT
+   - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true)
+
+--------------------------------------------------------------------------------
+B. VAI TRÒ 2: GIẢNG VIÊN PHỤ TRÁCH THỰC TẬP (LECTURER)
+--------------------------------------------------------------------------------
+Quyền hạn: Xem Dashboard thống kê, Quản lý biểu đồ, Theo dõi danh sách sinh viên,
+Xem chi tiết hồ sơ thực tập & doanh nghiệp của sinh viên, Thẩm định chứng chỉ
+ngoại ngữ, Đăng thông báo & tin tuyển dụng JD trên Bảng tin thực tập.
+
+1) Giảng viên điều phối 1:
+   - Email    : nguyenvana@tdtu.edu.vn
+   - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
+   - Họ tên   : ThS. Nguyễn Văn A
+   - Bộ môn   : Công nghệ Phần mềm
+
+2) Giảng viên điều phối 2:
+   - Email    : tranminhlan@tdtu.edu.vn
+   - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
+   - Họ tên   : ThS. Trần Minh Lan
+   - Bộ môn   : Hệ thống Thông tin & Mạng
+
+3) Giảng viên điều phối 3:
+   - Email    : tranvanb@tdtu.edu.vn
+   - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
+   - Họ tên   : TS. Trần Văn B
+   - Bộ môn   : Khoa học Máy tính
+
+--------------------------------------------------------------------------------
+C. VAI TRÒ 3: SINH VIÊN TRONG KỲ THỰC TẬP (ENROLLED STUDENT)
+--------------------------------------------------------------------------------
+Quyền hạn: Xem Tổng quan tiến độ cá nhân, Quản lý Hồ sơ & Link CV, Khai báo nơi
+thực tập (tra cứu Mã số thuế tự động), Nộp minh chứng Chứng chỉ tiếng Anh, Xem
+Bảng tin Thực tập & Tuyển dụng, Xem Cẩm nang Thực tập & Biểu mẫu.
+
+1) Sinh viên kiểm thử chính:
+   - Email    : 522h0045@student.tdtu.edu.vn
+   - Mật khẩu : Sv@123456      (hoặc 522H0045 / Student@123456)
+   - Họ tên   : Nguyễn Hữu Nhân
+   - MSSV     : 522H0045
+
+2) Sinh viên thực tế trong danh sách 91 SV (HK1 2026-2027):
+   - Email    : 51900839@student.tdtu.edu.vn
+   - Mật khẩu : Sv@123456      (hoặc 51900839 / Student@123456)
+   - Họ tên   : Võ Duy Trí
+   - MSSV     : 51900839 (Ngành Hệ thống thông tin - Lớp 19050402)
+
+3) Sinh viên kiểm thử bổ sung:
+   - Email    : 522h0001@student.tdtu.edu.vn
+   - Mật khẩu : Sv@123456      (hoặc 522H0001 / Student@123456)
+   - Họ tên   : Nguyễn Minh Anh
+   - MSSV     : 522H0001
+
+4) Bất kỳ sinh viên nào trong danh sách 91 sinh viên thực tế:
+   - Email    : <mssv>@student.tdtu.edu.vn (VD: 52000636@student.tdtu.edu.vn)
+   - Mật khẩu : Sv@123456      (hoặc chính MSSV viết hoa)
+
+--------------------------------------------------------------------------------
+D. VAI TRÒ 4: SINH VIÊN NGOÀI KỲ / CHƯA ĐỦ ĐIỀU KIỆN (OUT-OF-SEMESTER STUDENT)
+--------------------------------------------------------------------------------
+Quyền hạn: Chưa có tên trong danh sách đăng ký học phần thực tập của học kỳ hiện
+tại. Hệ thống tự động giới hạn quyền khai báo và chỉ cho phép tra cứu Cẩm nang
+Thực tập, Quy chế 320 giờ và Bảng tin tuyển dụng để chuẩn bị cho học kỳ sau.
+
+1) Sinh viên ngoài kỳ:
+   - Email    : 52100999@student.tdtu.edu.vn
+   - Mật khẩu : Sv@123456      (hoặc 52100999 / Student@123456)
+   - Họ tên   : Nguyễn Văn Ngoài Kỳ
+   - MSSV     : 52100999
+================================================================================

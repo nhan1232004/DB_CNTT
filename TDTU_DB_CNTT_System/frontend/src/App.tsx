@@ -215,34 +215,71 @@ const AppInner = () => {
   const [authChecking, setAuthChecking] = React.useState(true);
   const [activeSemester, setActiveSemester] = React.useState('hk1_2026_2027');
 
+  // Chống can thiệp URL & LocalStorage để chuyển đổi tài khoản hoặc vượt quyền trái phép
   React.useEffect(() => {
+    const sanitizeUrl = () => {
+      try {
+        const path = window.location.pathname || '/';
+        const search = window.location.search || '';
+        const hash = window.location.hash || '';
+        if ((path !== '/' && path !== '/index.html') || search !== '' || hash !== '') {
+          window.history.replaceState(null, '', '/');
+        }
+      } catch {}
+    };
+
+    sanitizeUrl();
+    window.addEventListener('popstate', sanitizeUrl);
+    window.addEventListener('hashchange', sanitizeUrl);
+
+    const handleStorageTamper = (e) => {
+      if (!e || !e.key || e.key === 'tdtu_auth_user' || e.key === 'tdtu_auth_token' || e.key === 'tdtu_auth_sig') {
+        const verified = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
+        const token = window.ApiClient?.getToken ? window.ApiClient.getToken() : null;
+        if (!verified || !token) {
+          setCurrentUser(null);
+          setActiveTab('dashboard');
+        } else {
+          setCurrentUser(prev => {
+            if (!prev || prev.email !== verified.email || prev.role !== verified.role || Boolean(prev.isAdmin) !== Boolean(verified.isAdmin)) {
+              window.ApiClient.clearToken();
+              return null;
+            }
+            return prev;
+          });
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageTamper);
+
     if (window.ApiClient && window.ApiClient.initFirestoreSync) {
       window.ApiClient.initFirestoreSync();
     }
+
     const token = window.ApiClient?.getToken ? window.ApiClient.getToken() : null;
-    if (token) {
+    const saved = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
+
+    if (token && saved && saved.role && window.ApiClient?.isTdtuEmail?.(saved.email)) {
       window.ApiClient.getMe()
         .then(res => {
           const u = res?.user || (res?.role ? res : null);
-          if (u && u.role) {
+          if (u && u.role && window.ApiClient?.isTdtuEmail?.(u.email) && u.email.toLowerCase() === saved.email.toLowerCase()) {
             setCurrentUser(u);
             if (u.role === 'student' && u.isEnrolledThisSemester === false) {
               setActiveTab('handbook');
             }
           } else {
-            const saved = window.ApiClient.getSavedUser();
-            if (saved && saved.role) {
-              setCurrentUser(saved);
-            } else {
-              window.ApiClient.clearToken();
-              setCurrentUser(null);
-            }
+            window.ApiClient.clearToken();
+            setCurrentUser(null);
           }
         })
         .catch(() => {
-          const saved = window.ApiClient.getSavedUser();
-          if (saved && saved.role) {
-            setCurrentUser(saved);
+          const recheck = window.ApiClient.getSavedUser();
+          if (recheck && recheck.role && window.ApiClient?.isTdtuEmail?.(recheck.email)) {
+            setCurrentUser(recheck);
+            if (recheck.role === 'student' && recheck.isEnrolledThisSemester === false) {
+              setActiveTab('handbook');
+            }
           } else {
             window.ApiClient.clearToken();
             setCurrentUser(null);
@@ -250,8 +287,16 @@ const AppInner = () => {
         })
         .finally(() => setAuthChecking(false));
     } else {
+      if (window.ApiClient) window.ApiClient.clearToken();
+      setCurrentUser(null);
       setAuthChecking(false);
     }
+
+    return () => {
+      window.removeEventListener('popstate', sanitizeUrl);
+      window.removeEventListener('hashchange', sanitizeUrl);
+      window.removeEventListener('storage', handleStorageTamper);
+    };
   }, []);
 
   // Bảo vệ phân quyền chuyển tab nghiêm ngặt theo Ma trận Số nguyên tố (Prime RBAC)
@@ -311,20 +356,20 @@ const AppInner = () => {
   }, [currentUser, activeTab]);
 
   const handleLoginSuccess = (user, token) => {
-    let validUser = user?.user || (user?.role ? user : null);
-    if (!validUser || !validUser.role) {
-      const saved = window.ApiClient.getSavedUser();
-      validUser = (saved && saved.role) ? saved : {
-        name: 'Nguyễn Hữu Nhân',
-        email: '522h0045@student.tdtu.edu.vn',
-        studentId: '522H0045',
-        role: 'student',
-        isEnrolledThisSemester: true
-      };
+    const candidate = user?.user || (user?.role ? user : null);
+    if (!candidate || !candidate.role || !candidate.email || !window.ApiClient?.isTdtuEmail?.(candidate.email)) {
+      if (window.ApiClient) window.ApiClient.clearToken();
+      setCurrentUser(null);
+      return;
     }
     if (token) window.ApiClient.setToken(token);
-    setCurrentUser(validUser);
-    if (validUser.role === 'student' && validUser.isEnrolledThisSemester === false) {
+    window.ApiClient.setSavedUser(candidate);
+    const verifiedUser = window.ApiClient.getSavedUser() || candidate;
+    try {
+      window.history.replaceState(null, '', '/');
+    } catch {}
+    setCurrentUser(verifiedUser);
+    if (verifiedUser.role === 'student' && verifiedUser.isEnrolledThisSemester === false) {
       setActiveTab('handbook');
     } else {
       setActiveTab('dashboard');
@@ -333,27 +378,11 @@ const AppInner = () => {
 
   const handleLogout = () => {
     if (window.ApiClient) window.ApiClient.clearToken();
+    try {
+      window.history.replaceState(null, '', '/');
+    } catch {}
     setCurrentUser(null);
     setActiveTab('dashboard');
-  };
-
-  const handleSwitchUser = async (email, name) => {
-    try {
-      const res = await window.ApiClient.loginGoogleSso(email, name);
-      const user = res?.user || (res?.role ? res : null);
-      const token = res?.token || window.ApiClient.getToken();
-      if (user && user.role) {
-        if (token) window.ApiClient.setToken(token);
-        setCurrentUser(user);
-        if (user.role === 'student' && user.isEnrolledThisSemester === false) {
-          setActiveTab('handbook');
-        } else {
-          setActiveTab('dashboard');
-        }
-      }
-    } catch (err) {
-      console.error('Error switching user:', err);
-    }
   };
 
   if (authChecking) {

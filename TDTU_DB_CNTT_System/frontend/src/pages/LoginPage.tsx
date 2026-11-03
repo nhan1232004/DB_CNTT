@@ -9,18 +9,32 @@ const LoginPage = ({ onLoginSuccess }) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
-  // Helper: Khởi tạo đối tượng Người dùng hợp lệ theo quy chế TDTU
-  const resolveUserFromEmail = (userEmail, userName) => {
-    const clean = (userEmail || '').trim().toLowerCase();
+  // Kiểm tra tên miền bắt buộc của Trường ĐH Tôn Đức Thắng
+  const isStrictTdtuEmail = (userEmail) => {
+    const clean = String(userEmail || '').trim().toLowerCase();
+    return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
+  };
 
-    // 1. Kiểm tra kho tài khoản hệ thống (bao gồm Doanh nghiệp)
+  // Helper: Khởi tạo đối tượng Người dùng hợp lệ theo quy chế TDTU (chỉ sau khi đã xác thực thành công)
+  const resolveUserFromEmail = (userEmail, userName) => {
+    const clean = String(userEmail || '').trim().toLowerCase();
+    if (!isStrictTdtuEmail(clean)) {
+      throw new Error(
+        `Từ chối truy cập: Hệ thống chỉ chấp nhận email nội bộ Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn).`
+      );
+    }
+
     const storedUsers = window.ApiClient?._getUsersStore ? window.ApiClient._getUsersStore() : [];
-    const foundStored = storedUsers.find(u => u.email.toLowerCase() === clean);
+    const foundStored = storedUsers.find(u => String(u.email || '').toLowerCase() === clean);
     if (foundStored) {
+      if (foundStored.isActive === false) {
+        throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên Khoa CNTT.');
+      }
       return {
         ...foundStored,
+        email: clean,
         name: foundStored.name || foundStored.displayName || userName || 'Người dùng TDTU',
-        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${clean}`
+        avatarUrl: foundStored.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${clean}`
       };
     }
 
@@ -32,39 +46,39 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     if (clean.endsWith('@tdtu.edu.vn')) {
       role = 'lecturer';
-      if (clean.includes('phamvanc') || clean.includes('admin')) {
-        name = name || 'TS. Phạm Văn C';
+      if (clean === 'phamvanc@tdtu.edu.vn' || clean === 'thayphuc@tdtu.edu.vn' || clean === 'admin@tdtu.edu.vn') {
+        name = name || (clean.includes('thayphuc') ? 'TS. BCN Khoa CNTT' : 'TS. Phạm Văn C');
         isAdmin = true;
-      } else if (clean.includes('nguyenvana') || clean.includes('tranminhlan')) {
-        name = name || (clean.includes('tranminhlan') ? 'ThS. Trần Minh Lan' : 'ThS. Nguyễn Văn A');
+      } else if (clean.includes('nguyenvana') || clean.includes('tranminhlan') || clean.includes('tranvanb')) {
+        name = name || (clean.includes('tranminhlan') ? 'ThS. Trần Minh Lan' : (clean.includes('tranvanb') ? 'TS. Trần Văn B' : 'ThS. Nguyễn Văn A'));
         isAdmin = false;
       } else {
         name = name || 'Giảng viên TDTU';
+        isAdmin = false;
       }
     } else if (clean.endsWith('@student.tdtu.edu.vn')) {
       role = 'student';
       studentId = clean.split('@')[0].toUpperCase();
-      if (clean.includes('522h0045')) {
+      if (studentId === '522H0045') {
         name = name || 'Nguyễn Hữu Nhân';
-        studentId = '522H0045';
         isEnrolledThisSemester = true;
-      } else if (clean.includes('522h0001')) {
+      } else if (studentId === '522H0001') {
         name = name || 'Nguyễn Minh Anh';
-        studentId = '522H0001';
         isEnrolledThisSemester = true;
-      } else if (studentId === '52100999') {
+      } else if (studentId === '522H0002') {
+        name = name || 'Trần Hoàng Nam';
+        isEnrolledThisSemester = true;
+      } else if (studentId === '52100999' || clean.includes('chuadk') || clean.includes('ngoaiky')) {
         name = name || 'Nguyễn Văn Ngoài Kỳ';
+        studentId = '52100999';
         isEnrolledThisSemester = false;
-      } else if (clean.includes('51900839')) {
+      } else if (studentId === '51900839') {
         name = name || 'Võ Duy Trí';
-        studentId = '51900839';
         isEnrolledThisSemester = true;
       } else {
         name = name || `Sinh viên (${studentId})`;
+        isEnrolledThisSemester = true;
       }
-    } else {
-      role = 'partner';
-      name = name || clean.split('@')[0].toUpperCase() + ' (Doanh nghiệp)';
     }
 
     return {
@@ -79,117 +93,134 @@ const LoginPage = ({ onLoginSuccess }) => {
     };
   };
 
-  // Đăng nhập Google SSO
+  // Kiểm tra kết quả Redirect từ Google SSO (nếu trình duyệt chặn popup trước đó)
+  React.useEffect(() => {
+    let mounted = true;
+    const handleRedirectCheck = async () => {
+      if (!window.FirebaseService?.checkRedirectResult) return;
+      try {
+        const redirectRes = await window.FirebaseService.checkRedirectResult();
+        if (!mounted || !redirectRes) return;
+        const gUser = redirectRes.user || (redirectRes.email ? redirectRes : null);
+        if (gUser && gUser.email) {
+          const cleanEmail = gUser.email.trim().toLowerCase();
+          if (!isStrictTdtuEmail(cleanEmail)) {
+            if (window.FirebaseService?.signOut) await window.FirebaseService.signOut();
+            window.ApiClient?.clearToken?.();
+            setError(
+              `Từ chối truy cập: Hệ thống chỉ cho phép đăng nhập bằng tài khoản Google nội bộ của Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Tài khoản "${cleanEmail}" không được phép truy cập.`
+            );
+            return;
+          }
+          const apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, gUser.displayName, gUser.photoURL);
+          const loggedInUser = apiRes?.user || (apiRes?.role ? apiRes : resolveUserFromEmail(cleanEmail, gUser.displayName));
+          const token = apiRes?.token || window.ApiClient.getToken();
+          onLoginSuccess(loggedInUser, token);
+        }
+      } catch (err) {
+        if (mounted && err?.message) {
+          setError(err.message);
+        }
+      }
+    };
+    handleRedirectCheck();
+    return () => { mounted = false; };
+  }, []);
+
+  // Đăng nhập Google SSO (Chỉ chấp nhận @tdtu.edu.vn và @student.tdtu.edu.vn - Không bao giờ tự nhảy sang tài khoản kiểm thử)
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      if (window.FirebaseService?.signInWithGoogle) {
-        let authResult = null;
-        try {
-          authResult = await window.FirebaseService.signInWithGoogle('popup');
-        } catch (popupErr) {
-          console.warn('[Google Popup Blocked/Failed]:', popupErr);
-          // Fallback to direct redirect
-          if (window.FirebaseService.signInWithGoogleRedirect) {
-            await window.FirebaseService.signInWithGoogleRedirect();
-            return;
-          }
-        }
-
-        if (authResult?.user) {
-          const cleanEmail = authResult.user.email.toLowerCase().trim();
-          if (!cleanEmail.endsWith('@tdtu.edu.vn') && !cleanEmail.endsWith('@student.tdtu.edu.vn')) {
-            setError('Cảnh báo: Chỉ chấp nhận tài khoản Google do Trường ĐH Tôn Đức Thắng cấp (@tdtu.edu.vn hoặc @student.tdtu.edu.vn).');
-            setLoading(false);
-            return;
-          }
-
-          let loggedInUser = null;
-          let token = 'tdtu_jwt_' + Date.now();
-          try {
-            const apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, authResult.user.displayName, authResult.user.photoURL);
-            loggedInUser = apiRes?.user || (apiRes?.role ? apiRes : null);
-            if (apiRes?.token) token = apiRes.token;
-          } catch (e) {}
-
-          if (!loggedInUser || !loggedInUser.role) {
-            loggedInUser = resolveUserFromEmail(cleanEmail, authResult.user.displayName);
-            if (authResult.user.photoURL) loggedInUser.avatarUrl = authResult.user.photoURL;
-          }
-
-          window.ApiClient.setToken(token);
-          window.ApiClient.setSavedUser(loggedInUser);
-          onLoginSuccess(loggedInUser, token);
-          return;
-        }
+      if (!window.FirebaseService?.signInWithGoogle) {
+        throw new Error('Dịch vụ xác thực Google SSO chưa sẵn sàng. Vui lòng sử dụng tab "Tài khoản Nội bộ TDTU" để đăng nhập bằng Email và Mật khẩu.');
       }
 
-      // Mô phỏng Google SSO cục bộ nếu không có Firebase kết nối
-      const defaultEmail = '522h0045@student.tdtu.edu.vn';
-      const user = resolveUserFromEmail(defaultEmail, 'Nguyễn Hữu Nhân');
-      const token = 'mock_jwt_sso_' + Date.now();
-      window.ApiClient.setToken(token);
-      window.ApiClient.setSavedUser(user);
-      onLoginSuccess(user, token);
+      const authResult = await window.FirebaseService.signInWithGoogle();
+      if (authResult?.isRedirecting) {
+        return;
+      }
+
+      const googleUser = authResult?.user || (authResult?.email ? authResult : null);
+      if (!googleUser || !googleUser.email) {
+        throw new Error('Không nhận được thông tin xác thực từ Google. Vui lòng thử lại.');
+      }
+
+      const cleanEmail = googleUser.email.toLowerCase().trim();
+      if (!isStrictTdtuEmail(cleanEmail)) {
+        if (window.FirebaseService?.signOut) {
+          await window.FirebaseService.signOut();
+        }
+        window.ApiClient?.clearToken?.();
+        setError(
+          `Từ chối truy cập: Hệ thống chỉ cho phép đăng nhập bằng tài khoản Google nội bộ của Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Tài khoản "${cleanEmail}" không thuộc tổ chức TDTU.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      const apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, googleUser.displayName, googleUser.photoURL);
+      let loggedInUser = apiRes?.user || (apiRes?.role ? apiRes : null);
+      const token = apiRes?.token || window.ApiClient.getToken();
+
+      if (!loggedInUser || !loggedInUser.role) {
+        loggedInUser = resolveUserFromEmail(cleanEmail, googleUser.displayName);
+        if (googleUser.photoURL) loggedInUser.avatarUrl = googleUser.photoURL;
+      }
+
+      window.ApiClient.setSavedUser(loggedInUser);
+      if (token) window.ApiClient.setToken(token);
+      onLoginSuccess(loggedInUser, token);
     } catch (err) {
-      console.error('[Google SSO Error]:', err);
-      setError(err?.message || 'Không thể kết nối đến máy chủ xác thực Google TDTU.');
+      console.warn('[Google SSO Warning]:', err);
+      window.ApiClient?.clearToken?.();
+      setError(err?.message || 'Xác thực Google SSO thất bại. Vui lòng sử dụng tài khoản @tdtu.edu.vn hoặc @student.tdtu.edu.vn.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Đăng nhập Email & Mật khẩu
+  // Đăng nhập Email & Mật khẩu nội bộ TDTU (Kiểm tra nghiêm ngặt tên miền TDTU và mật khẩu)
   const handlePasswordLogin = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!email || !password) {
-      setError('Vui lòng nhập đầy đủ Email và Mật khẩu.');
+    const clean = String(email || '').trim().toLowerCase();
+    const rawPassword = String(password || '');
+
+    if (!clean || !rawPassword) {
+      setError('Vui lòng nhập đầy đủ Email TDTU và Mật khẩu.');
+      return;
+    }
+
+    if (!isStrictTdtuEmail(clean)) {
+      setError(
+        `Từ chối truy cập: Chỉ chấp nhận tài khoản thuộc tên miền @tdtu.edu.vn (Giảng viên / Quản trị) hoặc @student.tdtu.edu.vn (Sinh viên). Email "${clean}" không hợp lệ.`
+      );
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
-      const clean = email.trim().toLowerCase();
-      let loggedInUser = null;
-      let token = 'token_pwd_' + Date.now();
-
-      if (window.ApiClient?.login) {
-        try {
-          const res = await window.ApiClient.login(clean, password);
-          loggedInUser = res?.user || (res?.role ? res : null);
-          if (res?.token) token = res.token;
-        } catch (e) {}
+      if (!window.ApiClient?.login) {
+        throw new Error('Hệ thống xác thực đang bảo trì. Vui lòng thử lại.');
       }
 
-      if (!loggedInUser || !loggedInUser.role) {
-        loggedInUser = resolveUserFromEmail(clean, clean.split('@')[0]);
+      const res = await window.ApiClient.login(clean, rawPassword);
+      const loggedInUser = res?.user || (res?.role ? res : null);
+      const token = res?.token || window.ApiClient.getToken();
+
+      if (!loggedInUser || !loggedInUser.role || !isStrictTdtuEmail(loggedInUser.email)) {
+        throw new Error('Thông tin tài khoản hoặc mật khẩu không hợp lệ.');
       }
 
-      window.ApiClient.setToken(token);
-      window.ApiClient.setSavedUser(loggedInUser);
       onLoginSuccess(loggedInUser, token);
     } catch (err) {
-      setError(err?.message || 'Email hoặc mật khẩu không chính xác.');
+      window.ApiClient?.clearToken?.();
+      setError(err?.message || 'Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Nút truy cập nhanh cho Tester / Thầy nghiệm thu
-  const handleQuickRole = (targetEmail, targetName) => {
-    setLoading(true);
-    setError(null);
-    setTimeout(() => {
-      const user = resolveUserFromEmail(targetEmail, targetName);
-      const token = 'mock_token_demo_' + Date.now();
-      window.ApiClient.setToken(token);
-      window.ApiClient.setSavedUser(user);
-      onLoginSuccess(user, token);
-      setLoading(false);
-    }, 150);
   };
 
   return (
@@ -261,14 +292,10 @@ const LoginPage = ({ onLoginSuccess }) => {
           <div className="text-[12.5px] font-bold text-[#1f2937] uppercase tracking-wider">
             Cổng Dịch Vụ Học Vụ
           </div>
-          <button
-            type="button"
-            onClick={() => handleQuickRole('52100999@student.tdtu.edu.vn', 'Nguyễn Văn Ngoài Kỳ')}
-            className="text-[13px] font-bold text-[#003087] hover:underline inline-flex items-center gap-1 cursor-pointer"
-          >
-            <span>Quy chế & Cẩm nang</span>
-            <span className="text-sm">↗</span>
-          </button>
+          <div className="text-[12.5px] font-bold text-[#003087] inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#003087]"></span>
+            <span>Xác thực Tập trung TDTU</span>
+          </div>
         </div>
 
         {/* Center Login Container */}
@@ -279,7 +306,7 @@ const LoginPage = ({ onLoginSuccess }) => {
               Đăng nhập hệ thống
             </h2>
             <p className="text-[14px] text-[#4b5563] text-justify leading-relaxed">
-              Vui lòng chọn hình thức đăng nhập phù hợp với vai trò của bạn để truy cập cổng thông tin thực tập.
+              Vui lòng đăng nhập bằng tài khoản nội bộ do Trường Đại học Tôn Đức Thắng cấp (@tdtu.edu.vn hoặc @student.tdtu.edu.vn) để truy cập hệ thống.
             </p>
           </div>
 
@@ -305,7 +332,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   : 'text-[#1f2937] hover:text-[#003087]'
               }`}
             >
-              Doanh nghiệp & Cán bộ
+              Tài khoản Nội bộ TDTU
             </button>
           </div>
 
@@ -321,10 +348,13 @@ const LoginPage = ({ onLoginSuccess }) => {
           {activeLoginTab === 'sso' ? (
             <div className="space-y-4">
               <div className="p-4 bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl text-[13px] text-[#1f2937] text-justify leading-relaxed">
-                Đăng nhập một chạm bằng tài khoản Google do Trường Đại học Tôn Đức Thắng cấp: 
+                Đăng nhập xác thực Google chỉ dành cho tài khoản thuộc tổ chức Trường Đại học Tôn Đức Thắng:
                 <strong className="block text-[#003087] mt-1">
-                  @student.tdtu.edu.vn (Sinh viên) hoặc @tdtu.edu.vn (Giảng viên)
+                  @student.tdtu.edu.vn (Sinh viên) hoặc @tdtu.edu.vn (Giảng viên / BCN Khoa)
                 </strong>
+                <span className="block text-[12px] text-[#dc2626] font-semibold mt-1">
+                  * Các tài khoản Gmail cá nhân (@gmail.com) hoặc ngoài TDTU sẽ bị từ chối truy cập.
+                </span>
               </div>
 
               <button
@@ -339,25 +369,25 @@ const LoginPage = ({ onLoginSuccess }) => {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
-                <span>{loading ? 'Đang xác thực Google...' : 'Đăng nhập bằng Google TDTU SSO'}</span>
+                <span>{loading ? 'Đang xác thực Google TDTU...' : 'Đăng nhập bằng Google TDTU SSO'}</span>
               </button>
             </div>
           ) : (
             /* TAB 2: EMAIL & PASSWORD CREDENTIALS */
             <form onSubmit={handlePasswordLogin} className="space-y-4">
               <div className="p-3.5 bg-[#f8fafc] border border-[#e5e7eb] rounded-xl text-[13px] text-[#4b5563] leading-relaxed text-justify">
-                Dành cho Doanh nghiệp đối tác tiếp nhận thực tập sinh hoặc Cán bộ quản trị sử dụng tài khoản mật khẩu nội bộ được Khoa cấp.
+                Đăng nhập bằng tài khoản Email nội bộ TDTU (<strong className="text-[#003087]">@tdtu.edu.vn</strong> hoặc <strong className="text-[#003087]">@student.tdtu.edu.vn</strong>) và mật khẩu được Khoa CNTT cấp.
               </div>
 
               <div>
                 <label className="block text-[12px] font-bold text-[#1f2937] uppercase mb-1">
-                  Email đăng nhập *
+                  Email nội bộ TDTU *
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="VD: phamvanc@tdtu.edu.vn hoặc 522H0045@student.tdtu.edu.vn"
+                  placeholder="VD: phamvanc@tdtu.edu.vn hoặc 522h0045@student.tdtu.edu.vn"
                   className="w-full px-3.5 py-2.5 text-[14px] bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-[#003087] outline-none text-[#1f2937]"
                   required
                 />
@@ -371,7 +401,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Nhập mật khẩu tài khoản..."
                   className="w-full px-3.5 py-2.5 text-[14px] bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-[#003087] outline-none text-[#1f2937]"
                   required
                 />
@@ -386,51 +416,6 @@ const LoginPage = ({ onLoginSuccess }) => {
               </button>
             </form>
           )}
-
-          {/* 3. KHU VỰC TRUY CẬP NHANH CHO KIỂM THỬ (CLEAN DEMO PILLS) */}
-          <div className="mt-8 pt-5 border-t border-[#e5e7eb]">
-            <div className="text-[12px] font-bold text-[#4b5563] uppercase tracking-wider text-center mb-3">
-              Truy cập nhanh kiểm thử (Demo 5 Roles Ma trận Prime RBAC)
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-[12.5px]">
-              <button
-                type="button"
-                onClick={() => handleQuickRole('522h0045@student.tdtu.edu.vn', 'Nguyễn Hữu Nhân')}
-                className="p-2.5 bg-white border border-[#e5e7eb] hover:border-[#003087] rounded-lg text-left transition cursor-pointer shadow-2xs hover:bg-[#ebf3ff]"
-              >
-                <span className="font-bold text-[#003087] block">[Sinh viên] 522H0045</span>
-                <span className="text-[#1f2937] block truncate">Nguyễn Hữu Nhân</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('nguyenvana@tdtu.edu.vn', 'ThS. Nguyễn Văn A')}
-                className="p-2.5 bg-white border border-[#e5e7eb] hover:border-[#003087] rounded-lg text-left transition cursor-pointer shadow-2xs hover:bg-[#ebf3ff]"
-              >
-                <span className="font-bold text-[#003087] block">[Giảng viên] nguyenvana</span>
-                <span className="text-[#1f2937] block truncate">ThS. Nguyễn Văn A</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('phamvanc@tdtu.edu.vn', 'TS. Phạm Văn C')}
-                className="p-2.5 bg-white border border-[#e5e7eb] hover:border-[#003087] rounded-lg text-left transition cursor-pointer shadow-2xs hover:bg-[#ebf3ff]"
-              >
-                <span className="font-bold text-[#003087] block">[Quản trị] phamvanc</span>
-                <span className="text-[#1f2937] block truncate">TS. Phạm Văn C (Admin)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickRole('52100999@student.tdtu.edu.vn', 'Nguyễn Văn Ngoài Kỳ')}
-                className="p-2.5 bg-white border border-[#fecaca] hover:border-[#dc2626] rounded-lg text-left transition cursor-pointer shadow-2xs hover:bg-[#fef2f2]"
-              >
-                <span className="font-bold text-[#dc2626] block">[Ngoài kỳ] 52100999</span>
-                <span className="text-[#1f2937] block truncate">Chưa đủ điều kiện</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Support Footnote */}
