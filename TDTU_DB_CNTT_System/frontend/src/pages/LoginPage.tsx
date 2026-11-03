@@ -1,11 +1,12 @@
 // Cổng Đăng nhập Xác thực & Phân quyền Khoa CNTT - Đại học Tôn Đức Thắng
-// Chuẩn thiết kế Enterprise Design System: Trắng (#ffffff), Xanh dương (#003087), Đỏ (#dc2626)
-// Màu chữ: Đen (#1f2937) và Đỏ (#dc2626)
+// Cập nhật UI/UX theo chuẩn referUI/Login.jsx và FRONTEND_SPEC.md
+// Đảm bảo đầy đủ logic xác thực nội bộ & Google SSO của TDTU
 
 const LoginPage = ({ onLoginSuccess }) => {
-  const [activeLoginTab, setActiveLoginTab] = React.useState('sso'); // 'sso' | 'credential'
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [roleTab, setRoleTab] = React.useState('student'); // 'student' | 'lecturer'
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [emailInput, setEmailInput] = React.useState('');
+  const [passwordInput, setPasswordInput] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -15,7 +16,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
   };
 
-  // Helper: Khởi tạo đối tượng Người dùng hợp lệ theo quy chế TDTU (chỉ sau khi đã xác thực thành công)
+  // Helper: Khởi tạo đối tượng Người dùng hợp lệ theo quy chế TDTU
   const resolveUserFromEmail = (userEmail, userName) => {
     const clean = String(userEmail || '').trim().toLowerCase();
     if (!isStrictTdtuEmail(clean)) {
@@ -108,7 +109,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             if (window.FirebaseService?.signOut) await window.FirebaseService.signOut();
             window.ApiClient?.clearToken?.();
             setError(
-              `Từ chối truy cập: Hệ thống chỉ cho phép đăng nhập bằng tài khoản Google nội bộ của Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Tài khoản "${cleanEmail}" không được phép truy cập.`
+              `Email không được phép truy cập. Vui lòng sử dụng email TDTU (@student.tdtu.edu.vn đối với Sinh viên hoặc @tdtu.edu.vn đối với Giảng viên).`
             );
             return;
           }
@@ -127,14 +128,14 @@ const LoginPage = ({ onLoginSuccess }) => {
     return () => { mounted = false; };
   }, []);
 
-  // Đăng nhập Google SSO (Chỉ chấp nhận @tdtu.edu.vn và @student.tdtu.edu.vn - Không bao giờ tự nhảy sang tài khoản kiểm thử)
+  // Đăng nhập Google SSO
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
 
     try {
       if (!window.FirebaseService?.signInWithGoogle) {
-        throw new Error('Dịch vụ xác thực Google SSO chưa sẵn sàng. Vui lòng sử dụng tab "Tài khoản Nội bộ TDTU" để đăng nhập bằng Email và Mật khẩu.');
+        throw new Error('Dịch vụ xác thực Google SSO chưa sẵn sàng. Vui lòng thử lại hoặc sử dụng Đăng nhập nội bộ.');
       }
 
       const authResult = await window.FirebaseService.signInWithGoogle();
@@ -154,8 +155,21 @@ const LoginPage = ({ onLoginSuccess }) => {
         }
         window.ApiClient?.clearToken?.();
         setError(
-          `Từ chối truy cập: Hệ thống chỉ cho phép đăng nhập bằng tài khoản Google nội bộ của Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn). Tài khoản "${cleanEmail}" không thuộc tổ chức TDTU.`
+          `Email không được phép truy cập. Vui lòng sử dụng email TDTU (@student.tdtu.edu.vn đối với Sinh viên hoặc @tdtu.edu.vn đối với Giảng viên).`
         );
+        setLoading(false);
+        return;
+      }
+
+      // Kiểm tra tab đăng nhập phù hợp với domain
+      if (roleTab === 'student' && !cleanEmail.endsWith('@student.tdtu.edu.vn')) {
+        setError(`Tài khoản "${cleanEmail}" là tài khoản Giảng viên / Cán bộ. Vui lòng chuyển sang tab "Giảng viên / Nội bộ" để đăng nhập.`);
+        setLoading(false);
+        return;
+      }
+
+      if (roleTab === 'lecturer' && cleanEmail.endsWith('@student.tdtu.edu.vn')) {
+        setError(`Tài khoản "${cleanEmail}" là tài khoản Sinh viên. Vui lòng chuyển sang tab "Sinh viên" để đăng nhập.`);
         setLoading(false);
         return;
       }
@@ -175,17 +189,17 @@ const LoginPage = ({ onLoginSuccess }) => {
     } catch (err) {
       console.warn('[Google SSO Warning]:', err);
       window.ApiClient?.clearToken?.();
-      setError(err?.message || 'Xác thực Google SSO thất bại. Vui lòng sử dụng tài khoản @tdtu.edu.vn hoặc @student.tdtu.edu.vn.');
+      setError(err?.message || 'Đăng nhập Google SSO thất bại hoặc đã bị hủy. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Đăng nhập Email & Mật khẩu nội bộ TDTU (Kiểm tra nghiêm ngặt tên miền TDTU và mật khẩu)
+  // Đăng nhập Email & Mật khẩu nội bộ TDTU
   const handlePasswordLogin = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const clean = String(email || '').trim().toLowerCase();
-    const rawPassword = String(password || '');
+    const clean = String(emailInput || '').trim().toLowerCase();
+    const rawPassword = String(passwordInput || '');
 
     if (!clean || !rawPassword) {
       setError('Vui lòng nhập đầy đủ Email TDTU và Mật khẩu.');
@@ -194,7 +208,7 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     if (!isStrictTdtuEmail(clean)) {
       setError(
-        `Từ chối truy cập: Chỉ chấp nhận tài khoản thuộc tên miền @tdtu.edu.vn (Giảng viên / Quản trị) hoặc @student.tdtu.edu.vn (Sinh viên). Email "${clean}" không hợp lệ.`
+        `Từ chối truy cập: Chỉ chấp nhận tài khoản thuộc tên miền @tdtu.edu.vn (Giảng viên / Quản trị) hoặc @student.tdtu.edu.vn (Sinh viên).`
       );
       return;
     }
@@ -224,215 +238,564 @@ const LoginPage = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white">
-      
-      {/* 1. CỘT TRÁI: INSTITUTIONAL BRAND HERO PANE */}
-      <div 
-        className="relative lg:w-1/2 min-h-[460px] lg:min-h-screen text-white flex flex-col justify-between p-8 sm:p-12 lg:p-16 overflow-hidden bg-cover bg-center"
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'row',
+        fontFamily: 'var(--font-main)',
+        backgroundColor: '#ffffff',
+      }}
+      className="flex-col lg:flex-row"
+    >
+      {/* CỘT TRÁI: HERO BANNER (50%) với login_background.jpg */}
+      <div
+        className="login-hero-pane w-full lg:w-1/2"
         style={{
-          backgroundImage: `linear-gradient(150deg, rgba(0, 30, 90, 0.94) 0%, rgba(0, 48, 135, 0.88) 55%, rgba(0, 15, 50, 0.96) 100%), url('./src/assets/login_background.jpg')`
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px 56px',
+          color: '#ffffff',
+          overflow: 'hidden',
+          backgroundImage: `linear-gradient(155deg, rgba(0, 22, 66, 0.82) 0%, rgba(0, 48, 135, 0.65) 50%, rgba(0, 22, 66, 0.85) 100%), url('./src/assets/login_background.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '420px',
         }}
       >
-        {/* Top Branding Crest */}
-        <div className="relative z-10">
-          <div className="inline-flex items-center px-4 py-2.5 bg-white rounded-xl shadow-md mb-4">
+        {/* Top Branding */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '8px 14px',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: '10px',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+              marginBottom: '14px',
+            }}
+          >
             <img
               src="./src/assets/logo_tdtu.png"
               alt="Logo TDTU"
-              className="h-10 w-auto object-contain"
+              style={{
+                height: '42px',
+                width: 'auto',
+                objectFit: 'contain',
+              }}
             />
           </div>
-          <div className="text-[13px] font-bold tracking-wider uppercase text-white">
-            TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG
-          </div>
-          <div className="w-12 h-1 bg-[#dc2626] rounded-full my-2.5"></div>
-          <div className="text-[12px] font-bold tracking-wider uppercase text-blue-200">
-            KHOA CÔNG NGHỆ THÔNG TIN
-          </div>
-        </div>
 
-        {/* Center Main Slogan */}
-        <div className="relative z-10 my-8 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 border border-white/25 text-[12px] font-bold text-white mb-4 backdrop-blur-sm">
-            <span className="w-2 h-2 rounded-full bg-[#dc2626] animate-pulse"></span>
-            <span>Học kỳ HK1 2026–2027</span>
+          <div
+            style={{
+              fontSize: '12px',
+              fontWeight: '800',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: '#ffffff',
+              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+            }}
+          >
+            HỆ THỐNG QUẢN LÝ THỰC TẬP & HỌC VỤ
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight text-white mb-4 text-left">
-            Cổng Thông Tin Thực Tập Doanh Nghiệp
+          <div
+            style={{
+              width: '40px',
+              height: '3px',
+              backgroundColor: '#e31837',
+              borderRadius: '2px',
+              margin: '8px 0 28px',
+            }}
+          />
+
+          {/* Slogan */}
+          <h1
+            style={{
+              fontSize: '38px',
+              fontWeight: '800',
+              lineHeight: 1.25,
+              marginBottom: '14px',
+              letterSpacing: '-0.02em',
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.6)',
+              color: '#ffffff',
+            }}
+          >
+            Từ giảng đường, đến hành trình nghề nghiệp.
           </h1>
-          <p className="text-[14px] text-white/95 leading-relaxed font-normal mb-6 text-justify">
-            Hệ thống điều phối, quản lý hồ sơ và hỗ trợ ra quyết định toàn diện cho học phần Thực tập doanh nghiệp và Kiến tập công nghiệp (TSNN & KTCN) Khoa CNTT TDTU.
+          <p
+            style={{
+              fontSize: '15px',
+              lineHeight: 1.6,
+              color: '#f1f5f9',
+              maxWidth: '480px',
+              marginBottom: '28px',
+              textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
+            }}
+          >
+            Một không gian để kết nối cơ hội thực tập, hoàn thiện hồ sơ và sẵn sàng cho bước tiến mới.
           </p>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="p-3.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="text-[15px] font-bold text-white">100+ Đối tác</div>
-              <div className="text-[12px] text-blue-100 font-medium">Doanh nghiệp công nghệ liên kết</div>
-            </div>
-            <div className="p-3.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-              <div className="text-[15px] font-bold text-white">Chuẩn AUN-QA</div>
-              <div className="text-[12px] text-blue-100 font-medium">Kiểm định chất lượng học vụ</div>
-            </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxWidth: '440px' }}>
           </div>
         </div>
 
-        {/* Bottom Hero Caption */}
-        <div className="relative z-10 text-[12.5px] text-white/85 space-y-1">
-          <div className="font-bold tracking-wider uppercase text-white">
-            KHOA CÔNG NGHỆ THÔNG TIN · TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG
+        {/* Bottom Hero Info */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            borderTop: '1px solid rgba(255, 255, 255, 0.25)',
+            paddingTop: '16px',
+            marginTop: '32px',
+          }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#93c5fd', marginBottom: '4px' }}>
+            KIẾN TẬP CÔNG NGHIỆP / TẬP SỰ NGHỀ NGHIỆP
           </div>
-          <div>Số 19 Nguyễn Hữu Thọ, Phường Tân Phong, Quận 7, TP. Hồ Chí Minh</div>
+          <div style={{ fontSize: '13px', color: '#e2e8f0', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            Khoa Công nghệ thông tin – Đại học Tôn Đức Thắng
+          </div>
         </div>
       </div>
 
-      {/* 2. CỘT PHẢI: FOCUSED ENTERPRISE LOGIN FORM */}
-      <div className="lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 lg:p-16 bg-white">
-        
-        {/* Top Mini Nav */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#e5e7eb]">
-          <div className="text-[12.5px] font-bold text-[#1f2937] uppercase tracking-wider">
-            Cổng Dịch Vụ Học Vụ
-          </div>
-          <div className="text-[12.5px] font-bold text-[#003087] inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#003087]"></span>
-            <span>Xác thực Tập trung TDTU</span>
+      {/* CỘT PHẢI: FORM ĐĂNG NHẬP (50%) */}
+      <div
+        className="login-form-pane w-full lg:w-1/2"
+        style={{
+          padding: '40px 56px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: '#ffffff',
+          overflowY: 'auto',
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Top Header of Right Pane */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '20px',
+            paddingBottom: '14px',
+            borderBottom: '1px solid #f1f5f9',
+            width: '100%',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '14px',
+              color: '#334155',
+              fontWeight: '700',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Khoa Công nghệ thông tin
+          </span>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: '#0052cc',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: '#eff6ff',
+            }}
+          >
+            <span>Cổng Thực tập TSNN & KTCN</span>
           </div>
         </div>
 
-        {/* Center Login Container */}
-        <div className="my-auto max-w-md w-full mx-auto py-8">
-          
-          <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1f2937] mb-2 tracking-tight text-left">
-              Đăng nhập hệ thống
+        {/* Center Container: Login Card */}
+        <div style={{ maxWidth: '440px', width: '100%', margin: 'auto' }}>
+          {/* TDTU Campus Gate Banner */}
+          <div style={{ marginBottom: '22px' }}>
+            <div
+              style={{
+                fontSize: '12px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: '#0052cc',
+                marginBottom: '6px',
+              }}
+            >
+              CỔNG THỰC TẬP CNTT — KHOA CNTT
+            </div>
+            <h2
+              style={{
+                fontSize: '26px',
+                fontWeight: '800',
+                color: '#0f172a',
+                margin: '0 0 6px',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Chào mừng bạn trở lại
             </h2>
-            <p className="text-[14px] text-[#4b5563] text-justify leading-relaxed">
-              Vui lòng đăng nhập bằng tài khoản nội bộ do Trường Đại học Tôn Đức Thắng cấp (@tdtu.edu.vn hoặc @student.tdtu.edu.vn) để truy cập hệ thống.
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+              Đăng nhập bằng tài khoản nhà trường để tiếp tục hành trình thực tập của bạn.
             </p>
           </div>
 
-          {/* Segmented Login Tabs */}
-          <div className="p-1 bg-[#f8fafc] rounded-xl flex mb-6 border border-[#e5e7eb]">
-            <button
-              type="button"
-              onClick={() => { setActiveLoginTab('sso'); setError(null); }}
-              className={`flex-1 py-2.5 text-[13.5px] font-bold rounded-lg transition-all cursor-pointer ${
-                activeLoginTab === 'sso'
-                  ? 'bg-[#003087] text-white shadow-xs'
-                  : 'text-[#1f2937] hover:text-[#003087]'
-              }`}
-            >
-              Google TDTU SSO
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveLoginTab('credential'); setError(null); }}
-              className={`flex-1 py-2.5 text-[13.5px] font-bold rounded-lg transition-all cursor-pointer ${
-                activeLoginTab === 'credential'
-                  ? 'bg-[#003087] text-white shadow-xs'
-                  : 'text-[#1f2937] hover:text-[#003087]'
-              }`}
-            >
-              Tài khoản Nội bộ TDTU
-            </button>
-          </div>
-
-          {/* Error Alert Box (Màu Đỏ theo quy chuẩn) */}
+          {/* Error Message */}
           {error && (
-            <div className="mb-5 p-3.5 bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] text-[13px] font-bold rounded-xl flex items-start gap-2.5">
-              <span className="font-bold text-base leading-none text-[#dc2626]">✕</span>
-              <div className="flex-1 text-justify leading-relaxed">{error}</div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '10px',
+                padding: '12px 14px',
+                color: '#b91c1c',
+                fontSize: '13px',
+                marginBottom: '20px',
+                lineHeight: 1.5,
+              }}
+            >
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{error}</span>
             </div>
           )}
 
-          {/* TAB 1: GOOGLE TDTU SSO */}
-          {activeLoginTab === 'sso' ? (
-            <div className="space-y-4">
-              <div className="p-4 bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl text-[13px] text-[#1f2937] text-justify leading-relaxed">
-                Đăng nhập xác thực Google chỉ dành cho tài khoản thuộc tổ chức Trường Đại học Tôn Đức Thắng:
-                <strong className="block text-[#003087] mt-1">
-                  @student.tdtu.edu.vn (Sinh viên) hoặc @tdtu.edu.vn (Giảng viên / BCN Khoa)
-                </strong>
-                <span className="block text-[12px] text-[#dc2626] font-semibold mt-1">
-                  * Các tài khoản Gmail cá nhân (@gmail.com) hoặc ngoài TDTU sẽ bị từ chối truy cập.
-                </span>
-              </div>
+          {/* Role Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: '#f1f5f9',
+              padding: '4px',
+              borderRadius: '10px',
+              marginBottom: '24px',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setRoleTab('student');
+                setError(null);
+              }}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                fontSize: '14px',
+                fontWeight: '700',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: roleTab === 'student' ? '#ffffff' : 'transparent',
+                color: roleTab === 'student' ? '#003087' : '#64748b',
+                boxShadow: roleTab === 'student' ? '0 2px 6px rgba(0, 0, 0, 0.08)' : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              Sinh viên
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRoleTab('lecturer');
+                setError(null);
+              }}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                fontSize: '14px',
+                fontWeight: '700',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: roleTab === 'lecturer' ? '#ffffff' : 'transparent',
+                color: roleTab === 'lecturer' ? '#003087' : '#64748b',
+                boxShadow: roleTab === 'lecturer' ? '0 2px 6px rgba(0, 0, 0, 0.08)' : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              Giảng viên / Nội bộ
+            </button>
+          </div>
 
+          {/* TAB 1: SINH VIÊN */}
+          {roleTab === 'student' && (
+            <div className="fade-in">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-[#003087] hover:bg-[#002266] text-white font-bold text-[14px] rounded-xl shadow-xs transition-all flex items-center justify-center gap-3 border border-[#003087] cursor-pointer"
+                style={{
+                  width: '100%',
+                  padding: '13px 20px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.2s',
+                  marginBottom: '10px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#94a3b8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
               >
-                <svg className="w-5 h-5 shrink-0 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                {/* Google Icon */}
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
                 </svg>
-                <span>{loading ? 'Đang xác thực Google TDTU...' : 'Đăng nhập bằng Google TDTU SSO'}</span>
+                <span>{loading ? 'Đang kết nối SSO...' : 'Đăng nhập bằng Google'}</span>
               </button>
-            </div>
-          ) : (
-            /* TAB 2: EMAIL & PASSWORD CREDENTIALS */
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              <div className="p-3.5 bg-[#f8fafc] border border-[#e5e7eb] rounded-xl text-[13px] text-[#4b5563] leading-relaxed text-justify">
-                Đăng nhập bằng tài khoản Email nội bộ TDTU (<strong className="text-[#003087]">@tdtu.edu.vn</strong> hoặc <strong className="text-[#003087]">@student.tdtu.edu.vn</strong>) và mật khẩu được Khoa CNTT cấp.
+
+              <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
+                Sử dụng tài khoản <strong>@student.tdtu.edu.vn</strong>
               </div>
 
-              <div>
-                <label className="block text-[12px] font-bold text-[#1f2937] uppercase mb-1">
-                  Email nội bộ TDTU *
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="VD: phamvanc@tdtu.edu.vn hoặc 522h0045@student.tdtu.edu.vn"
-                  className="w-full px-3.5 py-2.5 text-[14px] bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-[#003087] outline-none text-[#1f2937]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-bold text-[#1f2937] uppercase mb-1">
-                  Mật khẩu *
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu tài khoản..."
-                  className="w-full px-3.5 py-2.5 text-[14px] bg-white border border-[#e5e7eb] rounded-xl focus:ring-2 focus:ring-[#003087] outline-none text-[#1f2937]"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 bg-[#003087] hover:bg-[#002266] text-white font-bold text-[14px] rounded-xl transition shadow-xs cursor-pointer"
+              {/* Informative Security Notice Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  backgroundColor: '#eff6ff',
+                  borderRadius: '10px',
+                  border: '1px solid #bfdbfe',
+                  fontSize: '13px',
+                  color: '#1e40af',
+                  lineHeight: 1.5,
+                  marginBottom: '10px',
+                }}
               >
-                {loading ? 'Đang xác thực...' : 'Đăng nhập hệ thống'}
+                <svg className="w-5 h-5 shrink-0 text-[#2563eb] mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>
+                  Chỉ chấp nhận email do trường cấp. Nếu chưa đăng ký môn trong học kỳ, bạn sẽ được xem Cẩm nang thực tập.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: GIẢNG VIÊN / NỘI BỘ */}
+          {roleTab === 'lecturer' && (
+            <div className="fade-in">
+              <form onSubmit={handlePasswordLogin}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Email nhà trường / Mã số GV
+                  </label>
+                  <input
+                    type="text"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="VD: tranvannam@tdtu.edu.vn"
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    required
+                  />
+                </div>
+
+                <div style={{ marginBottom: '16px', position: 'relative' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Mật khẩu
+                  </label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Nhập mật khẩu nội bộ"
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '36px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      padding: 0,
+                    }}
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748b', cursor: 'pointer' }}>
+                    <input type="checkbox" defaultChecked style={{ accentColor: '#003087', cursor: 'pointer' }} />
+                    <span>Ghi nhớ đăng nhập</span>
+                  </label>
+                  <a
+                    href="#forgot"
+                    onClick={(e) => { e.preventDefault(); alert('Vui lòng liên hệ quản trị IT Khoa để đặt lại mật khẩu.'); }}
+                    style={{ fontSize: '13px', color: '#0052cc', fontWeight: '600', textDecoration: 'none' }}
+                  >
+                    Quên mật khẩu?
+                  </a>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 20px',
+                    backgroundColor: '#003087',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0, 48, 135, 0.2)',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <span>{loading ? 'Đang xác thực...' : 'Đăng nhập nội bộ'}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+              </form>
+
+              {/* Dòng HOẶC */}
+              <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0' }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+                <span style={{ padding: '0 10px', fontSize: '12px', color: '#94a3b8' }}>HOẶC</span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+              </div>
+
+              {/* Google SSO cho giảng viên */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '12px 20px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#94a3b8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                </svg>
+                <span>{loading ? 'Đang kết nối SSO...' : 'Đăng nhập bằng Google'}</span>
               </button>
-            </form>
+              <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginTop: '8px' }}>
+                Sử dụng tài khoản <strong>@tdtu.edu.vn</strong>
+              </div>
+
+              {/* Dòng ghi chú */}
+              <div
+                style={{
+                  borderTop: '1px solid #e2e8f0',
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  fontSize: '12px',
+                  color: '#64748b',
+                  lineHeight: 1.5,
+                  textAlign: 'center',
+                }}
+              >
+                Dành cho giảng viên: đăng nhập email và mật khẩu nội bộ hoặc Google SSO @tdtu.edu.vn tại thẻ phía trên.
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Bottom Support Footnote */}
-        <div className="pt-4 border-t border-[#e5e7eb] text-center text-[11.5px] text-[#1f2937] space-y-1">
-          <div>
-            <span>Cần hỗ trợ tài khoản? </span>
-            <a href="mailto:thuctap.cntt@tdtu.edu.vn" className="font-bold text-[#003087] hover:underline">
-              Liên hệ Văn phòng Khoa CNTT (C004)
-            </a>
-          </div>
-          <div className="font-semibold text-[#1f2937]">
-            © 2026 Khoa CNTT · Trường Đại học Tôn Đức Thắng
-          </div>
+        {/* Footer of Right Pane */}
+        <div style={{ textAlign: 'center', marginTop: '28px', fontSize: '13px', color: '#64748b' }}>
+          <div>Không truy cập được tài khoản?</div>
+          <a
+            href="mailto:thuctap.cntt@tdtu.edu.vn"
+            style={{ color: '#0052cc', fontWeight: '700', textDecoration: 'none' }}
+          >
+            Liên hệ Văn phòng Khoa CNTT (C004)
+          </a>
         </div>
-
       </div>
-
     </div>
   );
 };
