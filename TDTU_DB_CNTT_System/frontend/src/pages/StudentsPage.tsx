@@ -653,13 +653,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
             const gpa4Raw = row['GPA (Hệ 4)'] || row.gpa4 || row.gpa || row.GPA || row['Điểm TB'];
             const gpa4Val = parseFloat(gpa4Raw);
-            const finalGpa4 = isNaN(gpa4Val) ? 3.0 : gpa4Val;
+            const finalGpa4 = !isNaN(gpa4Val) && gpa4Val > 0 ? gpa4Val : null;
 
             const gpa10Raw = row['GPA (Hệ 10)'] || row.gpa10 || row['Điểm TB Hệ 10'];
             const gpa10Val = parseFloat(gpa10Raw);
-            const finalGpa10 = isNaN(gpa10Val) ? Number((finalGpa4 * 2.5).toFixed(2)) : gpa10Val;
+            const finalGpa10 = !isNaN(gpa10Val) && gpa10Val > 0
+              ? gpa10Val
+              : (finalGpa4 !== null ? Number((finalGpa4 * 2.5).toFixed(2)) : null);
 
-            const academicRank = String(row['Xếp loại'] || row['Xếp loại học lực'] || row.academicRank || (finalGpa10 >= 9.0 ? 'Xuất sắc' : (finalGpa10 >= 8.0 ? 'Giỏi' : (finalGpa10 >= 6.5 ? 'Khá' : 'Trung bình')))).trim();
+            const academicRank = String(row['Xếp loại'] || row['Xếp loại học lực'] || row.academicRank || (finalGpa10 !== null ? (finalGpa10 >= 9.0 ? 'Xuất sắc' : (finalGpa10 >= 8.0 ? 'Giỏi' : (finalGpa10 >= 6.5 ? 'Khá' : 'Trung bình'))) : '—')).trim();
 
             let birthDateStr = '';
             const rawBirth = row['Ngày sinh'] || row.birthDate || row['NgaySinh'];
@@ -974,13 +976,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             <button
               type="button"
               onClick={handleOpenAddStudent}
-              className="px-5 py-2.5 min-w-[160px] h-[38px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+              className="px-5 py-2.5 min-w-[160px] min-h-[42px] whitespace-nowrap bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
               title="Thêm mới 1 sinh viên vào học kỳ hiện tại"
             >
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
               </svg>
-              <span className="text-white font-bold">+ Thêm sinh viên</span>
+              <span className="text-white font-bold">Thêm sinh viên</span>
             </button>
           )}
 
@@ -988,13 +990,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             <button
               type="button"
               onClick={() => setImportModalOpen(true)}
-              className="px-5 py-2.5 min-w-[140px] h-[38px] whitespace-nowrap bg-white text-[#003087] border border-[#003087] hover:bg-[#ebf3ff] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+              className="px-5 py-2.5 min-w-[140px] min-h-[42px] whitespace-nowrap bg-white text-[#003087] border border-[#003087] hover:bg-[#ebf3ff] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
               title="Nhập danh sách sinh viên từ file Excel bên ngoài"
             >
               <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span>Nhập Excel</span>
+              <span>Nhập danh sách Excel</span>
             </button>
           )}
 
@@ -1007,13 +1009,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               }
               window.ApiClient.exportStudentsExcel(filteredStudents, activeSemester);
             }}
-            className="px-5 py-2.5 min-w-[140px] h-[38px] whitespace-nowrap bg-white text-[#1f2937] border border-[#cbd5e1] hover:bg-[#f8fafc] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+            className="px-5 py-2.5 min-w-[140px] min-h-[42px] whitespace-nowrap bg-white text-[#1f2937] border border-[#cbd5e1] hover:bg-[#f8fafc] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
             title="Xuất bảng sinh viên hiện tại ra file Excel (.xlsx)"
           >
             <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span>Xuất Excel</span>
+            <span>Xuất danh sách Excel</span>
           </button>
 
           {isAdmin && selectedIds.length > 0 && (
@@ -1148,7 +1150,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 </th>
                 <th className="py-4 px-3 w-28">MSSV</th>
                 <th className="py-4 px-3 w-56">HỌ VÀ TÊN</th>
-                <th className="py-4 px-3 w-32">MÔN HỌC</th>
+                <th className="py-4 px-3 w-32 text-center">MÔN HỌC</th>
                 <th className="py-4 px-3 w-40 text-center">TRẠNG THÁI</th>
                 <th className="py-4 px-3 w-64">DOANH NGHIỆP</th>
                 <th className="py-4 px-3 w-36 text-center">NGÀY CẬP NHẬT</th>
@@ -1220,8 +1222,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-3">
-                        <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1]">
+                      <td className="py-3.5 px-3 text-center">
+                        <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1] inline-block">
                           {(() => {
                             const cArr = Array.isArray(sv.courses) ? sv.courses.map((c: any) => String(c).toUpperCase()) : [];
                             const cCode = String(sv.courseCode || sv.course_str || sv.courseName || '').toUpperCase();
@@ -1273,10 +1275,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                             }`}
                             title="Tùy chọn thao tác"
                           >
-                            <svg className="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 24 24">
-                              <circle cx="12" cy="5" r="1.75" />
-                              <circle cx="12" cy="12" r="1.75" />
-                              <circle cx="12" cy="19" r="1.75" />
+                            {/* Dấu 3 chấm xoay ngang theo yêu cầu */}
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <circle cx="5" cy="12" r="2" />
+                              <circle cx="12" cy="12" r="2" />
+                              <circle cx="19" cy="12" r="2" />
                             </svg>
                           </button>
 
@@ -1613,13 +1616,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       <div className="text-[36px] md:text-[40px] font-extrabold font-mono text-[#003087] leading-none mb-2">
                         {selectedStudent.gpa10 != null && Number(selectedStudent.gpa10) > 0
                           ? Number(selectedStudent.gpa10).toFixed(2)
-                          : (selectedStudent.gpa4 ? (Number(selectedStudent.gpa4) * 2.5).toFixed(2) : '7.82')}
+                          : (selectedStudent.gpa4 && Number(selectedStudent.gpa4) > 0 ? (Number(selectedStudent.gpa4) * 2.5).toFixed(2) : '—')}
                       </div>
                       <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wider">GPA Hệ 10</div>
                     </div>
                     <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs flex flex-col justify-center">
                       <div className="text-[30px] md:text-[34px] font-extrabold text-[#1f2937] leading-none mb-2">
-                        {selectedStudent.academicRank || 'Khá'}
+                        {selectedStudent.academicRank || '—'}
                       </div>
                       <div className="text-[14px] font-bold text-[#4b5563] uppercase tracking-wider">Xếp loại học lực</div>
                     </div>
@@ -1749,7 +1752,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       >
                         <div>
                           <div className="text-[16px] font-bold text-[#1f2937]">
-                            {cert.certType || 'Chứng chỉ tiếng Anh'} — Điểm: <strong className="text-[#003087] font-mono">{cert.score || 'Hợp lệ'}</strong>
+                            {cert.name || cert.certType || 'Chứng chỉ ngoại ngữ'} — Điểm: <strong className="text-[#003087] font-mono">{cert.score || 'Hợp lệ'}</strong>
                           </div>
                           <div className="text-[13.5px] text-[#4b5563] mt-1 font-medium">
                             {cert.level ? `Cấp độ ${cert.level}` : ''}

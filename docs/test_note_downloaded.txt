@@ -1,0 +1,106 @@
+﻿Lỗi canh lề
+* Thêm phần xuất file pdf
+  
+
+* Gom gọn Mẫu in Giảng viên + Mở trung tâm in ấn
+  
+
+  
+
+* Phần chỉnh sửa thời gian bên mục cài đặt hệ thống chuyển sang bên quản lý học kỳ luôn
+  
+[a]  
+* Đổi thành dạng dropdown cho gọn
+  
+  
+
+* Lỗi căn chỉnh
+  
+
+* Xuất báo cáo excel trong dashboard cần xóa cột hệ 4.
+
+
+  
+
+* Xóa phần danh sách thực tập chuyển sang quản lý sinh viên
+  
+  
+
+* Lỗi căn lề
+Nhiều nút xuất nhập excel quá, cần thống nhất lại cho gọn và điều chỉnh label để người dùng dễ biết.
+Sinh viên ngoài kỳ thì chỉ có dashboard, hồ sơ cá nhân, bảng tin, tuyển dụng thôi.
+
+  
+Kiểm tra lại xem format link drive
+  
+  
+
+Kiểm tra lại tính đồng bộ
+  
+
+* Bỏ chữ “Khoa CNTT TDTU” được bôi đen vì duplicate với bên trái
+  
+
+* Chỉnh sửa Dropdown list lại cho đẹp, đừng để kiểu mặc định
+  
+
+* Xem xét ghi tắt sao cho dễ hiểu
+  
+
+* Nút thêm sinh viên bị duplicate dấu “+”
+
+
+  
+
+* Cập nhật trạng thái TT
+  
+
+* Chưa đồng bộ thông tin chứng chỉ giữa acc sinh viên và giảng viên.
+  
+
+* Căn chỉnh lại môn cột môn học bị lệch, xoay dấu 3 chấm ở cột chi tiết lại thành ngang
+  
+
+* Bị lộ source code khi bấm F12
+  
+
+* Lỗi phát thông báo học vụ phân quyền
+  
+
+* Bị lệch UI
+  
+
+* Khi expand cái sidebar thì cũng bị nhảy cái cột tác vụ quản trị
+  
+
+* Chỉnh lại format là DD-MM-YYYY cho dễ nhìn
+  
+
+* Thông tin hiển thị GPA của sinh viên đang bị sai vì không có nguồn nào để lấy GPA mà hệ thống tự gán.
+  
+
+* Bỏ cái sroll bar
+  
+
+* Đã lưu bản nháp hồ sơ khai báo thực tập mà khi ra lại trang không hiển thị
+  
+
+* Không cần gửi qua email
+* Phân luồng thông báo và chỉnh lại message thông báo vì lộ quá nhiều thông tin của sinh viên
+  
+- Xóa những cái caption
+  
+
+* Bổ sung cái cache để đỡ phải phải load lại những cái dữ liệu không thay đổi thường xuyên cho những chức năng khác luôn chứ không chỉ mỗi cái chứng chỉ tiếng anh này không
+  
+
+* Lỗi format, chỉnh lại format cho đẹp.
+  
+
+* Chỉnh lại những cái button cho nó bự hơn
+CẦN CẬP NHẬT THÔNG TIN REALTIME TOÀN BỘ KHÔNG CẦN PHẢI F5, VÀ TỐC ĐỘ CẬP NHẬT DỮ LIỆU VÀ HIỂN THỊ CẦN NHANH, HIỆN TẠI CÒN QUÁ CHẬM
+Bị lỗi đồng bộ nặng, có cái cập nhật có cái không cập nhật
+  
+
+* Cả 2 người cùng vào 1 acc của thầy Phúc nhưng người A chỉ thấy chứng chỉ của bản thân chứ không thấy chứng chỉ của người B trong khi 2 người cùng sài 1 acc.
+[a]bỏ MSSV

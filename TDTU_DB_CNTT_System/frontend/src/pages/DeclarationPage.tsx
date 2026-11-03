@@ -11,6 +11,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
   // Chế độ xem: 'list' (Bảng danh sách hồ sơ đã nộp) hoặc 'form' (Biểu mẫu khai báo/cập nhật 3 bước)
   const [viewMode, setViewMode] = React.useState('list');
   const [currentStep, setCurrentStep] = React.useState(1);
+  const [savedDraft, setSavedDraft] = React.useState(null);
   const studentId = String(
     currentUser?.studentId ||
     currentUser?.mssv ||
@@ -392,6 +393,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       const raw = localStorage.getItem('tdtu_decl_draft_' + studentId);
       if (raw) {
         const d = JSON.parse(raw);
+        setSavedDraft(d);
         if (d.currentStep && d.currentStep <= 3) setCurrentStep(d.currentStep);
         if (d.internshipStatus) setInternshipStatus(d.internshipStatus);
         if (d.taxCode) setTaxCode(d.taxCode);
@@ -852,6 +854,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       };
       localStorage.setItem('tdtu_decl_draft_' + studentId, JSON.stringify(draft));
       setLastSavedTime(draft.savedAt);
+      setSavedDraft(draft);
     } catch {}
   };
 
@@ -1036,7 +1039,59 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       {/* VIEW 1: BẢNG DANH SÁCH HỒ SƠ ĐÃ NỘP (THEO ĐÚNG MẪU NGƯỜI DÙNG YÊU CẦU) */}
       {/* ========================================================================= */}
       {viewMode === 'list' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
+        <div className="space-y-4">
+          {/* Banner Bản nháp đang lưu */}
+          {savedDraft && !serverDeclaration && (
+            <div className="p-5 rounded-2xl bg-[#ebf3ff] border-2 border-[#003087] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-white text-[#003087] flex items-center justify-center font-bold text-lg border border-[#bfdbfe] shrink-0 shadow-2xs">
+                  📝
+                </div>
+                <div>
+                  <div className="text-[15px] font-bold text-[#003087] flex items-center gap-2">
+                    <span>Hồ sơ khai báo bản nháp đang lưu</span>
+                    {savedDraft.savedAt && (
+                      <span className="text-[12px] font-semibold text-[#4b5563] bg-white px-2.5 py-0.5 rounded-full border border-[#cbd5e1]">
+                        Lúc {savedDraft.savedAt}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[13px] text-[#4b5563] mt-0.5 font-medium">
+                    {savedDraft.companyInfo?.name || savedDraft.companyName
+                      ? `Đơn vị: ${savedDraft.companyInfo?.name || savedDraft.companyName} · Vị trí: ${savedDraft.position || 'Thực tập sinh'}`
+                      : (savedDraft.internshipStatus === 'need_support' ? 'Trạng thái: Đề nghị Khoa CNTT hỗ trợ điều phối' : 'Đang điền thông tin (chưa gửi phê duyệt)')}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode('form');
+                    if (savedDraft.currentStep) setCurrentStep(savedDraft.currentStep);
+                  }}
+                  className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Tiếp tục hoàn thiện bản nháp</span>
+                  <span>→</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Bạn có chắc chắn muốn xóa bản nháp khai báo này không?')) {
+                      localStorage.removeItem('tdtu_decl_draft_' + studentId);
+                      setSavedDraft(null);
+                    }
+                  }}
+                  className="px-4 py-2.5 bg-white text-[#dc2626] border border-[#fecaca] hover:bg-[#fee2e2] text-[13px] font-bold rounded-xl transition cursor-pointer"
+                >
+                  Xóa nháp
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
           
           {/* Card Table Header */}
           <div className="p-5 border-b border-[#e2e8f0] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1238,6 +1293,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
           )}
 
           </div>
+        </div>
       )}
 
       {/* ========================================================================= */}

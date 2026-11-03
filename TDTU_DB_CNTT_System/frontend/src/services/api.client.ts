@@ -277,9 +277,10 @@ class ApiClient {
         if (!snapshot.empty) {
           const notes = [];
           const seenIds = new Set();
+          const deletedSet = new Set(this.getDeletedNotificationIds());
           snapshot.forEach(doc => {
             const n = { id: doc.id, ...doc.data() };
-            if (!seenIds.has(n.id)) {
+            if (n && n.id && !seenIds.has(n.id) && !deletedSet.has(String(n.id))) {
               seenIds.add(n.id);
               notes.push(n);
             }
@@ -708,9 +709,15 @@ class ApiClient {
       const saved = localStorage.getItem(this.notificationKey);
       const list = saved ? JSON.parse(saved) : [];
       const delArr = this.getDeletedNotificationIds();
-      list.filter(n => n && n.read).forEach(n => {
+      const readItems = list.filter(n => n && n.read);
+      readItems.forEach(n => {
         const sid = String(n.id || '');
         if (sid && !delArr.includes(sid)) delArr.push(sid);
+        if (window.FirebaseService?.db && sid) {
+          try {
+            window.FirebaseService.db.collection('tdtu_notifications').doc(sid).delete().catch(() => {});
+          } catch {}
+        }
       });
       localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delArr));
 
@@ -730,6 +737,11 @@ class ApiClient {
       list.forEach(n => {
         const sid = String(n?.id || '');
         if (sid && !delArr.includes(sid)) delArr.push(sid);
+        if (window.FirebaseService?.db && sid) {
+          try {
+            window.FirebaseService.db.collection('tdtu_notifications').doc(sid).delete().catch(() => {});
+          } catch {}
+        }
       });
       localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delArr));
       localStorage.setItem(this.notificationKey, JSON.stringify([]));
@@ -847,7 +859,6 @@ class ApiClient {
       'Học phần ĐK': (s.courses && s.courses.length > 0) ? s.courses.join(' & ') : (s.courseCode || 'KTCN'),
       'Học song song': s.isDualCourse ? 'Có (KTCN + TSNN)' : 'Không',
       'GPA (Hệ 10)': s.gpa10 !== undefined && s.gpa10 !== null ? s.gpa10 : '',
-      'GPA (Hệ 4)': s.gpa4 !== undefined && s.gpa4 !== null ? s.gpa4 : (s.gpa !== undefined ? s.gpa : ''),
       'Xếp loại': s.academicRank || '',
       'Trạng thái': (s.companyName || s.company) ? 'Đã có nơi TT' : (s.status === 'need_support' || s.noCompanyOption === 'faculty' ? 'Cần Khoa hỗ trợ' : (s.status || 'Chưa có nơi TT')),
       'Doanh nghiệp tiếp nhận': s.companyName || s.company || 'Chưa có',
@@ -872,7 +883,6 @@ class ApiClient {
         { wch: 16 }, // Học phần ĐK
         { wch: 18 }, // Học song song
         { wch: 14 }, // GPA (Hệ 10)
-        { wch: 14 }, // GPA (Hệ 4)
         { wch: 14 }, // Xếp loại
         { wch: 24 }, // Trạng thái
         { wch: 32 }, // Doanh nghiệp tiếp nhận
@@ -987,9 +997,11 @@ class ApiClient {
   static _normalizeStudentRecord(s, idx = 0) {
     const sid = String(s.mssv || s.studentId || s.id || '').trim().toUpperCase();
     const fullName = String(s.name || s.fullName || ((s['Họ lót'] || s.lastName || '') + ' ' + (s['Tên'] || s.firstName || '')).trim() || '').trim();
-    const gpa4Val = typeof s.gpa4 === 'number' ? s.gpa4 : (parseFloat(s.gpa4) || parseFloat(s.gpa) || 3.0);
-    const gpa10Val = typeof s.gpa10 === 'number' && s.gpa10 > 0 ? s.gpa10 : (parseFloat(s.gpa10) > 0 ? parseFloat(s.gpa10) : Number((gpa4Val * 2.5).toFixed(2)));
-    const rankVal = s.academicRank || (gpa10Val >= 9.0 ? 'Xuất sắc' : (gpa10Val >= 8.0 ? 'Giỏi' : (gpa10Val >= 6.5 ? 'Khá' : 'Trung bình')));
+    const rawGpa4 = s.gpa4 !== undefined && s.gpa4 !== null && s.gpa4 !== '' ? parseFloat(s.gpa4) : (s.gpa !== undefined && s.gpa !== null && s.gpa !== '' ? parseFloat(s.gpa) : NaN);
+    const rawGpa10 = s.gpa10 !== undefined && s.gpa10 !== null && s.gpa10 !== '' ? parseFloat(s.gpa10) : NaN;
+    const gpa4Val = !isNaN(rawGpa4) && rawGpa4 > 0 ? rawGpa4 : (!isNaN(rawGpa10) && rawGpa10 > 0 ? Number((rawGpa10 / 2.5).toFixed(2)) : null);
+    const gpa10Val = !isNaN(rawGpa10) && rawGpa10 > 0 ? rawGpa10 : (gpa4Val !== null ? Number((gpa4Val * 2.5).toFixed(2)) : null);
+    const rankVal = s.academicRank || (gpa10Val !== null ? (gpa10Val >= 9.0 ? 'Xuất sắc' : (gpa10Val >= 8.0 ? 'Giỏi' : (gpa10Val >= 6.5 ? 'Khá' : 'Trung bình'))) : '—');
     const rawCourses = Array.isArray(s.courses) ? s.courses.map((c: any) => String(c).toUpperCase()) : [];
     const rawCode = String(s.courseCode || s.course_str || s.courseName || s['Môn học'] || s['Học phần'] || s['Học phần ĐK'] || '').toUpperCase();
     const hasKtcn = rawCourses.some((c: string) => c.includes('KTCN') || c.includes('KIẾN TẬP')) || rawCode.includes('KTCN') || rawCode.includes('KIẾN TẬP') || s.ktcnEnrolled === 1 || s.ktcnEnrolled === true;
@@ -1433,10 +1445,10 @@ class ApiClient {
         isAdmin,
         studentId,
         isEnrolledThisSemester,
-        gpa: studentProfile?.gpa || studentProfile?.gpa4 || 3.13,
-        gpa4: studentProfile?.gpa4 || studentProfile?.gpa || 3.13,
-        gpa10: studentProfile?.gpa10 || 7.82,
-        academicRank: studentProfile?.academicRank || 'Khá',
+        gpa: studentProfile?.gpa ?? studentProfile?.gpa4 ?? null,
+        gpa4: studentProfile?.gpa4 ?? studentProfile?.gpa ?? null,
+        gpa10: studentProfile?.gpa10 ?? (studentProfile?.gpa4 ? Number((studentProfile.gpa4 * 2.5).toFixed(2)) : null),
+        academicRank: studentProfile?.academicRank || (studentProfile?.gpa10 ? (studentProfile.gpa10 >= 9 ? 'Xuất sắc' : (studentProfile.gpa10 >= 8 ? 'Giỏi' : 'Khá')) : '—'),
         birthDate: studentProfile?.birthDate || '',
         birthPlace: studentProfile?.birthPlace || '',
         gender: studentProfile?.gender || 'Nam',
@@ -1639,13 +1651,16 @@ class ApiClient {
             } catch {}
           }
 
-          // Dịch vụ Email Tự động gửi thông báo xác nhận về email sinh viên
+          // Thông báo xác nhận riêng tư gửi thẳng vào hộp thư cá nhân của sinh viên
           this.sendEmailNotification({
             to: `${sid.toLowerCase()}@student.tdtu.edu.vn`,
-            recipientName: students[idx].name || 'Nguyễn Hữu Nhân',
-            subject: `[TDTU Khoa CNTT] Tiếp nhận Khai báo Thực tập - ${students[idx].company}`,
+            targetAudience: 'specific_student',
+            targetStudentId: sid,
+            isPrivate: true,
+            recipientName: students[idx].name || 'Sinh viên',
+            subject: `Tiếp nhận Khai báo Thực tập - ${students[idx].company}`,
             type: 'declaration_confirmed',
-            content: `Kính gửi sinh viên ${students[idx].name || 'Nguyễn Hữu Nhân'} (MSSV: ${sid}),\n\nKhoa Công nghệ Thông tin - Trường ĐH Tôn Đức Thắng xác nhận đã tiếp nhận thành công Phiếu khai báo nơi thực tập học kỳ HK1/2026-2027 của bạn.\n\nThông tin chi tiết:\n- Đơn vị tiếp nhận: ${students[idx].company}\n- Mã số thuế: ${body.taxCode || '0101778162'}\n- Vị trí: ${body.position || 'Kỹ sư phần mềm'}\n- Người hướng dẫn: ${body.contactPerson || 'Bộ phận nhân sự'}\n- Trạng thái học vụ: ĐÃ CÓ DOANH NGHIỆP\n\nVui lòng hoàn tất nộp Phiếu tiếp nhận BM-01 (có chữ ký và dấu mộc của doanh nghiệp) về Văn phòng Khoa trước ngày 15/11/2026.`
+            content: `Khoa CNTT xác nhận đã tiếp nhận thành công Phiếu khai báo nơi thực tập học kỳ HK1/2026-2027 của bạn tại ${students[idx].company}. Vui lòng nộp Phiếu tiếp nhận BM-01 (có chữ ký và dấu mộc của doanh nghiệp) về Văn phòng Khoa trước hạn chót quy định.`
           });
         }
       } catch (err) {
@@ -3634,7 +3649,7 @@ class ApiClient {
       type: certData.type || 'Ngoại ngữ',
       name: certData.name || 'TOEIC',
       score: String(certData.score || ''),
-      maxScore: certData.maxScore ? String(certData.maxScore) : undefined,
+      maxScore: certData.maxScore ? String(certData.maxScore) : '',
       level: certData.level || 'B1',
       examDate: certData.examDate || '',
       issueDate: certData.issueDate || certData.examDate || '',

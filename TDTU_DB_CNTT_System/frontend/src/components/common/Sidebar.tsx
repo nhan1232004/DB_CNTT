@@ -183,6 +183,12 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
     if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(item.id)) return false;
     if (item.id === 'handbook' && isLecturer) return false;
     if (isPartner) return ['dashboard', 'profile', 'bulletin', 'handbook'].includes(item.id);
+
+    // Sinh viên ngoài kỳ: chỉ có dashboard, hồ sơ cá nhân, bảng tin, tuyển dụng (email_jd), cẩm nang
+    if (isStudent && currentUser?.isEnrolledThisSemester === false) {
+      return ['dashboard', 'profile', 'bulletin', 'email_jd', 'handbook'].includes(item.id);
+    }
+
     if (window.PrimeRbac?.checkUserPermission) {
       return window.PrimeRbac.checkUserPermission(currentUser, item.featureKey, 2);
     }

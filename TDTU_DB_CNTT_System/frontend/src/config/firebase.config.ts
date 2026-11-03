@@ -34,7 +34,11 @@
       if (firebase.firestore) {
         try {
           db = firebase.firestore();
-          console.log('[Firebase]: Firestore Realtime Database initialized.');
+          // Bảo đảm Firestore không bao giờ báo lỗi khi gặp trường undefined
+          if (db.settings) {
+            db.settings({ ignoreUndefinedProperties: true });
+          }
+          console.log('[Firebase]: Firestore Realtime Database initialized with ignoreUndefinedProperties.');
         } catch (fErr) {
           console.warn('[Firebase Firestore Init Warning]:', fErr.message);
         }

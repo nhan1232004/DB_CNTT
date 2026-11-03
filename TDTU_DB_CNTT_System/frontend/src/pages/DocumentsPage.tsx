@@ -466,9 +466,6 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
       <div className="no-print bg-white rounded-2xl border border-[#e5e7eb] p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-[12px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
-              KHOA CÔNG NGHỆ THÔNG TIN · TDTU
-            </span>
             <span className="text-[12px] font-mono font-bold text-[#dc2626]">
               HK1 / 2026–2027
             </span>
@@ -552,7 +549,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_tong_ket')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_tong_ket'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -566,8 +563,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Báo cáo Tổng kết & Xét duyệt
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Thống kê chỉ số, duyệt danh sách đủ điều kiện & chữ ký 3 bên.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    Duyệt danh sách đủ điều kiện & ký 3 bên.
                   </p>
                 </div>
               </button>
@@ -576,7 +573,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_phan_bo')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_phan_bo'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -590,8 +587,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Phân bổ theo Doanh nghiệp
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Bàn giao danh sách sinh viên cho từng Doanh nghiệp & mentor.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    Bàn giao danh sách SV cho từng Doanh nghiệp.
                   </p>
                 </div>
               </button>
@@ -600,7 +597,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bang_diem')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_bang_diem'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -614,8 +611,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bảng Điểm & Đánh giá Cuối kỳ
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Bảng điểm tổng hợp cuối kỳ (Nhật ký 20%, DN 40%, Báo cáo 40%).
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    Bảng điểm tổng hợp (Nhật ký 20%, DN 40%, Báo cáo 40%).
                   </p>
                 </div>
               </button>
@@ -624,7 +621,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_giay_gioi_thieu')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_giay_gioi_thieu'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -638,8 +635,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Giấy Giới Thiệu Thực Tập (GGT)
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Giấy giới thiệu cấp cho sinh viên nộp cho Doanh nghiệp tiếp nhận.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    Cấp cho sinh viên mang đến Doanh nghiệp tiếp nhận.
                   </p>
                 </div>
               </button>
@@ -648,7 +645,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_dieu_phoi')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_dieu_phoi'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -662,8 +659,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Danh sách SV Cần hỗ trợ Điều phối
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Danh sách sinh viên kèm GPA, kỹ năng cần Khoa kết nối DN.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    Danh sách SV kèm GPA cần hỗ trợ kết nối DN.
                   </p>
                 </div>
               </button>
@@ -672,7 +669,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('mau_bieu_mau_bm')}
-                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words ${
+                className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between w-full min-w-0 overflow-hidden break-words min-h-[105px] ${
                   selectedTemplate === 'mau_bieu_mau_bm'
                     ? 'border-[#003087] bg-[#ebf3ff]/60 ring-2 ring-[#003087]'
                     : 'border-[#e5e7eb] bg-white hover:border-[#003087]'
@@ -686,8 +683,8 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <h3 className="font-bold text-[14px] text-[#1f2937] mt-2 truncate">
                     Bộ Biểu Mẫu Chuẩn Khoa CNTT
                   </h3>
-                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed break-words line-clamp-2">
-                    Xem & in trực tiếp các biểu mẫu: BM-01, BM-02, BM-03, BM-04.
+                  <p className="text-[11.5px] text-[#4b5563] mt-1 leading-relaxed truncate">
+                    In trực tiếp biểu mẫu: BM-01, BM-02, BM-03, BM-04.
                   </p>
                 </div>
               </button>
@@ -779,7 +776,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                   </svg>
-                  <span>In Biểu mẫu này (PDF / A4)</span>
+                  <span>Xuất PDF / In văn bản (A4)</span>
                 </button>
 
                 <button

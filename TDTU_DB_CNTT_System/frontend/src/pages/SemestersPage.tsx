@@ -11,6 +11,16 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
   const canDelete = window.PrimeRbac?.hasPrimePermission(mask, 7);
   const canScopeAll = window.PrimeRbac?.hasPrimePermission(mask, 11);
 
+  // Chuẩn hóa định dạng ngày DD-MM-YYYY dễ nhìn theo yêu cầu
+  const formatDateVN = (dateStr) => {
+    if (!dateStr) return '—';
+    const parts = String(dateStr).trim().split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
   // Danh sách các học kỳ trong hệ thống
   const [semestersList, setSemestersList] = React.useState(() => {
     try {
@@ -232,23 +242,23 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
                   )}
                 </div>
 
-                {/* Deadlines Timeline Preview */}
+                {/* Deadlines Timeline Preview (Format DD-MM-YYYY chuẩn học vụ) */}
                 <div className="space-y-2 py-3 border-y border-[#e5e7eb]  text-[14px]">
                   <div className="flex items-center justify-between">
                     <span className="text-[#1f2937] ">1. Hạn khai báo DN:</span>
-                    <strong className="font-mono text-[#1f2937] ">{sem.declarationDeadline}</strong>
+                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.declarationDeadline)}</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[#1f2937] ">2. Hạn nộp chứng chỉ:</span>
-                    <strong className="font-mono text-[#1f2937] ">{sem.certDeadline}</strong>
+                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.certDeadline)}</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[#1f2937] ">3. Hạn GV thẩm định:</span>
-                    <strong className="font-mono text-[#1f2937] ">{sem.reviewDeadline}</strong>
+                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.reviewDeadline)}</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[#1f2937] ">4. Hạn nộp Báo cáo:</span>
-                    <strong className="font-mono text-[#1f2937] ">{sem.reportDeadline}</strong>
+                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.reportDeadline)}</strong>
                   </div>
                 </div>
 

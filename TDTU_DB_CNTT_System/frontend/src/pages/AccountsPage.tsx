@@ -288,17 +288,6 @@ const AccountsPage = ({ currentUser }) => {
           </button>
           <button
             type="button"
-            onClick={() => setActiveSubTab('deadlines')}
-            className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[130px] text-center shadow-xs ${
-              activeSubTab === 'deadlines'
-                ? 'bg-[#003087] text-white'
-                : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
-            }`}
-          >
-            Tùy chỉnh
-          </button>
-          <button
-            type="button"
             onClick={() => setActiveSubTab('prime_matrix')}
             className={`px-6 py-3 text-[15.5px] font-bold rounded-xl transition cursor-pointer min-w-[130px] text-center shadow-xs ${
               activeSubTab === 'prime_matrix'
@@ -306,7 +295,7 @@ const AccountsPage = ({ currentUser }) => {
                 : 'bg-white text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] border border-[#e2e8f0]'
             }`}
           >
-            Phân quyền
+            Ma trận Prime RBAC
           </button>
         </div>
       </div>
@@ -444,7 +433,7 @@ const AccountsPage = ({ currentUser }) => {
                       <th className="p-4 w-48 text-center">Vai trò hệ thống</th>
                       <th className="p-4 w-32 text-center">Phân quyền</th>
                       <th className="p-4 w-36 text-center">Trạng thái</th>
-                      <th className="p-4 w-48 text-right">Tác vụ Quản trị</th>
+                      <th className="p-4 w-48 text-right sticky right-0 bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Tác vụ Quản trị</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f1f5f9] font-medium">
@@ -456,7 +445,7 @@ const AccountsPage = ({ currentUser }) => {
                       </tr>
                     ) : (
                       filteredUsers.map(u => (
-                        <tr key={u.uid} className="hover:bg-[#f8fafc] transition">
+                        <tr key={u.uid} className="group hover:bg-[#f8fafc] transition">
                           <td className="p-4">
                             <div className="font-bold text-[#1f2937] text-[14.5px]">
                               {u.name || u.displayName}
@@ -518,7 +507,7 @@ const AccountsPage = ({ currentUser }) => {
                             )}
                           </td>
 
-                          <td className="p-4 text-right space-x-2">
+                          <td className="p-4 text-right space-x-2 sticky right-0 bg-white group-hover:bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
                             {u.role === 'lecturer' && (
                               <button
                                 type="button"
@@ -565,121 +554,7 @@ const AccountsPage = ({ currentUser }) => {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: TÙY CHỈNH CẤU HÌNH HẠN CHÓT & MỐC THỜI GIAN       */}
-      {/* ======================================================== */}
-      {activeSubTab === 'deadlines' && (
-        <div className="bg-white  p-6 md:p-8 rounded-xl border border-[#e5e7eb]  shadow-sm space-y-6">
-          
-          <div className="border-b border-[#e5e7eb]  pb-4">
-            <h2 className="text-base font-bold text-[#1f2937] ">
-              Cấu hình Mốc thời gian & Hạn chót học kỳ
-            </h2>
-            <p className="text-[14px] text-[#1f2937]  mt-1">
-              Quản trị viên có toàn quyền thay đổi các mốc ngày hạn chót. Khi lưu, các đồng hồ đếm ngược và bảng theo dõi của sinh viên, giảng viên sẽ được cập nhật đồng bộ tức thì.
-            </p>
-          </div>
-
-          <form onSubmit={handleSaveDeadlines} className="space-y-5 max-w-3xl">
-            
-            <div>
-              <label className="block text-[14px] font-bold uppercase tracking-wider text-[#1f2937]  mb-1">
-                Tên học kỳ áp dụng *
-              </label>
-              <input
-                type="text"
-                value={deadlinesForm.semesterName}
-                onChange={e => setDeadlinesForm({ ...deadlinesForm, semesterName: e.target.value })}
-                placeholder="VD: HK1 2025–2026"
-                className="w-full px-4 py-2 text-sm font-semibold rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              
-              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
-                <label className="block text-[14px] font-bold text-blue-900 ">
-                  1. Hạn chót Khai báo Doanh nghiệp (Sinh viên) *
-                </label>
-                <input
-                  type="date"
-                  value={deadlinesForm.declarationDeadline}
-                  onChange={e => setDeadlinesForm({ ...deadlinesForm, declarationDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-blue-300  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-blue-600"
-                  required
-                />
-              </div>
-
-              <div className="p-4 bg-[#f8fafc]/50  rounded-xl border border-[#e5e7eb]  space-y-2">
-                <label className="block text-[14px] font-bold text-[#1f2937] ">
-                  2. Hạn chót Nộp Chứng chỉ ngoại ngữ & Tin học *
-                </label>
-                <input
-                  type="date"
-                  value={deadlinesForm.certDeadline}
-                  onChange={e => setDeadlinesForm({ ...deadlinesForm, certDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
-                  required
-                />
-              </div>
-
-              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
-                <label className="block text-[14px] font-bold text-[#003087] ">
-                  3. Hạn chót Giảng viên Thẩm định hồ sơ *
-                </label>
-                <input
-                  type="date"
-                  value={deadlinesForm.reviewDeadline}
-                  onChange={e => setDeadlinesForm({ ...deadlinesForm, reviewDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#bfdbfe]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
-                  required
-                />
-              </div>
-
-              <div className="p-4 bg-[#ebf3ff]/50  rounded-xl border border-[#bfdbfe]  space-y-2">
-                <label className="block text-[14px] font-bold text-[#003087] ">
-                  4. Hạn chót Nộp Báo cáo Tổng kết thực tập *
-                </label>
-                <input
-                  type="date"
-                  value={deadlinesForm.reportDeadline}
-                  onChange={e => setDeadlinesForm({ ...deadlinesForm, reportDeadline: e.target.value })}
-                  className="w-full px-3 py-2 text-[14px] font-bold rounded-lg border border-[#bfdbfe]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
-                  required
-                />
-              </div>
-
-            </div>
-
-            <div>
-              <label className="block text-[14px] font-bold uppercase tracking-wider text-[#1f2937]  mb-1">
-                Ghi chú / Quy chế mốc thời gian học kỳ
-              </label>
-              <textarea
-                rows={3}
-                value={deadlinesForm.regulationNote}
-                onChange={e => setDeadlinesForm({ ...deadlinesForm, regulationNote: e.target.value })}
-                className="w-full px-4 py-2.5 text-[14px] rounded-xl border border-[#e5e7eb]  bg-white  text-[#1f2937]  outline-none focus:ring-2 focus:ring-[#003087]"
-              ></textarea>
-            </div>
-
-            <div className="pt-2 flex items-center justify-end gap-3">
-              <button
-                type="submit"
-                disabled={savingDeadlines}
-                className="px-6 py-2.5 bg-[#003087] hover:bg-[#002266] text-white text-[14px] font-bold rounded-xl transition shadow-md flex items-center gap-2 disabled:opacity-50"
-              >
-                {savingDeadlines ? 'Đang lưu...' : ' Lưu cấu hình Mốc thời gian'}
-              </button>
-            </div>
-
-          </form>
-
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* TAB 3: MA TRẬN PHÂN QUYỀN NGUYÊN TỐ (THẦY PHÚC)         */}
+      {/* TAB 2: MA TRẬN PHÂN QUYỀN NGUYÊN TỐ (THẦY PHÚC)         */}
       {/* ======================================================== */}
       {activeSubTab === 'prime_matrix' && (
         <div className="space-y-6">

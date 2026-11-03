@@ -260,7 +260,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
               {notifications.length === 0 ? (
                 <div className="text-center py-12 text-[#1f2937] font-semibold text-[13px]">
                   Không có thông báo mới nào.
@@ -292,7 +292,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                                     ? 'bg-orange-100 text-orange-800 border-orange-200'
                                     : 'bg-blue-100 text-[#003087] border-blue-200'
                         }`}>
-                          {item.targetAudienceLabel || (item.isPrivate ? 'Cá nhân bạn' : 'Toàn trường')}
+                          {item.targetAudienceLabel || ((item.isPrivate || item.targetAudience === 'specific_student') ? 'Cá nhân' : 'Toàn trường')}
                         </span>
 
                         {/* Priority Badge */}
@@ -335,9 +335,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
 
                     <div className="text-[10.5px] font-medium text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1">
                       <span>Người gửi: {item.senderName || 'Khoa CNTT'}</span>
-                      {item.targetStudentId && (
-                        <span className="font-mono text-purple-700 font-bold">MSSV: {item.targetStudentId}</span>
-                      )}
                     </div>
                   </div>
                 ))
