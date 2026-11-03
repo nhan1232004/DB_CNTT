@@ -876,15 +876,28 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         </div>
       )}
 
-      {/* 6. BẢNG DANH SÁCH SINH VIÊN TÍCH HỢP NGAY TRÊN TRANG TỔNG QUAN CỦA GIẢNG VIÊN / ADMIN */}
-      {!isStudent && window.StudentsPage && (
-        <div className="pt-4 border-t border-[#e5e7eb]">
-          <window.StudentsPage
-            currentUser={currentUser}
-            activeSemester={activeSemester}
-            onSemesterChange={onSemesterChange}
-            embedded={true}
-          />
+      {/* 6. LIÊN KẾT ĐIỀU HƯỚNG SANG TRANG QUẢN LÝ SINH VIÊN (Tránh trùng lặp bảng dữ liệu trên Bảng điều khiển) */}
+      {!isStudent && onNavigateTab && (
+        <div className="pt-6 border-t border-[#e5e7eb] flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white rounded-2xl border shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#ebf3ff] text-[#003087] flex items-center justify-center font-bold shrink-0">
+              <svg className="w-5 h-5 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-[14.5px] font-bold text-[#1f2937]">Danh sách chi tiết & Tra cứu hồ sơ sinh viên ({totalStudents} sinh viên)</div>
+              <div className="text-[12.5px] text-[#4b5563]">Xem bảng dữ liệu đầy đủ, tìm kiếm, lọc theo chuyên ngành, lớp học và thẩm định hồ sơ thực tập</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateTab('students')}
+            className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl transition flex items-center gap-2 cursor-pointer shadow-xs shrink-0"
+          >
+            <span>Đến trang Quản lý sinh viên</span>
+            <span>→</span>
+          </button>
         </div>
       )}
 
