@@ -13,8 +13,8 @@ Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đ
 
 | STT | Họ và Tên | Email đăng nhập | Mật khẩu | Vai trò & Quyền hạn |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | **TS. Phạm Văn C** | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Quản trị viên Khoa CNTT (`isAdmin: true`) — Toàn quyền hệ thống, cấu hình học kỳ, import/export, phân quyền Prime RBAC |
-| 2 | **TS. BCN Khoa CNTT** | `thayphuc@tdtu.edu.vn` | `Admin@123456` | Ban Chủ nhiệm Khoa (`isAdmin: true`) — Toàn quyền quản trị & phê duyệt học vụ |
+| 1 | **TS. Dương Hữu Phúc** | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` *(hoặc Google TDTU SSO)* | Quản trị viên Khoa CNTT (`isAdmin: true`, `RoleKey: thay_phuc`) — Toàn quyền hệ thống, cấu hình học kỳ, import/export, phân quyền Prime RBAC |
+| 2 | **TS. Phạm Văn C** | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Quản trị viên Khoa CNTT (`isAdmin: true`) — Toàn quyền quản trị & phê duyệt học vụ |
 
 ---
 

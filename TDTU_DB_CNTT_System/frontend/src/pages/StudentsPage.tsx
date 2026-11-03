@@ -65,7 +65,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [crudSaving, setCrudSaving] = React.useState(false);
   const [actionToast, setActionToast] = React.useState(null);
 
-  const isAdmin = Boolean(currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.email === 'phamvanc@tdtu.edu.vn');
+  const isAdmin = Boolean(currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn');
   const isStaff = Boolean(isAdmin || currentUser?.role === 'lecturer');
 
   // Tải danh sách chứng chỉ thực tế khi mở Modal

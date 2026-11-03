@@ -251,12 +251,20 @@
   function getUserRoleKey(user) {
     if (!user) return 'sv_trong_ky';
     if (user.roleKey) return user.roleKey;
+    const cleanEmail = String(user.email || '').trim().toLowerCase();
     // Nguyenvana là Giảng viên (không phải Admin)
-    if (user.email === 'nguyenvana@tdtu.edu.vn') {
+    if (cleanEmail === 'nguyenvana@tdtu.edu.vn') {
       return 'giang_vien';
     }
-    // Chỉ duy nhất Thầy Phúc hoặc email phamvanc mới là thay_phuc
-    if (user.email === 'phamvanc@tdtu.edu.vn' || user.role === 'admin' || (user.isAdmin && user.role !== 'lecturer')) {
+    // Quản trị viên Khoa CNTT (Thầy Dương Hữu Phúc / Phạm Văn C / Admin)
+    if (
+      cleanEmail === 'duonghuuphuc@tdtu.edu.vn' ||
+      cleanEmail === 'phamvanc@tdtu.edu.vn' ||
+      cleanEmail === 'thayphuc@tdtu.edu.vn' ||
+      cleanEmail === 'admin@tdtu.edu.vn' ||
+      user.role === 'admin' ||
+      Boolean(user.isAdmin)
+    ) {
       return 'thay_phuc';
     }
     if (user.role === 'lecturer') {

@@ -30,6 +30,7 @@ export class AuthService {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const isDefaultAdmin = cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn' || cleanEmail === 'thayphuc@tdtu.edu.vn' || cleanEmail === 'admin@tdtu.edu.vn';
     let userRow = this.db.prepare('SELECT * FROM users WHERE LOWER(email) = LOWER(?)').get(cleanEmail) as any;
 
     if (!userRow) {
@@ -38,18 +39,19 @@ export class AuthService {
         ? (this.db.prepare('SELECT * FROM students WHERE UPPER(studentId) = UPPER(?)').get(domainCheck.studentId) as any)
         : null;
 
-      const userName = name || (studentRow ? studentRow.fullName : cleanEmail.split('@')[0]);
+      const userName = name || (cleanEmail === 'duonghuuphuc@tdtu.edu.vn' ? 'TS. Dương Hữu Phúc' : (studentRow ? studentRow.fullName : cleanEmail.split('@')[0]));
       const uid = `fb-tdtu-usr-${domainCheck.studentId || Date.now()}`;
       const now = new Date().toISOString();
 
       this.db.prepare(`
         INSERT INTO users (uid, email, name, role, isAdmin, isActive, studentId, department, avatarUrl, createdAt)
-        VALUES (?, ?, ?, ?, 0, 1, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
       `).run(
         uid,
         cleanEmail,
         userName,
         domainCheck.role,
+        isDefaultAdmin ? 1 : 0,
         domainCheck.studentId || null,
         studentRow ? studentRow.major : 'Khoa CNTT',
         avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanEmail}`,
@@ -57,6 +59,9 @@ export class AuthService {
       );
 
       userRow = this.db.prepare('SELECT * FROM users WHERE uid = ?').get(uid) as any;
+    } else if (isDefaultAdmin && !userRow.isAdmin) {
+      this.db.prepare('UPDATE users SET isAdmin = 1 WHERE LOWER(email) = LOWER(?)').run(cleanEmail);
+      userRow.isAdmin = 1;
     }
 
     if (!userRow.isActive) {
@@ -94,6 +99,7 @@ export class AuthService {
     }
 
     const credentialMap: Record<string, string[]> = {
+      'duonghuuphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026', 'Phuc@123456'],
       'phamvanc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
       'thayphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
       'admin@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],

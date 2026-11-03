@@ -282,7 +282,8 @@ function seedInitialData(db: DatabaseSync): void {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    // 4 Key Lecturers
+    // Key Admin & Lecturers
+    insertUser.run('fb-usr-admin-phuc', 'duonghuuphuc@tdtu.edu.vn', 'TS. Dương Hữu Phúc', 'lecturer', 1, 1, null, 'Ban Chủ nhiệm Khoa CNTT', 'https://api.dicebear.com/7.x/avataaars/svg?seed=DuongHuuPhuc', now);
     insertUser.run('fb-usr-admin-01', 'phamvanc@tdtu.edu.vn', 'TS. Phạm Văn C', 'lecturer', 1, 1, null, 'Khoa CNTT - Phụ trách Học vụ & Thực tập', 'https://api.dicebear.com/7.x/avataaars/svg?seed=PhamVanC', now);
     insertUser.run('fb-usr-admin-02', 'nguyenvana@tdtu.edu.vn', 'ThS. Nguyễn Văn A', 'lecturer', 0, 1, null, 'Khoa CNTT - Điều phối Doanh nghiệp', 'https://api.dicebear.com/7.x/avataaars/svg?seed=NguyenVanA', now);
     insertUser.run('fb-usr-lec-03', 'tranthib@tdtu.edu.vn', 'TS. Trần Thị B', 'lecturer', 0, 1, null, 'Bộ môn Kỹ thuật Phần mềm (Cố vấn học tập)', 'https://api.dicebear.com/7.x/avataaars/svg?seed=TranThiB', now);

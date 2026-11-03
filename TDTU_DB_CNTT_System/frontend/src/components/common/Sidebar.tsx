@@ -7,9 +7,10 @@
 const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
   const isStudent = currentUser?.role === 'student';
   const isPartner = currentUser?.role === 'partner';
-  const isAdmin = currentUser?.email === 'phamvanc@tdtu.edu.vn' || (Boolean(currentUser?.isAdmin) && currentUser?.email !== 'nguyenvana@tdtu.edu.vn');
+  const cleanEmail = String(currentUser?.email || '').toLowerCase();
+  const isAdmin = cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn' || (Boolean(currentUser?.isAdmin) && cleanEmail !== 'nguyenvana@tdtu.edu.vn');
   const roleKey = window.PrimeRbac?.getUserRoleKey?.(currentUser) || (isAdmin ? 'thay_phuc' : (isStudent ? 'sv_trong_ky' : 'giang_vien'));
-  const isLecturer = roleKey === 'giang_vien' || (!isAdmin && currentUser?.role === 'lecturer') || currentUser?.email === 'nguyenvana@tdtu.edu.vn';
+  const isLecturer = roleKey === 'giang_vien' || (!isAdmin && currentUser?.role === 'lecturer') || cleanEmail === 'nguyenvana@tdtu.edu.vn';
   const isFacultyStaff = isAdmin || roleKey === 'thay_phuc' || isLecturer;
 
   // Trạng thái thu gọn Sidebar

@@ -46,8 +46,8 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     if (clean.endsWith('@tdtu.edu.vn')) {
       role = 'lecturer';
-      if (clean === 'phamvanc@tdtu.edu.vn' || clean === 'thayphuc@tdtu.edu.vn' || clean === 'admin@tdtu.edu.vn') {
-        name = name || (clean.includes('thayphuc') ? 'TS. BCN Khoa CNTT' : 'TS. Phạm Văn C');
+      if (clean === 'duonghuuphuc@tdtu.edu.vn' || clean === 'phamvanc@tdtu.edu.vn' || clean === 'thayphuc@tdtu.edu.vn' || clean === 'admin@tdtu.edu.vn') {
+        name = name || (clean === 'duonghuuphuc@tdtu.edu.vn' ? 'TS. Dương Hữu Phúc' : (clean.includes('thayphuc') ? 'TS. BCN Khoa CNTT' : 'TS. Phạm Văn C'));
         isAdmin = true;
       } else if (clean.includes('nguyenvana') || clean.includes('tranminhlan') || clean.includes('tranvanb')) {
         name = name || (clean.includes('tranminhlan') ? 'ThS. Trần Minh Lan' : (clean.includes('tranvanb') ? 'TS. Trần Văn B' : 'ThS. Nguyễn Văn A'));

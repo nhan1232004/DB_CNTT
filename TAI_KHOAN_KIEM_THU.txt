@@ -26,16 +26,16 @@ Quyền hạn: Toàn quyền cấu hình học kỳ, quản lý danh sách sinh 
 dữ liệu Excel, duyệt JD doanh nghiệp, thẩm định chứng chỉ, phát thông báo học vụ
 và phân quyền tài khoản (Ma trận Số nguyên tố Prime RBAC).
 
-1) Tài khoản Admin chính (BCN Khoa):
+1) Tài khoản Quản trị viên cấp cao (Thầy Dương Hữu Phúc - BCN Khoa CNTT):
+   - Email    : duonghuuphuc@tdtu.edu.vn
+   - Mật khẩu : Admin@123456   (hoặc Tdtu@2026 / Phuc@123456, hoặc đăng nhập trực tiếp qua Google TDTU SSO)
+   - Họ tên   : TS. Dương Hữu Phúc
+   - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true, RoleKey: thay_phuc)
+
+2) Tài khoản Admin phụ (BCN Khoa):
    - Email    : phamvanc@tdtu.edu.vn
    - Mật khẩu : Admin@123456   (hoặc Tdtu@2026)
    - Họ tên   : TS. Phạm Văn C
-   - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true)
-
-2) Tài khoản Admin phụ (BCN Khoa):
-   - Email    : thayphuc@tdtu.edu.vn
-   - Mật khẩu : Admin@123456   (hoặc Tdtu@2026)
-   - Họ tên   : TS. BCN Khoa CNTT
    - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true)
 
 --------------------------------------------------------------------------------

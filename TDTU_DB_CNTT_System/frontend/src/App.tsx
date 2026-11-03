@@ -303,9 +303,10 @@ const AppInner = () => {
   React.useEffect(() => {
     if (!currentUser) return;
     
-    const isAdmin = currentUser.email === 'phamvanc@tdtu.edu.vn' || (Boolean(currentUser.isAdmin) && currentUser.email !== 'nguyenvana@tdtu.edu.vn');
+    const cleanEmail = String(currentUser.email || '').toLowerCase();
+    const isAdmin = cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn' || (Boolean(currentUser.isAdmin) && cleanEmail !== 'nguyenvana@tdtu.edu.vn');
     const roleKey = window.PrimeRbac?.getUserRoleKey?.(currentUser) || (isAdmin ? 'thay_phuc' : (currentUser.role === 'student' ? 'sv_trong_ky' : 'giang_vien'));
-    const isLecturer = roleKey === 'giang_vien' || (!isAdmin && currentUser.role === 'lecturer') || currentUser.email === 'nguyenvana@tdtu.edu.vn';
+    const isLecturer = roleKey === 'giang_vien' || (!isAdmin && currentUser.role === 'lecturer') || cleanEmail === 'nguyenvana@tdtu.edu.vn';
     const isFacultyStaff = isAdmin || roleKey === 'thay_phuc' || isLecturer;
 
     // Cả Admin & Giảng viên: Không vào declaration và profile -> Tự động chuyển về dashboard
@@ -342,7 +343,7 @@ const AppInner = () => {
       return;
     }
     if (featKey === 'accounts') {
-      const isAdm = currentUser.isAdmin || currentUser.role === 'admin' || currentUser.email === 'phamvanc@tdtu.edu.vn';
+      const isAdm = currentUser.isAdmin || currentUser.role === 'admin' || cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn';
       if (!isAdm) setActiveTab('dashboard');
       return;
     }
@@ -482,7 +483,7 @@ const AppInner = () => {
               <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
             )}
 
-            {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.email === 'phamvanc@tdtu.edu.vn') && (
+            {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
               <window.AccountsPage currentUser={currentUser} />
             )}
 

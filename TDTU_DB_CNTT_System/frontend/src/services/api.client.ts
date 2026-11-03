@@ -15,6 +15,16 @@ class ApiClient {
     return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
   }
 
+  static isAdminEmail(email) {
+    const clean = String(email || '').trim().toLowerCase();
+    return (
+      clean === 'duonghuuphuc@tdtu.edu.vn' ||
+      clean === 'phamvanc@tdtu.edu.vn' ||
+      clean === 'thayphuc@tdtu.edu.vn' ||
+      clean === 'admin@tdtu.edu.vn'
+    );
+  }
+
   static _computeUserSig(user) {
     if (!user || !user.email) return '';
     const cleanEmail = String(user.email || '').trim().toLowerCase();
@@ -105,7 +115,13 @@ class ApiClient {
           this.clearToken();
           return null;
         }
-        if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
+        if (this.isAdminEmail(cleanEmail)) {
+          user.isAdmin = true;
+          user.role = 'lecturer';
+          if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
+            user.name = user.name || 'TS. Dương Hữu Phúc';
+          }
+        } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
           user.isAdmin = false;
           user.role = 'lecturer';
         }
@@ -140,6 +156,12 @@ class ApiClient {
         normalized.role = 'student';
         normalized.isAdmin = false;
         normalized.studentId = cleanEmail.split('@')[0].toUpperCase();
+      } else if (this.isAdminEmail(cleanEmail)) {
+        normalized.role = 'lecturer';
+        normalized.isAdmin = true;
+        if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
+          normalized.name = normalized.name || 'TS. Dương Hữu Phúc';
+        }
       } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
         normalized.role = 'lecturer';
         normalized.isAdmin = false;
@@ -171,6 +193,32 @@ class ApiClient {
             const data = doc.data();
             list.push({ uid: doc.id, ...data });
           });
+          // Đảm bảo tài khoản Quản trị viên Thầy Dương Hữu Phúc luôn có quyền Admin (isAdmin: true) trên hệ thống
+          const phucAccount = {
+            uid: 'u_gv_phuc',
+            email: 'duonghuuphuc@tdtu.edu.vn',
+            name: 'TS. Dương Hữu Phúc',
+            displayName: 'TS. Dương Hữu Phúc',
+            role: 'lecturer',
+            isAdmin: true,
+            isActive: true,
+            department: 'Ban Chủ nhiệm Khoa CNTT',
+            createdAt: '2025-08-01'
+          };
+          const existingPhucIdx = list.findIndex(u => String(u.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn');
+          if (existingPhucIdx === -1) {
+            list.unshift(phucAccount);
+            try {
+              db.collection('tdtu_users').doc(phucAccount.uid).set(phucAccount, { merge: true }).catch(() => {});
+            } catch {}
+          } else if (!list[existingPhucIdx].isAdmin) {
+            list[existingPhucIdx].isAdmin = true;
+            list[existingPhucIdx].role = 'lecturer';
+            list[existingPhucIdx].name = list[existingPhucIdx].name || 'TS. Dương Hữu Phúc';
+            try {
+              db.collection('tdtu_users').doc(list[existingPhucIdx].uid || 'u_gv_phuc').set({ isAdmin: true, role: 'lecturer' }, { merge: true }).catch(() => {});
+            } catch {}
+          }
           if (list.length > 0) {
             this._saveUsersStore(list);
             window.dispatchEvent(new CustomEvent('tdtu_users_updated', { detail: { source: 'firestore', count: list.length, users: list } }));
@@ -339,16 +387,14 @@ class ApiClient {
   static async _seedFirestoreUsers(db) {
     try {
       const seed = [
+        { uid: 'u_gv_phuc', email: 'duonghuuphuc@tdtu.edu.vn', name: 'TS. Dương Hữu Phúc', displayName: 'TS. Dương Hữu Phúc', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
         { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'TS. Phạm Văn C', displayName: 'TS. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
         { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'ThS. Nguyễn Văn A', displayName: 'ThS. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
         { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'ThS. Trần Minh Lan', displayName: 'ThS. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
         { uid: 'u_sv01', email: '522h0045@student.tdtu.edu.vn', name: 'Nguyễn Hữu Nhân', displayName: 'Nguyễn Hữu Nhân', studentId: '522H0045', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
         { uid: 'u_sv02', email: '522h0001@student.tdtu.edu.vn', name: 'Nguyễn Minh Anh', displayName: 'Nguyễn Minh Anh', studentId: '522H0001', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
         { uid: 'u_sv03', email: '522h0002@student.tdtu.edu.vn', name: 'Trần Hoàng Nam', displayName: 'Trần Hoàng Nam', studentId: '522H0002', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
-        { uid: 'u_sv04', email: '51900839@student.tdtu.edu.vn', name: 'Võ Duy Trí', displayName: 'Võ Duy Trí', studentId: '51900839', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
-        { uid: 'u_dt01', email: 'hr@fpt.com', name: 'FPT Software HCM', displayName: 'FPT Software HCM', contactName: 'Trần Thị Bích Thảo', taxCode: '0101778115', industry: 'Phát triển phần mềm', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-05' },
-        { uid: 'u_dt02', email: 'tuyendung@kms-technology.com', name: 'KMS Technology', displayName: 'KMS Technology', contactName: 'Lê Hoàng Tuấn', taxCode: '0309988712', industry: 'Kiểm thử & QA/QC', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-06' },
-        { uid: 'u_dt03', email: 'hr@anvietdigital.vn', name: 'An Việt Digital', displayName: 'An Việt Digital', contactName: 'Trần Quốc Huy', taxCode: '0312345678', industry: 'Thiết kế Web & Mobile', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-08' }
+        { uid: 'u_sv04', email: '51900839@student.tdtu.edu.vn', name: 'Võ Duy Trí', displayName: 'Võ Duy Trí', studentId: '51900839', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' }
       ];
       const batch = db.batch();
       seed.forEach(u => {
@@ -1152,8 +1198,14 @@ class ApiClient {
 
       if (email.endsWith('@tdtu.edu.vn')) {
         role = 'lecturer';
-        if (email === 'phamvanc@tdtu.edu.vn' || email === 'thayphuc@tdtu.edu.vn' || email === 'admin@tdtu.edu.vn') {
-          userName = email.includes('thayphuc') ? 'TS. BCN Khoa CNTT' : 'TS. Phạm Văn C';
+        if (this.isAdminEmail(email)) {
+          if (email === 'duonghuuphuc@tdtu.edu.vn') {
+            userName = userName || 'TS. Dương Hữu Phúc';
+          } else if (email.includes('thayphuc')) {
+            userName = userName || 'TS. BCN Khoa CNTT';
+          } else {
+            userName = userName || 'TS. Phạm Văn C';
+          }
           isAdmin = true;
         } else if (email.includes('nguyenvana')) {
           userName = 'ThS. Nguyễn Văn A';
@@ -1205,6 +1257,9 @@ class ApiClient {
         if (email.endsWith('@student.tdtu.edu.vn')) {
           role = 'student';
           isAdmin = false;
+        } else if (this.isAdminEmail(email)) {
+          role = 'lecturer';
+          isAdmin = true;
         } else {
           role = existingUser.role || role;
           if (existingUser.isAdmin !== undefined) isAdmin = existingUser.isAdmin;
@@ -1631,6 +1686,7 @@ class ApiClient {
     // Bảng mật khẩu chuẩn cho các nhóm vai trò kiểm thử nội bộ TDTU
     const credentialMap = {
       // 1. Nhóm Quản trị viên Khoa / Ban Chủ nhiệm Khoa (Admin)
+      'duonghuuphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026', 'Phuc@123456'],
       'phamvanc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
       'thayphuc@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
       'admin@tdtu.edu.vn': ['Admin@123456', 'Tdtu@2026'],
@@ -2762,25 +2818,45 @@ class ApiClient {
   // Quản trị Người dùng & Đối tác Doanh nghiệp
   // ==========================================
   static _getUsersStore() {
+    const phucAccount = {
+      uid: 'u_gv_phuc',
+      email: 'duonghuuphuc@tdtu.edu.vn',
+      name: 'TS. Dương Hữu Phúc',
+      displayName: 'TS. Dương Hữu Phúc',
+      role: 'lecturer',
+      isAdmin: true,
+      isActive: true,
+      department: 'Ban Chủ nhiệm Khoa CNTT',
+      createdAt: '2025-08-01'
+    };
+
     try {
       const saved = localStorage.getItem('tdtu_firebase_users');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const pIdx = parsed.findIndex(u => String(u.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn');
+          if (pIdx === -1) {
+            parsed.unshift(phucAccount);
+          } else {
+            parsed[pIdx].isAdmin = true;
+            parsed[pIdx].role = 'lecturer';
+            parsed[pIdx].name = parsed[pIdx].name || 'TS. Dương Hữu Phúc';
+          }
+          return parsed;
+        }
       }
     } catch {}
 
     const seed = [
+      phucAccount,
       { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'TS. Phạm Văn C', displayName: 'TS. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
       { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'ThS. Nguyễn Văn A', displayName: 'ThS. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
       { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'ThS. Trần Minh Lan', displayName: 'ThS. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
       { uid: 'u_sv01', email: '522h0045@student.tdtu.edu.vn', name: 'Nguyễn Hữu Nhân', displayName: 'Nguyễn Hữu Nhân', studentId: '522H0045', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
       { uid: 'u_sv02', email: '522h0001@student.tdtu.edu.vn', name: 'Nguyễn Minh Anh', displayName: 'Nguyễn Minh Anh', studentId: '522H0001', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
       { uid: 'u_sv03', email: '522h0002@student.tdtu.edu.vn', name: 'Trần Hoàng Nam', displayName: 'Trần Hoàng Nam', studentId: '522H0002', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
-      { uid: 'u_sv04', email: '51900839@student.tdtu.edu.vn', name: 'Võ Duy Trí', displayName: 'Võ Duy Trí', studentId: '51900839', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
-      { uid: 'u_dt01', email: 'hr@fpt.com', name: 'FPT Software HCM', displayName: 'FPT Software HCM', contactName: 'Trần Thị Bích Thảo', taxCode: '0101778115', industry: 'Phát triển phần mềm', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-05' },
-      { uid: 'u_dt02', email: 'tuyendung@kms-technology.com', name: 'KMS Technology', displayName: 'KMS Technology', contactName: 'Lê Hoàng Tuấn', taxCode: '0309988712', industry: 'Kiểm thử & QA/QC', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-06' },
-      { uid: 'u_dt03', email: 'hr@anvietdigital.vn', name: 'An Việt Digital', displayName: 'An Việt Digital', contactName: 'Trần Quốc Huy', taxCode: '0312345678', industry: 'Thiết kế Web & Mobile', role: 'partner', isAdmin: false, isActive: true, createdAt: '2025-09-08' }
+      { uid: 'u_sv04', email: '51900839@student.tdtu.edu.vn', name: 'Võ Duy Trí', displayName: 'Võ Duy Trí', studentId: '51900839', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' }
     ];
     try {
       localStorage.setItem('tdtu_firebase_users', JSON.stringify(seed));
