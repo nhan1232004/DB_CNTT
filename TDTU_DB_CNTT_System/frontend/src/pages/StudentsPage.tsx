@@ -526,11 +526,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             else if (className.startsWith('20') || className.startsWith('21')) year = 'Năm 4';
             else if (className.startsWith('22')) year = 'Năm 3';
 
-            const tenMH = String(row['Tên MH'] || row['Môn học'] || row['Học phần'] || '').toLowerCase();
+            const tenMH = String(row['Tên MH'] || row['Môn học'] || row['Học phần'] || row['Học phần ĐK'] || row['Môn học đăng ký'] || row['Mã MH'] || row.courseCode || row.course || '').toLowerCase();
             let rowCourse = defaultSheetCourse;
-            if (tenMH.includes('dự án') || tenMH.includes('tập sự') || tenMH.includes('tsnn')) {
+            if (tenMH.includes('dự án') || tenMH.includes('tập sự') || tenMH.includes('tsnn') || tenMH.includes('504075') || tenMH.includes('504096')) {
               rowCourse = 'TSNN';
-            } else if (tenMH.includes('kiến tập') || tenMH.includes('ktcn')) {
+            } else if (tenMH.includes('kiến tập') || tenMH.includes('ktcn') || tenMH.includes('504074') || tenMH.includes('504095')) {
               rowCourse = 'KTCN';
             }
 
@@ -538,11 +538,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             const gpa4Val = parseFloat(gpa4Raw);
             const finalGpa4 = isNaN(gpa4Val) ? 3.0 : gpa4Val;
 
-            const gpa10Raw = row['GPA (Hệ 10)'] || row.gpa10;
+            const gpa10Raw = row['GPA (Hệ 10)'] || row.gpa10 || row['Điểm TB Hệ 10'];
             const gpa10Val = parseFloat(gpa10Raw);
-            const finalGpa10 = isNaN(gpa10Val) ? 0 : gpa10Val;
+            const finalGpa10 = isNaN(gpa10Val) ? Number((finalGpa4 * 2.5).toFixed(2)) : gpa10Val;
 
-            const academicRank = String(row['Xếp loại'] || row.academicRank || (finalGpa4 >= 3.6 ? 'Xuất sắc' : (finalGpa4 >= 3.2 ? 'Giỏi' : (finalGpa4 >= 2.5 ? 'Khá' : 'Trung bình')))).trim();
+            const academicRank = String(row['Xếp loại'] || row['Xếp loại học lực'] || row.academicRank || (finalGpa10 >= 9.0 ? 'Xuất sắc' : (finalGpa10 >= 8.0 ? 'Giỏi' : (finalGpa10 >= 6.5 ? 'Khá' : 'Trung bình')))).trim();
 
             let birthDateStr = '';
             const rawBirth = row['Ngày sinh'] || row.birthDate || row['NgaySinh'];
@@ -1095,7 +1095,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
                       <td className="py-3.5 px-3">
                         <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1]">
-                          {sv.courseCode || 'KTCN'}
+                          {(() => {
+                            const cArr = Array.isArray(sv.courses) ? sv.courses.map((c: any) => String(c).toUpperCase()) : [];
+                            const cCode = String(sv.courseCode || sv.course_str || sv.courseName || '').toUpperCase();
+                            if (sv.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG')) return 'KTCN & TSNN';
+                            if (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || sv.tsnnEnrolled === 1) return 'TSNN';
+                            return 'KTCN';
+                          })()}
                         </span>
                       </td>
 
@@ -1120,7 +1126,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       </td>
 
                       <td className="py-3.5 px-3 text-[#4b5563] text-[13.5px] font-mono text-center">
-                        {sv.updatedAt || '22/09/2026'}
+                        {sv.updatedAt && typeof sv.updatedAt === 'string' && sv.updatedAt.includes('T') && !isNaN(Date.parse(sv.updatedAt))
+                          ? new Date(sv.updatedAt).toLocaleDateString('vi-VN')
+                          : (sv.updatedAt || sv.updated || '22/09/2026')}
                       </td>
 
                       <td className="py-3.5 px-4 text-center relative">
@@ -1314,7 +1322,14 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               <div>
                 <h3 className="font-extrabold text-[24px] md:text-[26px] text-[#1f2937]">Hồ sơ sinh viên</h3>
                 <div className="text-[13.5px] md:text-[14px] text-[#4b5563] mt-1 font-medium">
-                  HK1 2026–2027 · Cập nhật gần nhất lúc {selectedStudent.updatedAt || '11/09/2026, 15:20'}
+                  HK1 2026–2027 · Cập nhật gần nhất lúc {(() => {
+                    const raw = selectedStudent.updatedAt || selectedStudent.updated;
+                    if (!raw) return '11/09/2026, 15:20';
+                    if (typeof raw === 'string' && raw.includes('T') && !isNaN(Date.parse(raw))) {
+                      return new Date(raw).toLocaleString('vi-VN');
+                    }
+                    return raw;
+                  })()}
                 </div>
               </div>
               <button 
@@ -1437,32 +1452,31 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                     <div>
                       <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Môn học đăng ký:</div>
                       <div className="text-[16px] md:text-[17px] font-bold text-[#003087] leading-relaxed">
-                        {selectedStudent.courseCode ? (
-                          selectedStudent.courseCode.includes('KTCN') && selectedStudent.courseCode.includes('TSNN')
-                            ? 'Kiến tập công nghiệp & Tập sự nghề nghiệp (Song song)'
-                            : selectedStudent.courseCode.includes('KTCN')
-                              ? 'Kiến tập công nghiệp (KTCN)'
-                              : 'Tập sự nghề nghiệp (TSNN)'
-                        ) : 'Kiến tập công nghiệp & Tập sự nghề nghiệp'}
+                        {(() => {
+                          const cArr = Array.isArray(selectedStudent.courses) ? selectedStudent.courses.map((c: any) => String(c).toUpperCase()) : [];
+                          const cCode = String(selectedStudent.courseCode || selectedStudent.course_str || selectedStudent.courseName || '').toUpperCase();
+                          const isDual = Boolean(selectedStudent.isDualCourse) || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG');
+                          if (isDual) return 'Kiến tập công nghiệp & Tập sự nghề nghiệp (Song song)';
+                          if (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || selectedStudent.tsnnEnrolled === 1) {
+                            return 'Tập sự nghề nghiệp (TSNN)';
+                          }
+                          return 'Kiến tập công nghiệp (KTCN)';
+                        })()}
                       </div>
                     </div>
                   </div>
 
-                  {/* GPA Metric Cards (Phóng to 150%) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-[#e5e7eb]">
+                  {/* GPA Metric Cards (Chỉ giữ lại Hệ 10 và Xếp loại học lực theo yêu cầu) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-[#e5e7eb]">
                     <div className="p-6 bg-[#ebf3ff] rounded-2xl border-2 border-[#bfdbfe] text-center shadow-2xs">
                       <div className="text-[36px] md:text-[40px] font-extrabold font-mono text-[#003087] leading-none mb-2">
-                        {selectedStudent.gpa4 != null ? Number(selectedStudent.gpa4).toFixed(2) : (selectedStudent.gpa10 ? (Number(selectedStudent.gpa10) * 0.4).toFixed(2) : '3.13')}
+                        {selectedStudent.gpa10 != null && Number(selectedStudent.gpa10) > 0
+                          ? Number(selectedStudent.gpa10).toFixed(2)
+                          : (selectedStudent.gpa4 ? (Number(selectedStudent.gpa4) * 2.5).toFixed(2) : '7.82')}
                       </div>
-                      <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wider">GPA Hệ 4</div>
+                      <div className="text-[14px] font-bold text-[#003087] uppercase tracking-wider">GPA Hệ 10</div>
                     </div>
-                    <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs">
-                      <div className="text-[36px] md:text-[40px] font-extrabold font-mono text-[#1f2937] leading-none mb-2">
-                        {selectedStudent.gpa10 != null ? Number(selectedStudent.gpa10).toFixed(2) : (selectedStudent.gpa4 ? (Number(selectedStudent.gpa4) * 2.5).toFixed(2) : '7.82')}
-                      </div>
-                      <div className="text-[14px] font-bold text-[#4b5563] uppercase tracking-wider">GPA Hệ 10</div>
-                    </div>
-                    <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs">
+                    <div className="p-6 bg-[#f8fafc] rounded-2xl border-2 border-[#cbd5e1] text-center shadow-2xs flex flex-col justify-center">
                       <div className="text-[30px] md:text-[34px] font-extrabold text-[#1f2937] leading-none mb-2">
                         {selectedStudent.academicRank || 'Khá'}
                       </div>
@@ -1754,7 +1768,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">GPA (Hệ 10)</label>
                   <input
@@ -1771,24 +1785,6 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       setCrudForm({ ...crudForm, gpa10: g10, gpa4: auto4, academicRank: rank });
                     }}
                     placeholder="VD: 8.25"
-                    className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono font-bold text-[#1f2937] text-[14.5px]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1f2937] uppercase tracking-wide text-[12.5px] mb-1.5">GPA (Hệ 4)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="4"
-                    value={crudForm.gpa4}
-                    onChange={e => {
-                      const g4 = e.target.value;
-                      const num4 = parseFloat(g4);
-                      const rank = !isNaN(num4) ? (num4 >= 3.6 ? 'Xuất sắc' : num4 >= 3.2 ? 'Giỏi' : num4 >= 2.5 ? 'Khá' : 'Trung bình') : crudForm.academicRank;
-                      setCrudForm({ ...crudForm, gpa4: g4, academicRank: rank });
-                    }}
-                    placeholder="VD: 3.30"
                     className="w-full px-4 py-3 border border-[#cbd5e1] rounded-xl font-mono font-bold text-[#003087] text-[14.5px]"
                   />
                 </div>
@@ -2006,7 +2002,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                           <th className="p-2.5">Họ và tên</th>
                           <th className="p-2.5">Lớp</th>
                           <th className="p-2.5">Ngành</th>
-                          <th className="p-2.5 text-center">GPA</th>
+                          <th className="p-2.5 text-center">GPA (Hệ 10)</th>
                           <th className="p-2.5 text-center">Xếp loại</th>
                           <th className="p-2.5">Môn học</th>
                         </tr>
@@ -2019,7 +2015,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                             <td className="p-2.5 font-bold text-[#1f2937]">{s.fullName}</td>
                             <td className="p-2.5 font-mono text-[#1f2937]">{s.class}</td>
                             <td className="p-2.5 text-[#1f2937]">{s.major}</td>
-                            <td className="p-2.5 font-mono text-center font-bold text-[#003087]">{s.gpa10 || '—'} / {s.gpa4 || '—'}</td>
+                            <td className="p-2.5 font-mono text-center font-bold text-[#003087]">{s.gpa10 || '—'}</td>
                             <td className="p-2.5 text-center font-bold">{s.academicRank}</td>
                             <td className="p-2.5 font-bold text-[#003087]">{s.courseCode}</td>
                           </tr>

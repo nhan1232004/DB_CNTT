@@ -207,48 +207,76 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     }
   };
 
-  // 1. Nhận diện môn học gán cứng từ danh sách Admin import
+  // 1. Nhận diện môn học gán cứng từ danh sách Admin import (Chuẩn hóa cho cả KTCN, TSNN và Song song KTCN + TSNN)
   React.useEffect(() => {
     let isMounted = true;
+
+    const extractCoursesFromRecord = (found: any) => {
+      const cArr = Array.isArray(found.courses) ? found.courses.map((c: any) => String(c).toUpperCase()) : [];
+      const cCode = String(found.courseCode || found.course_str || found.courseName || found['Môn học'] || found['Học phần'] || '').toUpperCase();
+      const hasKtcn = cArr.some((c: string) => c.includes('KTCN') || c.includes('KIẾN TẬP')) || cCode.includes('KTCN') || cCode.includes('KIẾN TẬP') || found.ktcnEnrolled === 1 || found.ktcnEnrolled === true;
+      const hasTsnn = cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || cCode.includes('DỰ ÁN') || found.tsnnEnrolled === 1 || found.tsnnEnrolled === true;
+      if ((hasKtcn && hasTsnn) || found.isDualCourse === true || found.isDualCourse === 1 || cCode.includes('SONG SONG')) {
+        return { isDual: true, courses: ['KTCN', 'TSNN'] };
+      }
+      if (hasTsnn && !hasKtcn) {
+        return { isDual: false, courses: ['TSNN'] };
+      }
+      return { isDual: false, courses: ['KTCN'] };
+    };
+
     const fetchStudentEnrolledCourse = async () => {
       try {
-        let enrolledCourses = [];
+        let enrolledCourses: string[] = [];
         let isDual = false;
         let majorStr = '';
+        const normSid = String(studentId || '').trim().toUpperCase();
 
+        // Ưu tiên 1: Tìm trong danh sách sinh viên thực tế (getLiveStudents)
         if (window.ApiClient?.getLiveStudents) {
           try {
             const list = await window.ApiClient.getLiveStudents('hk1_2026_2027');
-            const found = list.find((s) => (s.mssv === studentId || s.studentId === studentId));
+            const found = (list || []).find((s: any) => String(s.mssv || s.studentId || s.id || '').trim().toUpperCase() === normSid);
             if (found) {
-              if (found.isDualCourse || (found.courses && found.courses.length > 1) || (found.course_str && found.course_str.includes('Song song'))) {
-                isDual = true;
-                enrolledCourses = ['KTCN', 'TSNN'];
-              } else if (found.courses && found.courses.includes('Tập sự nghề nghiệp')) {
-                enrolledCourses = ['TSNN'];
-              } else {
-                enrolledCourses = ['KTCN'];
-              }
+              const extracted = extractCoursesFromRecord(found);
+              isDual = extracted.isDual;
+              enrolledCourses = extracted.courses;
               majorStr = found.major ? ` · Chuyên ngành: ${found.major}` : '';
             }
           } catch {}
         }
 
+        // Ưu tiên 2: Tra cứu trực tiếp từ helper getStudentEnrolledCourse (quét toàn bộ học kỳ trong LocalStorage)
         if (enrolledCourses.length === 0 && window.ApiClient?.getStudentEnrolledCourse) {
-          const courseData = window.ApiClient.getStudentEnrolledCourse(studentId);
+          const courseData = window.ApiClient.getStudentEnrolledCourse(normSid);
           if (courseData) {
-            isDual = Boolean(courseData.isDualCourse);
-            enrolledCourses = courseData.courses || (isDual ? ['KTCN', 'TSNN'] : ['KTCN']);
+            const extracted = extractCoursesFromRecord(courseData);
+            isDual = extracted.isDual;
+            enrolledCourses = extracted.courses;
+            if (courseData.major && !majorStr) majorStr = ` · Chuyên ngành: ${courseData.major}`;
           }
         }
 
+        // Ưu tiên 3: Tra cứu trực tiếp từ Cloud Firestore tdtu_students nếu chưa có trong bộ nhớ đệm
+        if (enrolledCourses.length === 0 && window.FirebaseService?.db) {
+          try {
+            const doc = await window.FirebaseService.db.collection('tdtu_students').doc(normSid).get();
+            if (doc.exists) {
+              const docData = doc.data();
+              const extracted = extractCoursesFromRecord(docData);
+              isDual = extracted.isDual;
+              enrolledCourses = extracted.courses;
+              if (docData?.major && !majorStr) majorStr = ` · Chuyên ngành: ${docData.major}`;
+            }
+          } catch {}
+        }
+
+        // Ưu tiên 4: Fallback từ thông tin phiên đăng nhập currentUser
         if (enrolledCourses.length === 0) {
-          if (currentUser?.isDualCourse) {
-            isDual = true;
-            enrolledCourses = ['KTCN', 'TSNN'];
-          } else if (currentUser?.selectedCourses) {
-            enrolledCourses = currentUser.selectedCourses;
-            isDual = enrolledCourses.length > 1;
+          if (currentUser) {
+            const extracted = extractCoursesFromRecord(currentUser);
+            isDual = extracted.isDual;
+            enrolledCourses = extracted.courses;
           } else {
             isDual = false;
             enrolledCourses = ['KTCN'];
@@ -271,7 +299,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     };
 
     fetchStudentEnrolledCourse();
-    return () => { isMounted = false; };
+    window.addEventListener('tdtu_data_updated', fetchStudentEnrolledCourse);
+    window.addEventListener('storage', fetchStudentEnrolledCourse);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('tdtu_data_updated', fetchStudentEnrolledCourse);
+      window.removeEventListener('storage', fetchStudentEnrolledCourse);
+    };
   }, [studentId, currentUser]);
 
   // 2. Khôi phục hồ sơ đã nộp từ Server hoặc localStorage

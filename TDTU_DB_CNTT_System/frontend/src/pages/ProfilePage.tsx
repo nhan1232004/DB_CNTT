@@ -222,15 +222,28 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         {/* Card 2: Môn học đăng ký */}
         <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
           <div className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Môn học đăng ký</div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="px-2 py-0.5 rounded-md bg-[#ebf3ff]  text-[#003087]  font-bold text-xs">
-              {liveStudentInfo?.courseCode || currentUser?.courseCode || 'KTCN'}
-            </span>
-            <span className="text-xs text-[#1f2937]">Mã môn: {(liveStudentInfo?.isDualCourse || currentUser?.isDualCourse) ? '504074 & 504075' : ((liveStudentInfo?.courseCode || currentUser?.courseCode) === 'TSNN' ? '504075' : '504074')}</span>
-          </div>
-          <div className="text-[16px] font-bold text-[#1f2937] mt-2">
-            {liveStudentInfo?.courseName || currentUser?.courseName || 'Kiến tập Công nghiệp'}
-          </div>
+          {(() => {
+            const cArr = Array.isArray(liveStudentInfo?.courses) ? liveStudentInfo.courses.map((c: any) => String(c).toUpperCase()) : [];
+            const cCode = String(liveStudentInfo?.courseCode || liveStudentInfo?.course_str || liveStudentInfo?.courseName || currentUser?.courseCode || currentUser?.courseName || '').toUpperCase();
+            const isDual = Boolean(liveStudentInfo?.isDualCourse || currentUser?.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG'));
+            const isTsnnOnly = !isDual && (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || cCode.includes('DỰ ÁN') || liveStudentInfo?.tsnnEnrolled === 1);
+            const displayCode = isDual ? 'KTCN & TSNN' : (isTsnnOnly ? 'TSNN' : 'KTCN');
+            const displaySubjId = isDual ? '504074 & 504075' : (isTsnnOnly ? '504075' : '504074');
+            const displayName = isDual ? 'Kiến tập CN & Tập sự NN (Song song)' : (isTsnnOnly ? 'Tập sự Nghề nghiệp' : 'Kiến tập Công nghiệp');
+            return (
+              <>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded-md bg-[#ebf3ff]  text-[#003087]  font-bold text-xs">
+                    {displayCode}
+                  </span>
+                  <span className="text-xs text-[#1f2937]">Mã môn: {displaySubjId}</span>
+                </div>
+                <div className="text-[16px] font-bold text-[#1f2937] mt-2">
+                  {displayName}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Card 3: Tình trạng hồ sơ */}
@@ -254,7 +267,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           </button>
         </div>
 
-        {/* Card 4: Hồ sơ học tập & Điểm tích lũy (GPA) */}
+        {/* Card 4: Hồ sơ học tập & Điểm tích lũy (GPA Hệ 10 & Xếp loại học lực) */}
         <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Hồ sơ học tập (GPA)</span>
@@ -263,11 +276,10 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-[#003087] ">
-              {liveStudentInfo?.gpa4 || liveStudentInfo?.gpa || currentUser?.gpa4 || currentUser?.gpa || '—'}
+            <span className="text-2xl font-black text-[#003087] font-mono">
+              {liveStudentInfo?.gpa10 || currentUser?.gpa10 || (liveStudentInfo?.gpa4 ? (Number(liveStudentInfo.gpa4) * 2.5).toFixed(2) : '—')}
             </span>
-            <span className="text-xs text-[#1f2937] font-semibold">/ 4.0</span>
-            <span className="text-xs text-[#1f2937] ml-1">(Hệ 10: {liveStudentInfo?.gpa10 || currentUser?.gpa10 || '—'})</span>
+            <span className="text-xs text-[#1f2937] font-semibold">/ 10.0 (Hệ 10)</span>
           </div>
           <div className="text-[13px] text-[#4b5563] mt-2">
             Lớp: <strong className="text-[#1f2937] ">{liveStudentInfo?.class || liveStudentInfo?.className || currentUser?.class || currentUser?.className || "—"}</strong> · {liveStudentInfo?.major || currentUser?.major || 'Kỹ thuật phần mềm'}

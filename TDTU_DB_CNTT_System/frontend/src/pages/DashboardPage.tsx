@@ -587,8 +587,8 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
                 <FlexibleChartRenderer
                   chartType={cfg.chartType}
                   slices={gpaStats.slices}
-                  centerText={gpaStats.avgGpa4}
-                  centerSub="GPA TB / 4.0"
+                  centerText={gpaStats.avgGpa10}
+                  centerSub="GPA TB / 10"
                 />
               ) : (
                 <div className="space-y-4 my-2">
@@ -626,7 +626,7 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
             </div>
 
             <div className="pt-3 mt-2 border-t border-[#e5e7eb] text-[13px] text-[#1f2937] flex flex-wrap items-center justify-between gap-2">
-              <span>GPA trung bình: <strong className="text-[#003087] font-mono">{gpaStats.avgGpa4}/4.0 ({gpaStats.avgGpa10}/10)</strong></span>
+              <span>GPA trung bình (Hệ 10): <strong className="text-[#003087] font-mono">{gpaStats.avgGpa10} / 10.0</strong></span>
               <span className="font-bold text-[#15803d]">{gpaStats.khaGioiPct}% Đạt Khá – Giỏi – Xuất sắc</span>
             </div>
           </div>

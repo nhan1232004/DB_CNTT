@@ -912,14 +912,14 @@ class ApiClient {
     const sid = String(s.mssv || s.studentId || s.id || '').trim().toUpperCase();
     const fullName = String(s.name || s.fullName || ((s['Họ lót'] || s.lastName || '') + ' ' + (s['Tên'] || s.firstName || '')).trim() || '').trim();
     const gpa4Val = typeof s.gpa4 === 'number' ? s.gpa4 : (parseFloat(s.gpa4) || parseFloat(s.gpa) || 3.0);
-    const gpa10Val = typeof s.gpa10 === 'number' ? s.gpa10 : (parseFloat(s.gpa10) || Number((gpa4Val * 2.5).toFixed(2)));
-    const rankVal = s.academicRank || (gpa4Val >= 3.6 ? 'Xuất sắc' : (gpa4Val >= 3.2 ? 'Giỏi' : (gpa4Val >= 2.5 ? 'Khá' : 'Trung bình')));
-    const coursesArr = Array.isArray(s.courses) && s.courses.length > 0
-      ? s.courses
-      : (String(s.courseCode || 'KTCN').includes('&') || String(s.courseCode || '').includes('+')
-          ? ['KTCN', 'TSNN']
-          : [String(s.courseCode || 'KTCN').trim()]);
-    const isDual = Boolean(s.isDualCourse === 1 || s.isDualCourse === true || coursesArr.length > 1);
+    const gpa10Val = typeof s.gpa10 === 'number' && s.gpa10 > 0 ? s.gpa10 : (parseFloat(s.gpa10) > 0 ? parseFloat(s.gpa10) : Number((gpa4Val * 2.5).toFixed(2)));
+    const rankVal = s.academicRank || (gpa10Val >= 9.0 ? 'Xuất sắc' : (gpa10Val >= 8.0 ? 'Giỏi' : (gpa10Val >= 6.5 ? 'Khá' : 'Trung bình')));
+    const rawCourses = Array.isArray(s.courses) ? s.courses.map((c: any) => String(c).toUpperCase()) : [];
+    const rawCode = String(s.courseCode || s.course_str || s.courseName || s['Môn học'] || s['Học phần'] || s['Học phần ĐK'] || '').toUpperCase();
+    const hasKtcn = rawCourses.some((c: string) => c.includes('KTCN') || c.includes('KIẾN TẬP')) || rawCode.includes('KTCN') || rawCode.includes('KIẾN TẬP') || s.ktcnEnrolled === 1 || s.ktcnEnrolled === true;
+    const hasTsnn = rawCourses.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || rawCode.includes('TSNN') || rawCode.includes('TẬP SỰ') || rawCode.includes('DỰ ÁN') || s.tsnnEnrolled === 1 || s.tsnnEnrolled === true;
+    const isDual = Boolean((hasKtcn && hasTsnn) || s.isDualCourse === 1 || s.isDualCourse === true || rawCode.includes('SONG SONG'));
+    const coursesArr = isDual ? ['KTCN', 'TSNN'] : (hasTsnn && !hasKtcn ? ['TSNN'] : ['KTCN']);
     const rawStatus = String(s.status || '').trim();
     const normStatus = (rawStatus === 'has_company' || rawStatus === 'Có doanh nghiệp')
       ? 'Có doanh nghiệp'
@@ -1317,6 +1317,9 @@ class ApiClient {
         gender: studentProfile?.gender || 'Nam',
         class: studentProfile?.class || '19050402',
         major: studentProfile?.major || 'Khoa học máy tính',
+        courses: studentProfile?.courses || ['KTCN'],
+        courseCode: studentProfile?.courseCode || 'KTCN',
+        isDualCourse: Boolean(studentProfile?.isDualCourse),
         courseName: studentProfile?.courseName || 'Kiến tập Công nghiệp',
         avatarUrl: body.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
       };
@@ -2736,9 +2739,43 @@ class ApiClient {
   // ==========================================
   // Quản lý Hồ sơ Cá nhân Sinh viên (Doanh nghiệp, Chứng chỉ, Lịch sử, Link CV)
   // ==========================================
+  static getStudentEnrolledCourse(studentId = '522H0045') {
+    const sid = String(studentId || '').trim().toUpperCase();
+    const keys = [
+      this.liveStudentsKey,
+      'tdtu_imported_students_hk1_2026_2027',
+      'tdtu_imported_students_hk2_2025_2026',
+      'tdtu_imported_students_hk1_2025_2026'
+    ];
+    for (const k of keys) {
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            const found = arr.find((s: any) => String(s.mssv || s.studentId || s.id || '').trim().toUpperCase() === sid);
+            if (found) {
+              const norm = this._normalizeStudentRecord(found);
+              return {
+                courses: norm.courses,
+                courseCode: norm.courseCode,
+                courseName: norm.courseName,
+                isDualCourse: Boolean(norm.isDualCourse),
+                major: norm.major
+              };
+            }
+          }
+        }
+      } catch {}
+    }
+    return null;
+  }
+
   static getStudentDeclaration(studentId = '522H0045') {
     try {
-      const saved = localStorage.getItem('tdtu_decl_' + studentId);
+      const sid = String(studentId || '').trim().toUpperCase();
+      const enrolled = this.getStudentEnrolledCourse(sid);
+      const saved = localStorage.getItem('tdtu_decl_' + sid) || localStorage.getItem('tdtu_decl_' + studentId);
       if (saved) {
         const parsed = JSON.parse(saved);
         const isHasCompany = parsed.internshipStatus === 'has_company';
@@ -2753,7 +2790,7 @@ class ApiClient {
           contactPhone: parsed.contactPhone || '',
           mainIndustry: parsed.mainIndustry || '',
           internshipStatus: parsed.internshipStatus || (parsed.companyName ? 'has_company' : 'interviewing'),
-          selectedCourses: parsed.selectedCourses || ['KTCN'],
+          selectedCourses: enrolled?.courses || parsed.selectedCourses || ['KTCN'],
           supportNote: parsed.supportNote || '',
           statusLabel: isHasCompany ? 'Khoa đã xác nhận doanh nghiệp' : (parsed.internshipStatus === 'interviewing' ? 'Đang tìm / Chờ phỏng vấn' : 'Cần Khoa hỗ trợ'),
           confirmedAt: parsed.confirmedAt || '11/09/2026'

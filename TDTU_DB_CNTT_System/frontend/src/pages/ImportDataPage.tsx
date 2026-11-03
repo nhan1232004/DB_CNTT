@@ -95,11 +95,11 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
               else major = 'Kỹ thuật phần mềm';
             }
 
-            const tenMH = String(row['Tên MH'] || row['Môn học'] || row['Học phần'] || '').toLowerCase();
+            const tenMH = String(row['Tên MH'] || row['Môn học'] || row['Học phần'] || row['Học phần ĐK'] || row['Môn học đăng ký'] || row['Mã MH'] || row.courseCode || row.course || '').toLowerCase();
             let rowCourse = defaultSheetCourse;
-            if (tenMH.includes('dự án') || tenMH.includes('tập sự') || tenMH.includes('tsnn')) {
+            if (tenMH.includes('dự án') || tenMH.includes('tập sự') || tenMH.includes('tsnn') || tenMH.includes('504075') || tenMH.includes('504096')) {
               rowCourse = 'TSNN';
-            } else if (tenMH.includes('kiến tập') || tenMH.includes('ktcn')) {
+            } else if (tenMH.includes('kiến tập') || tenMH.includes('ktcn') || tenMH.includes('504074') || tenMH.includes('504095')) {
               rowCourse = 'KTCN';
             }
 
@@ -107,11 +107,11 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
             const gpa4Val = parseFloat(String(gpa4Raw || '').replace(',', '.'));
             const finalGpa4 = isNaN(gpa4Val) ? 3.0 : gpa4Val;
 
-            const gpa10Raw = row['GPA (Hệ 10)'] || row.gpa10;
+            const gpa10Raw = row['GPA (Hệ 10)'] || row.gpa10 || row['Điểm TB Hệ 10'];
             const gpa10Val = parseFloat(String(gpa10Raw || '').replace(',', '.'));
             const finalGpa10 = isNaN(gpa10Val) ? Number((finalGpa4 * 2.5).toFixed(2)) : gpa10Val;
 
-            const academicRank = String(row['Xếp loại'] || row.academicRank || (finalGpa4 >= 3.6 ? 'Xuất sắc' : (finalGpa4 >= 3.2 ? 'Giỏi' : (finalGpa4 >= 2.5 ? 'Khá' : 'Trung bình')))).trim();
+            const academicRank = String(row['Xếp loại'] || row['Xếp loại học lực'] || row.academicRank || (finalGpa10 >= 9.0 ? 'Xuất sắc' : (finalGpa10 >= 8.0 ? 'Giỏi' : (finalGpa10 >= 6.5 ? 'Khá' : 'Trung bình')))).trim();
 
             let birthDateStr = '';
             const rawBirth = row['Ngày sinh'] || row.birthDate || row['NgaySinh'];
@@ -519,7 +519,7 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
                   <th className="p-3">Họ và tên</th>
                   <th className="p-3">Lớp</th>
                   <th className="p-3">Chuyên ngành</th>
-                  <th className="p-3 text-center">GPA (Hệ 10 / 4)</th>
+                  <th className="p-3 text-center">GPA (Hệ 10)</th>
                   <th className="p-3 text-center">Xếp loại</th>
                   <th className="p-3">Học phần đăng ký</th>
                   <th className="p-3 text-center">Trạng thái</th>
@@ -557,7 +557,7 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
                         <td className="p-3 font-mono text-[#1f2937]">{s.class}</td>
                         <td className="p-3 text-[#1f2937]">{s.major}</td>
                         <td className="p-3 font-mono text-center font-bold text-[#003087]">
-                          {s.gpa10 || '—'} / {s.gpa4 || '—'}
+                          {s.gpa10 || '—'}
                         </td>
                         <td className="p-3 text-center font-bold text-[#1f2937]">
                           {s.academicRank}

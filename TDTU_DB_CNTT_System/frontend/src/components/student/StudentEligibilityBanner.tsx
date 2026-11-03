@@ -9,7 +9,27 @@ const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onN
   if (!currentUser || currentUser.role !== 'student') return null;
 
   const studentId = (currentUser.studentId || currentUser.mssv || '522H0045').toUpperCase();
-  const enrolledCourses = studentRecord?.courses || declaration?.selectedCourses || (currentUser.isEnrolledThisSemester === false ? [] : ['KTCN']);
+  const enrolledCourses = (() => {
+    if (studentRecord) {
+      const cArr = Array.isArray(studentRecord.courses) ? studentRecord.courses.map((c: any) => String(c).toUpperCase()) : [];
+      const cCode = String(studentRecord.courseCode || studentRecord.course_str || studentRecord.courseName || '').toUpperCase();
+      const hasKtcn = cArr.some((c: string) => c.includes('KTCN') || c.includes('KIẾN TẬP')) || cCode.includes('KTCN') || cCode.includes('KIẾN TẬP') || Boolean(studentRecord.ktcnEnrolled);
+      const hasTsnn = cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || cCode.includes('DỰ ÁN') || Boolean(studentRecord.tsnnEnrolled);
+      if ((hasKtcn && hasTsnn) || studentRecord.isDualCourse === true || studentRecord.isDualCourse === 1 || cCode.includes('SONG SONG')) {
+        return ['KTCN', 'TSNN'];
+      }
+      if (hasTsnn && !hasKtcn) return ['TSNN'];
+      if (hasKtcn) return ['KTCN'];
+    }
+    if (Array.isArray(declaration?.selectedCourses) && declaration.selectedCourses.length > 0) {
+      return declaration.selectedCourses;
+    }
+    if (currentUser.isEnrolledThisSemester === false) return [];
+    const uCode = String(currentUser.courseCode || currentUser.courseName || '').toUpperCase();
+    if (uCode.includes('KTCN') && uCode.includes('TSNN')) return ['KTCN', 'TSNN'];
+    if (uCode.includes('TSNN') || uCode.includes('TẬP SỰ')) return ['TSNN'];
+    return ['KTCN'];
+  })();
   const isEligible = currentUser.isEnrolledThisSemester !== false && studentId !== '52100999' && Array.isArray(enrolledCourses) && enrolledCourses.length > 0;
   const hasConfirmedCompany = isEligible && declaration?.internshipStatus === 'has_company' && Boolean(declaration?.companyName);
 
@@ -144,7 +164,7 @@ const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onN
             </div>
             <p className="text-[12.5px] text-[#1f2937] mt-1.5 leading-relaxed text-justify">
               Mã số SV: <strong className="font-mono text-[#003087]">{studentId}</strong> · <strong>{currentUser.name}</strong>
-              {studentRecord?.gpa4 ? ` · GPA: ${studentRecord.gpa4} (${studentRecord.academicRank || 'Khá'})` : ''}.
+              {studentRecord?.gpa10 ? ` · GPA (Hệ 10): ${studentRecord.gpa10} (${studentRecord.academicRank || 'Khá'})` : ''}.
               Bạn đã đủ điều kiện tham gia đợt thực tập học kỳ này. Khi có doanh nghiệp tiếp nhận chính thức, vui lòng tích chọn <strong>"Đã có nơi thực tập"</strong> trong mục Khai báo để cập nhật đơn vị thực tập.
             </p>
           </div>
