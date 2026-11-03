@@ -1,20 +1,21 @@
 {
   "name": "dashboard-tsnn-tdtu",
-  "version": "3.1.0",
-  "description": "Hệ thống Quản lý Thực tập & Dashboard TSNN/KTCN (DB_CNTT) - Khoa CNTT ĐH Tôn Đức Thắng",
+  "version": "3.2.0",
+  "description": "Hệ thống Quản lý Thực tập & Dashboard TSNN/KTCN (DB_CNTT) - Khoa CNTT ĐH Tôn Đức Thắng (100% TypeScript)",
   "type": "module",
   "scripts": {
     "start": "node --experimental-strip-types TDTU_DB_CNTT_System/backend/src/server.ts",
     "dev": "node --watch --experimental-strip-types TDTU_DB_CNTT_System/backend/src/server.ts",
-    "test": "node --test TDTU_DB_CNTT_System/backend/tests/api.test.ts",
-    "test:backend": "cd TDTU_DB_CNTT_System/backend && npm test",
-    "deploy:firebase": "cd TDTU_DB_CNTT_System && npx firebase deploy --only hosting",
+    "test": "node --test TDTU_DB_CNTT_System/backend/tests/api.test.ts TDTU_DB_CNTT_System/backend/tests/prime-rbac.test.ts Adapter_Code/reporting-adapter-demo/tests/demo.test.ts",
+    "test:backend": "node --test TDTU_DB_CNTT_System/backend/tests/api.test.ts TDTU_DB_CNTT_System/backend/tests/prime-rbac.test.ts",
+    "deploy:firebase": "npx firebase-tools deploy --only hosting",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },
   "keywords": [
     "tdtu",
+    "typescript",
     "dashboard-tsnn",
     "internship-portal",
     "decision-support-system",

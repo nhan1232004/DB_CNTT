@@ -5,23 +5,23 @@
 
 ### 1. NGUYÊN TẮC THIẾT KẾ CẮM-VÀ-CHẠY (PLUG AND PLAY)
 
-Hệ thống báo cáo của DB_CNTT được xây dựng dựa trên kiến trúc **Chart Router (Hình 1)** và nguyên lý **Open-Closed Principle (OCP)**:
-* **Mở cho việc mở rộng (Open for Extension):** Bất kỳ đội nhóm nào muốn thêm biểu đồ thống kê mới chỉ cần thêm **01 file plugin độc lập**.
-* **Đóng với việc sửa đổi (Closed for Modification):** Tuyệt đối **không cần sửa** `server.ts`, không sửa `HttpRouter`, không sửa `chart-router.ts`.
+Hệ thống báo cáo của DB_CNTT được xây dựng dựa trên kiến trúc **Chart Router** và nguyên lý **Open-Closed Principle (OCP)**:
+* **Mở cho việc mở rộng (Open for Extension):** Bất kỳ đội nhóm nào muốn thêm biểu đồ thống kê mới chỉ cần thêm **01 file plugin `.ts` độc lập**.
+* **Đóng với việc sửa đổi (Closed for Modification):** Tuyệt đối **không cần sửa** `server.ts`, không sửa `http-router.ts`, không sửa `chart-router.ts`.
 
 ---
 
-### 2. CẤU TRÚC MỘT PLUGIN BIỂU ĐỒ CHUẨN
+### 2. CẤU TRÚC MỘT PLUGIN BIỂU ĐỒ CHUẨN (TYPESCRIPT)
 
 Mọi plugin biểu đồ đều nằm trong thư mục:
-`backend/src/plugins/charts/`
+`TDTU_DB_CNTT_System/backend/src/services/charts/`
 
 Và triển khai interface `IChartPlugin`:
 
 ```typescript
-import { getDatabase } from '../../database/sqlite.db.ts';
-import { widgetRegistry } from '../../modules/reporting/widget-registry.ts';
-import type { IChartPlugin, WidgetMetadata, StandardChartPayload } from '../../modules/reporting/contracts.ts';
+import { getDatabase } from '../../models/sqlite.db.ts';
+import { widgetRegistry } from '../widget-registry.ts';
+import type { IChartPlugin, WidgetMetadata, StandardChartPayload } from '../../models/reporting.contracts.ts';
 
 export class MyNewChartPlugin implements IChartPlugin {
   // 1. Khai báo siêu dữ liệu (Metadata) cho WidgetRegistry
@@ -57,7 +57,7 @@ export class MyNewChartPlugin implements IChartPlugin {
           name: 'Số lượng',
           type: 'bar',
           data,
-          color: '#0B3C5D' // Mã màu chủ đạo TDTU Navy
+          color: '#003087' // Mã màu chủ đạo TDTU Navy
         }
       ],
       summaryStats: {
@@ -79,27 +79,26 @@ export default plugin;
 
 ### 3. CƠ CHẾ TỰ ĐỘNG KHÁM PHÁ (AUTO-DISCOVERY)
 
-Khi bạn lưu file plugin vào `backend/src/plugins/charts/ten-bieu-do.plugin.ts`:
+Khi bạn lưu file plugin vào `TDTU_DB_CNTT_System/backend/src/services/charts/ten-bieu-do.plugin.ts`:
 1. `WidgetRegistry` ngay lập tức ghi nhận plugin vào danh mục widget.
-2. Endpoint `GET /api/dashboard/widgets` tự động trả về widget mới cho giao diện React.
-3. Giao diện người dùng sẽ tự động hiển thị thẻ biểu đồ mới trong Dashboard mà lập trình viên frontend không cần phải code lại layout!
+2. Endpoint `GET /api/dashboard/widgets` tự động trả về widget mới cho giao diện React TypeScript.
+3. Giao diện người dùng (`DashboardPage.tsx`) sẽ tự động hiển thị thẻ biểu đồ mới trong Dashboard (và trong hộp thoại Quản lý biểu đồ dành cho Giảng viên / Admin) mà lập trình viên frontend không cần phải code lại layout.
 
 ---
 
-### 4. VÍ DỤ THỰC TẾ: THÊM BIỂU ĐỒ ĐÁNH GIÁ KẾT QUẢ THỰC TẬP (BM-04)
+### 4. VÍ DỤ THỰC TẾ: THÊM BIỂU ĐỒ ĐÁNH GIÁ KẾT QUẢ THỰC TẬP (BM-03)
 
-Tạo file `backend/src/plugins/charts/internship-evaluation.plugin.ts`:
+Tạo file `TDTU_DB_CNTT_System/backend/src/services/charts/internship-evaluation.plugin.ts`:
 
 ```typescript
-import { getDatabase } from '../../database/sqlite.db.ts';
-import { widgetRegistry } from '../../modules/reporting/widget-registry.ts';
-import type { IChartPlugin, WidgetMetadata, StandardChartPayload } from '../../modules/reporting/contracts.ts';
+import { widgetRegistry } from '../widget-registry.ts';
+import type { IChartPlugin, WidgetMetadata, StandardChartPayload } from '../../models/reporting.contracts.ts';
 
 export class InternshipEvaluationPlugin implements IChartPlugin {
   getMetadata(): WidgetMetadata {
     return {
       id: 'internship-evaluation-chart',
-      name: 'Đánh giá Kết quả Thực tập của Doanh nghiệp (BM-04)',
+      name: 'Đánh giá Kết quả Thực tập của Doanh nghiệp (BM-03)',
       category: 'academic',
       description: 'Phân loại kết quả đánh giá sinh viên từ Mentor doanh nghiệp: Xuất sắc, Giỏi, Khá, Đạt.',
       defaultSize: 'medium',
@@ -113,7 +112,7 @@ export class InternshipEvaluationPlugin implements IChartPlugin {
 
     return {
       widgetId: 'internship-evaluation-chart',
-      title: 'Tỷ lệ Đánh giá của Doanh nghiệp theo BM-04',
+      title: 'Tỷ lệ Đánh giá của Doanh nghiệp theo BM-03',
       chartType: 'pie',
       categories,
       series: [
@@ -121,7 +120,7 @@ export class InternshipEvaluationPlugin implements IChartPlugin {
           name: 'Số sinh viên',
           type: 'pie',
           data,
-          color: '#0B3C5D'
+          color: '#003087'
         }
       ],
       summaryStats: {
@@ -139,4 +138,4 @@ widgetRegistry.register(evalPlugin);
 export default evalPlugin;
 ```
 
-Chỉ với 45 dòng code độc lập, biểu đồ mới đã sẵn sàng phục vụ toàn trường mà không ảnh hưởng bất kỳ module nào khác!
+Chỉ với 45 dòng code TypeScript độc lập, biểu đồ mới đã sẵn sàng phục vụ toàn Khoa mà không ảnh hưởng bất kỳ module nào khác.
