@@ -1,337 +1,464 @@
-# TDTU KHOA CNTT — HỆ THỐNG QUẢN LÝ THỰC TẬP & DASHBOARD RA QUYẾT ĐỊNH (DB_CNTT)
-### CỔNG THÔNG TIN HỌC PHẦN KIẾN TẬP CÔNG NGHIỆP (KTCN) & TẬP SỰ NGHỀ NGHIỆP (TSNN)
-**Trường Đại học Tôn Đức Thắng (TDTU) · Khoa Công nghệ Thông tin**
+# TDTU KHOA CONG NGHE THONG TIN
+## HE THONG QUAN LY THUC TAP VA DASHBOARD HO TRO RA QUYET DINH (DB_CNTT)
+### CONG THONG TIN HOC PHAN KIEN TAP CONG NGHIEP (KTCN) VA TAP SU NGHE NGHIEP (TSNN)
 
 [![Node.js Version](https://img.shields.io/badge/Node.js-v24.19.0-339933?logo=node.js)](https://nodejs.org/)
 [![React Version](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25_.ts_%2F_.tsx-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-v10_Hosting_%26_Auth-FFCA28?logo=firebase)](https://firebase.google.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![Tests](https://img.shields.io/badge/Automated_Tests-24%2F24_Passed-16a34a)](#)
+[![Automated Tests](https://img.shields.io/badge/Automated_Tests-24%2F24_Passed-16a34a)](#)
+[![Git Branch](https://img.shields.io/badge/Git_Branch-522H0045-003087)](#)
 
-- **Trang ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app  
-- **Máy chủ phát triển nội bộ (Local Server):** `http://localhost:3000`  
-- **Nhánh mã nguồn chính thức (Git Branch):** `522H0045`
-
----
-
-## 1. TỔNG QUAN DỰ ÁN
-
-Hệ thống **DB_CNTT** là giải pháp phần mềm quản lý học vụ toàn diện được viết **100% bằng TypeScript (`.ts` & `.tsx`)**, chuẩn hóa toàn bộ quy trình thực tập doanh nghiệp dành cho Sinh viên và Ban Chủ nhiệm / Giảng viên Khoa CNTT Trường Đại học Tôn Đức Thắng. Hệ thống giải quyết trọn vẹn bài toán quản lý hai học phần quan trọng: **Kiến tập công nghiệp (KTCN - 160 giờ)** và **Tập sự nghề nghiệp (TSNN - 320 giờ)**, phục vụ công tác điều hành, theo dõi tiến độ theo từng học kỳ, đối soát pháp lý doanh nghiệp qua Mã số thuế, bóc tách tin tuyển dụng tự động và hỗ trợ ra quyết định điều phối sinh viên.
-
-### Điểm nhấn công nghệ & tính năng mới nhất (`v3.2.0`):
-1. **Chuẩn hóa 100% TypeScript (`.ts` / `.tsx`):** Toàn bộ Backend (`TDTU_DB_CNTT_System/backend/`), Frontend (`TDTU_DB_CNTT_System/frontend/` - 22 tệp `.ts`/`.tsx`) và Gói minh chứng kiến trúc (`Adapter_Code/`) đều sử dụng TypeScript đồng nhất, loại bỏ hoàn toàn các tệp `.js`/`.jsx` dư thừa.
-2. **Kiến trúc Clean Architecture & Micro-modular 3 lớp:** Tách bạch hoàn toàn giữa Định tuyến (`routes`), Kiểm soát truy cập (`middlewares`), Bộ điều khiển (`controllers`), Nghiệp vụ thuần (`services`) và CSDL (`models`).
-3. **Kiến trúc Chart Router, Widget Registry & Plug-and-Play (Open-Closed Principle):** Cho phép mở rộng thêm biểu đồ phân tích mới bằng đúng 01 file plugin `.ts` độc lập mà không cần chỉnh sửa mã nguồn cốt lõi của máy chủ; ẩn quyền cấu hình biểu đồ đối với vai trò Sinh viên.
-4. **Đồng bộ Real-time Đa chiều (Sinh viên ↔ Giảng viên):** Khi sinh viên khai báo nơi thực tập (Tên công ty, Mã số thuế, Địa chỉ, Người đại diện, Vị trí thực tập, Mentor hướng dẫn, SĐT Mentor), dữ liệu được đồng bộ tức thì sang tab **Doanh nghiệp & Tiến độ** trong Hồ sơ sinh viên phía Giảng viên (qua SQLite + Cloud Firestore + LocalStorage + BroadcastChannel).
-5. **Quản lý Học kỳ Chặt chẽ & Popup Thông báo Real-time cho Sinh viên:**
-   - Lọc danh sách sinh viên chính xác theo từng học kỳ (`hk1_2026_2027`, `hk2_2026_2027`, `hk3_2026_2027`), không hiển thị lẫn sinh viên giữa các kỳ.
-   - Khi Giảng viên đăng thông báo học vụ mới, Sinh viên đăng nhập sẽ nhận được **Popup thông báo nổi ở góc dưới bên phải màn hình** kèm nút xem chi tiết.
-6. **Tối ưu Trải nghiệm Người dùng (Phóng to Popup 150% & Trung tâm In ấn A4):**
-   - Các hộp thoại chi tiết (Hồ sơ sinh viên, Thẩm định chứng chỉ ngoại ngữ, Chi tiết phiếu khai báo) được phóng đại kích thước hiển thị lên **150%** giúp Giảng viên và Sinh viên dễ quan sát và thao tác.
-   - Tích hợp **Trung tâm In ấn Chuẩn A4** với 6 biểu mẫu văn bản hành chính theo đúng chuẩn thể thức văn bản Việt Nam (Nghị định 30/2020/NĐ-CP).
+- **Dia chi ung dung truc tuyen (Live Production):** https://dashboard-39cf8.web.app
+- **May chu phat trien cuc bo (Local Server):** `http://localhost:3000`
+- **Nhanh ma nguon chinh thuc:** `522H0045`
+- **Phien ban phat hanh:** `v3.2.0 (100% TypeScript Enterprise Release)`
 
 ---
 
-## 2. KIẾN TRÚC KỸ THUẬT HỆ THỐNG
+## 1. TONG QUAN DU AN
 
-### 2.1. Sơ đồ Luồng Hoạt động Tổng thể (System Architecture)
+He thong DB_CNTT la giai phap phan mem quan ly hoc vu chuyen nghiep duoc xay dung 100% bang ngon ngu TypeScript (`.ts` va `.tsx`), chuan hoa toan dien quy trinh to chuc, quan ly va giam sat thuc tap doanh nghiep tai Khoa Cong nghe Thong tin, Truong Dai hoc Ton Duc Thang (TDTU).
+
+He thong giai quyet tap trung cac nghiep vu quan ly cho hai hoc phan dao tao cot loi:
+1. **Kien tap Cong nghiep (KTCN):** 160 gio tiep can va thuc hanh thuc te tai doanh nghiep.
+2. **Tap su Nghe nghiep (TSNN):** 320 gio thuc tap chuyen sau va lam viec tai don vi tiep nhan.
+3. **Hoc phan Song song:** Ho tro sinh vien du dieu kien hoc tap dang ky dong thoi ca hai hoc phan trong cung mot hoc ky.
+
+### Muc tieu chien luoc:
+- **So hoa quy trinh hoc vu:** Xoa bo hoan toan quy trinh xu ly giay thu cong, chuyen doi sang khai bao truc tuyen, tra cuu phap ly doanh nghiep qua Ma so thue (MST), nop va tham dinh chung chi ngoai ngu tot nghiep, tiep nhan JD tuyen dung va cap Giay gioi thieu tu dong.
+- **Ho tro ra quyet dinh (Decision Support System):** Cung cap Bang dieu khien tong the giup Ban Chu nhiem Khoa va Giang vien co van nhan dien som cac sinh vien gap kho khan (chua co don vi tiep nhan, can Khoa ho tro dieu phoi, chua dat chuan B1) de phan bo doanh nghiep kip thoi.
+- **Kien truc huong dich vu ben vung:** Thiet ke theo mo hinh Modular Monolith huong Service-Oriented (SOA), ap dung co che Chart Router va Adapter Pattern dam bao he thong co kha nang mo rong, bao tri va de dang ban giao trong giai doan 2026 - 2031.
+
+---
+
+## 2. KIEN TRUC HE THONG VA NGUYEN TAC THIET KE
+
+### 2.1. So do Luong Hoat dong Tong the
 
 ```text
-                           ┌────────────────────────────────────────┐
-                           │      Trình duyệt Người dùng (Client)   │
-                           │  React 18 TypeScript SPA (.ts / .tsx)  │
-                           └──────────────────┬─────────────────────┘
-                                              │ HTTP / JSON API (Port 3000)
-                                              ▼
-                           ┌────────────────────────────────────────┐
-                           │          HTTP Router & Pipeline        │
-                           │   (CORS, BodyParser, AuthMiddleware)   │
-                           └──────────────────┬─────────────────────┘
-                                              │
-                      ┌───────────────────────┴───────────────────────┐
-                      ▼                                               ▼
-         ┌─────────────────────────┐                     ┌─────────────────────────┐
-         │   Controllers Domain    │                     │  Reporting Controller   │
-         │ (Students, Decl, JDs)   │                     └────────────┬────────────┘
-         └────────────┬────────────┘                                  │
-                      ▼                                               ▼
-         ┌─────────────────────────┐                     ┌─────────────────────────┐
-         │  Service Business Logic │                     │       Chart Router      │
-         │ (CRUD, Logic, Parsers)  │                     └────────────┬────────────┘
-         └────────────┬────────────┘                                  │
-                      │                                               ▼
-                      │                                  ┌─────────────────────────┐
-                      │                                  │     Widget Registry     │
-                      │                                  │   (Singleton Catalog)   │
-                      │                                  └────────────┬────────────┘
-                      │                                               │
-                      │                        ┌──────────────────────┴──────────────────────┐
-                      │                        ▼                                             ▼
-                      │             ┌──────────────────────┐                     ┌──────────────────────┐
-                      │             │  Status Pie Plugin   │                     │ Top Companies Plugin │
-                      │             └──────────┬───────────┘                     └──────────┬───────────┘
-                      │                        │                                             │
-                      ▼                        ▼                                             ▼
-       ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-       │                                  Tầng Dữ Liệu & Hợp Đồng                                    │
-       │                   SQLite Database (WAL Mode) · Data Adapters (V1 / V2)                      │
-       └─────────────────────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                           TRINH DUYET KHACH (CLIENT)                        |
+|        React 18 Single Page Application (100% TypeScript: 22 Modules)       |
+|   Tailwind CSS Enterprise DS + TabErrorBoundary + LocalStorage / In-Memory  |
++-----------------------------------------------------------------------------+
+               |                                            ^
+               | HTTP / JSON API (Port 3000)                | Real-time Sync
+               v                                            v (onSnapshot)
++---------------------------------------------+  +----------------------------+
+|            NODE.JS API GATEWAY              |  |   CLOUD FIRESTORE SYNC     |
+|       HTTP Router Pipeline & CORS           |  | Multi-Device Notification  |
+| Prime RBAC (Tich so nguyen to: 2,3,5,7,...) |  | Live Declarations & Certs  |
++---------------------------------------------+  +----------------------------+
+       |                               |
+       v                               v
++-----------------------------+  +--------------------------------------------+
+|     DOMAIN CONTROLLERS      |  |         REPORTING DECISION ENGINE          |
+| - Auth Controller           |  |            (CHART ROUTER)                  |
+| - Students Controller       |  |  ChartRouter.dispatch(widgetId, options)   |
+| - Internship Controller     |  +--------------------------------------------+
+| - Certificates Controller   |                        |
+| - Documents Controller      |                        v
+| - Bulletin Controller       |          +----------------------------+
++-----------------------------+          |      WIDGET REGISTRY       |
+               |                         |    (Singleton Catalog)     |
+               v                         +----------------------------+
++-----------------------------+                        |
+|      DOMAIN SERVICES        |          +-------------+--------------+
+| - auth.service.ts           |          |                            |
+| - students.service.ts       |          v                            v
+| - internship.service.ts     |  +----------------+          +----------------+
+| - notification.service.ts   |  | StatusPieChart |          | TopCompanies   |
+| - email-parser.ts           |  |     Plugin     |          |  Chart Plugin  |
+| - documents.service.ts      |  +----------------+          +----------------+
++-----------------------------+          |                            |
+       |               |                 +-------------+--------------+
+       |               |                               |
+       v               v                               v
++--------------+ +--------------------+ +-------------------------------------+
+|  SQLite DB   | | Tax Lookup Adapter | |         COMPANY DATA ADAPTER        |
+|  (WAL Mode)  | | Tra cuu MST DN     | |      Anti-Corruption Layer          |
+| db_cntt.db   | | Phong Chuyen trach | | Chuan hoa Schema V1 va Schema V2    |
++--------------+ +--------------------+ +-------------------------------------+
 ```
 
-### 2.2. Chi tiết các Phân hệ Kỹ thuật
+### 2.2. Cac Nguyen tac Kien truc Cot loi
 
-* **Frontend TypeScript Engine (`TDTU_DB_CNTT_System/frontend`):**
-  - React 18 kết hợp Babel Standalone (`preset-typescript` với `ignoreExtensions: true` & `preset-react` với `runtime: 'classic'`) nạp trực tiếp 22 tệp `.ts` và `.tsx`.
-  - Tailwind CSS tuân thủ nghiêm ngặt TDTU Enterprise Design System: Trắng (`#ffffff`), Xanh TDTU Navy (`#003087`), Đỏ Accent/Alert (`#dc2626`), chữ Đen/Xám đậm (`#1f2937`), không sử dụng icon emoji.
-  - SheetJS (`XLSX`) xử lý nạp/xuất file Excel đa sheet phía Client.
-* **Backend TypeScript Server (`TDTU_DB_CNTT_System/backend`):**
-  - Node.js 24 native với cờ `--experimental-strip-types` thực thi trực tiếp mã nguồn TypeScript.
-  - CSDL SQLite tích hợp sẵn (`node:sqlite`) bật chế độ `PRAGMA journal_mode = WAL` và `PRAGMA foreign_keys = ON`.
-  - Bộ phân quyền toán học Prime RBAC (`prime-rbac.ts` sử dụng tích các số nguyên tố `2, 3, 5, 7, 11, 13, 17, 19`).
+1. **Clean 3-Tier Architecture:**
+   - He thong duoc phan tach nghiem ngat qua cac tang: `routes/` -> `middlewares/` -> `controllers/` -> `services/` -> `models/`.
+   - Controller chi dam nhan doc request va tra response; Service chi chua pure business logic; Model chi dinh nghia schema va hop dong du lieu.
+
+2. **Kien truc Chart Router & Widget Registry (Plug-and-Play Engine):**
+   - Tuan thu triet de nguyen ly Open-Closed Principle (OCP): He thong mo cho viec mo rong (Them bieu do moi) nhung dong voi viec sua doi ma nguon cot loi.
+   - Khi bo sung mot bao cao moi, lap trinh vien chi can them 01 file plugin `.ts` doc lap trong thu muc `services/charts/`. Server tu dong phat hien va frontend tu dong render the bieu do tren Dashboard ma khong can sua controller hay router.
+
+3. **Adapter Pattern (Anti-Corruption Layer):**
+   - Cach ly su bien dong ve dinh dang du lieu nguon tu cac phong ban khac nhau.
+   - `CompanyDataAdapter` tu dong nhan dien va chuan hoa ca du lieu kieu cu (Schema V1: `sector_name`, `total`) va kieu moi (Schema V2: `summary.industryName`, `companies`) ve mot kieu hop dong duy nhat `IndustryStatistic[]`.
+
+4. **Phan quyen Toan hoc Prime Product RBAC:**
+   - Ap dung Dinh ly Co ban cua So hoc: Moi quyen han duoc gan bang mot so nguyen to doc lap (`Read=2`, `Create=3`, `Update=5`, `Delete=7`, `ScopeAll=11`, `Import=13`, `Export=17`, `Approve=19`).
+   - Phan quyen cho mot vai tro la phep Nhan cac thua so nguyen to. Kiem tra quyen la phep Chia het (Modulo 0). Phep toan nay dem lai toc do xu ly 0ms va kha nang mo rong vo han ma khong gay xung dot ma tran quyen.
+
+5. **He thong Dong bo Da thiet bi & Cache 2 tang:**
+   - Ket hop Cache In-Memory (<0.5ms) va LocalStorage voi Firestore Real-time listener (`onSnapshot`).
+   - Khi sinh vien khai bao tren thiet bi di dong, giang vien xem tren may tinh de ban duoc cap nhat ngay lap tuc ma khong can tai lai trang.
+
+6. **Kha nang Cach ly Loi (TabErrorBoundary):**
+   - Vung noi dung giao dien duoc bọc trong bo dem `TabErrorBoundary`. Neu mot tab gap su co tam thoi khi tai du lieu mang, thanh menu Sidebar va Navbar van hoat dong 100%, tuyet doi khong gay sup ung dung hoac huy phien dang nhap cua nguoi dung.
 
 ---
 
-## 3. CẤU TRÚC THƯ MỤC CHUẨN DOANH NGHIỆP (100% TYPESCRIPT)
+## 3. NGAN XEP CONG NGHE (TECHNOLOGY STACK)
+
+| Phan he | Cong nghe su dung | Phien ban | Muc dich su dung |
+| :--- | :--- | :---: | :--- |
+| **Backend Runtime** | Node.js Native | `v24.19.0` | Thuc thi truc tiep TypeScript bang co `--experimental-strip-types`, khong can bien dich trung gian |
+| **Ngon ngu chu dao** | TypeScript | `v5.5+` | Dong nhat 100% types tai ca Backend, Frontend va Adapter Code |
+| **Co so Du lieu Local** | SQLite (`node:sqlite`) | Embedded | Che do WAL (Write-Ahead Logging), ho tro truy van bat dong bo toc do cao |
+| **Co so Du lieu Cloud** | Google Cloud Firestore | `v10.13.0` | Dong bo du lieu thoi gian thuc giua cac thiet bi cua giang vien va sinh vien |
+| **Frontend Framework** | React SPA (Functional) | `v18.3.1` | Khung giao dien nguoi dung theo kien truc Component-driven |
+| **Styling & Design** | Tailwind CSS Enterprise | CDN | Trien khai bo nhan dien TDTU Design System: Navy `#003087`, Red `#dc2626`, White `#ffffff` |
+| **Excel Engine** | SheetJS (`xlsx`) | `v0.18.5` | Doc, phan tich va ket xuat file Excel da sheet (KTCN & TSNN) ngay tai trinh duyet |
+| **Cloud Hosting** | Firebase Hosting | Serverless | Trien khai Frontend SPA truc tuyen 24/7 tren mang luoi CDN toan cau |
+| **Kiem thu Tu dong** | Node.js Test Runner | Native | Bo test suite 24 tests chay nhanh trong ~1.3s, khong can cai Jest/Mocha |
+| **Container hoa** | Docker & Docker Compose | Multi-stage | Dong goi toan bo he thong de trien khai nhat quan tren moi may chu |
+
+---
+
+## 4. CAU TRUC THU MUC CHUAN CHUYEN NGHIEP
 
 ```text
 Dashoard_TSNN-main/
-├── TDTU_DB_CNTT_System/                 # Phân hệ Chính thức Hoàn chỉnh của Hệ thống
-│   ├── backend/                         # Node.js 24 RESTful API Service (TypeScript)
-│   │   ├── src/
-│   │   │   ├── config/
-│   │   │   │   └── env.config.ts        # Biến môi trường & cấu hình hệ thống
-│   │   │   ├── controllers/             # Tiếp nhận HTTP Request & trả Response
-│   │   │   │   ├── auth.controller.ts
-│   │   │   │   ├── bulletin.controller.ts
-│   │   │   │   ├── certificates.controller.ts
-│   │   │   │   ├── documents.controller.ts
-│   │   │   │   ├── internship.controller.ts
-│   │   │   │   ├── notification.controller.ts
-│   │   │   │   ├── reporting.controller.ts
-│   │   │   │   └── students.controller.ts
-│   │   │   ├── data/                    # CSDL SQLite & Master Dataset 91 SV
-│   │   │   │   ├── db_cntt.sqlite
-│   │   │   │   └── real-students.json
-│   │   │   ├── middlewares/             # Middlewares xác thực & Phân quyền Prime RBAC
-│   │   │   │   ├── middleware.ts
-│   │   │   │   └── prime-rbac.ts
-│   │   │   ├── models/                  # Interface, Contracts & Schema CSDL
-│   │   │   │   ├── reporting.contracts.ts
-│   │   │   │   ├── sqlite.db.ts
-│   │   │   │   └── types.ts
-│   │   │   ├── routes/                  # Định tuyến HTTP Router
-│   │   │   │   ├── api.router.ts
-│   │   │   │   └── http-router.ts
-│   │   │   ├── services/                # Pure Business Logic
-│   │   │   │   ├── charts/              # Plug-and-Play Chart Plugins (.ts)
-│   │   │   │   │   ├── major-distribution.plugin.ts
-│   │   │   │   │   ├── salary-trend.plugin.ts
-│   │   │   │   │   ├── status-pie.plugin.ts
-│   │   │   │   │   └── top-companies.plugin.ts
-│   │   │   │   ├── auth.service.ts
-│   │   │   │   ├── bulletin.service.ts
-│   │   │   │   ├── certificates.service.ts
-│   │   │   │   ├── chart-router.ts      # BỘ ĐỊNH TUYẾN BIỂU ĐỒ (CHART ROUTER)
-│   │   │   │   ├── company-data.adapter.ts # ADAPTER ĐA SCHEMA V1 / V2
-│   │   │   │   ├── documents.service.ts
-│   │   │   │   ├── email-parser.ts
-│   │   │   │   ├── internship.service.ts
-│   │   │   │   ├── notification.service.ts
-│   │   │   │   ├── students.service.ts
-│   │   │   │   ├── tax-lookup.adapter.ts
-│   │   │   │   └── widget-registry.ts   # WIDGET REGISTRY TỰ ĐỘNG KHÁM PHÁ
-│   │   │   ├── utils/
-│   │   │   │   └── response.ts
-│   │   │   └── server.ts                # Entrypoint Backend HTTP Server (Port 3000)
-│   │   ├── tests/                       # Bộ kiểm thử tự động API & Prime RBAC (9/9 Tests)
-│   │   │   ├── api.test.ts
-│   │   │   └── prime-rbac.test.ts
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   └── frontend/                        # React 18 TypeScript SPA (TDTU Design System)
-│       ├── data/                        # Dữ liệu mẫu JSON & File Excel mẫu GPA
-│       │   ├── DSSV_KTCN_TSNN_HK1_2026-2027_GPA.xlsx
-│       │   └── real-students.json
-│       ├── src/
-│       │   ├── assets/                  # Tài nguyên hình ảnh & Logo TDTU
-│       │   ├── components/
-│       │   │   ├── common/              # AdminNotificationModal.tsx, Navbar.tsx, Sidebar.tsx
-│       │   │   └── student/             # StudentEligibilityBanner.tsx
-│       │   ├── config/
-│       │   │   └── firebase.config.ts   # Cấu hình Firebase Auth & Firestore
-│       │   ├── pages/                   # 14 Trang chức năng nghiệp vụ (.tsx)
-│       │   │   ├── AccountsPage.tsx     # Quản lý tài khoản & Phân quyền Prime RBAC
-│       │   │   ├── BulletinPage.tsx     # Bảng tin tuyển dụng & Thông báo 2 tầng
-│       │   │   ├── CertificatesPage.tsx # Hồ sơ chứng chỉ ngoại ngữ TDTU
-│       │   │   ├── DashboardPage.tsx    # Bảng điều khiển ra quyết định & Chart Router
-│       │   │   ├── DeclarationPage.tsx  # Khai báo thực tập & Tra cứu MST
-│       │   │   ├── DocumentsPage.tsx    # Trung tâm In ấn A4 & Bộ Biểu mẫu Khoa CNTT
-│       │   │   ├── EmailJdPage.tsx      # Tiếp nhận & Duyệt tin từ Email
-│       │   │   ├── ExportDataPage.tsx   # Xuất báo cáo dữ liệu học vụ Excel
-│       │   │   ├── HandbookPage.tsx     # Cẩm nang & Quy chế học phần
-│       │   │   ├── ImportDataPage.tsx   # Nạp dữ liệu Excel đầu kỳ
-│       │   │   ├── LoginPage.tsx        # Đăng nhập SSO & Firebase
-│       │   │   ├── ProfilePage.tsx      # Hồ sơ sinh viên cá nhân
-│       │   │   ├── SemestersPage.tsx    # Quản lý kế hoạch học kỳ
-│       │   │   └── StudentsPage.tsx     # Quản lý & Thẩm định danh sách sinh viên
-│       │   ├── services/                # API Gateway Client & Prime RBAC (.ts)
-│       │   │   ├── api.client.ts
-│       │   │   └── prime-rbac.ts
-│       │   ├── types/                   # Hợp đồng kiểu dữ liệu TypeScript
-│       │   │   └── index.ts
-│       │   ├── App.tsx                  # Điều phối Router trung tâm & Popup Thông báo SV
-│       │   └── index.css                # CSS Chuẩn TDTU & In ấn @media print
-│       ├── index.html                   # HTML Host cho Single Page Application
-│       ├── package.json
-│       └── tsconfig.json
-├── Adapter_Code/                        # Gói Demo Độc Lập Kiến Trúc Chart Router & Adapter (15/15 Tests)
-│   └── reporting-adapter-demo/
-├── docs/                                # Thư mục tài liệu kỹ thuật & báo cáo tổng thể
-│   ├── architecture/                    # Sơ đồ thiết kế Sequence & Router
-│   ├── plans/                           # Kế hoạch phát triển dự án
-│   ├── API_SPECIFICATION.md
-│   ├── BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md
-│   ├── HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md
-│   └── HUONG_DAN_TAO_CHART_PLUGIN_MOI.md
-├── .firebaserc                          # Cấu hình dự án Firebase Hosting
-├── firebase.json                        # Quy tắc Rewrite & Hosting Headers (.ts/.tsx)
-├── firestore.rules                      # Bảo mật Firestore Rules
-├── Dockerfile                           # Docker build đa tầng cho toàn bộ dự án
-├── docker-compose.yml                   # Khởi chạy Docker tiện lợi
-├── package.json                         # Scripts quản lý vòng đời dự án
-└── start-local.bat                      # Khởi chạy 1-Click trên Windows
+|-- TDTU_DB_CNTT_System/
+|   |-- backend/
+|   |   |-- src/
+|   |   |   |-- config/
+|   |   |   |   `-- env.config.ts                  # Bien moi truong va cau hinh cong mang
+|   |   |   |-- controllers/                       # 8 Controllers tiep nhan va tra loi HTTP
+|   |   |   |   |-- auth.controller.ts
+|   |   |   |   |-- bulletin.controller.ts
+|   |   |   |   |-- certificates.controller.ts
+|   |   |   |   |-- documents.controller.ts
+|   |   |   |   |-- internship.controller.ts
+|   |   |   |   |-- notification.controller.ts
+|   |   |   |   |-- reporting.controller.ts
+|   |   |   |   `-- students.controller.ts
+|   |   |   |-- data/                              # CSDL SQLite va tap du lieu 91 sinh vien
+|   |   |   |   |-- db_cntt.sqlite
+|   |   |   |   `-- real-students.json
+|   |   |   |-- middlewares/                       # Middleware xac thuc va Prime RBAC
+|   |   |   |   |-- middleware.ts
+|   |   |   |   `-- prime-rbac.ts
+|   |   |   |-- models/                            # Schema du lieu va hop dong kien truc
+|   |   |   |   |-- reporting.contracts.ts
+|   |   |   |   |-- sqlite.db.ts
+|   |   |   |   `-- types.ts
+|   |   |   |-- routes/                            # Dinh tuyen RESTful API
+|   |   |   |   |-- api.router.ts
+|   |   |   |   `-- http-router.ts
+|   |   |   |-- services/                          # Cac phan he dich vu nghiep vu doc lap
+|   |   |   |   |-- charts/                        # Thu muc chua cac Plugin Bieu do (OCP)
+|   |   |   |   |   |-- major-distribution.plugin.ts
+|   |   |   |   |   |-- salary-trend.plugin.ts
+|   |   |   |   |   |-- status-pie.plugin.ts
+|   |   |   |   |   `-- top-companies.plugin.ts
+|   |   |   |   |-- auth.service.ts
+|   |   |   |   |-- bulletin.service.ts
+|   |   |   |   |-- certificates.service.ts
+|   |   |   |   |-- chart-router.ts                # Bo dinh tuyen bieu do (Chart Router)
+|   |   |   |   |-- company-data.adapter.ts        # Adapter chuan hoa da Schema V1 / V2
+|   |   |   |   |-- documents.service.ts
+|   |   |   |   |-- email-parser.ts                # Boc tach tin tuyen dung tu email forward
+|   |   |   |   |-- internship.service.ts
+|   |   |   |   |-- notification.service.ts        # Phat thong bao hoc vu va chong Spam
+|   |   |   |   |-- students.service.ts
+|   |   |   |   |-- tax-lookup.adapter.ts          # Tra cuu phap ly doanh nghiep qua MST
+|   |   |   |   `-- widget-registry.ts             # Danh muc bieu do Singleton
+|   |   |   |-- utils/
+|   |   |   |   `-- response.ts
+|   |   |   `-- server.ts                          # Diem khoi chay Backend Server (Port 3000)
+|   |   |-- tests/                                 # Kiem thu tu dong API va Prime RBAC (9/9 Pass)
+|   |   |   |-- api.test.ts
+|   |   |   `-- prime-rbac.test.ts
+|   |   |-- package.json
+|   |   `-- tsconfig.json
+|   `-- frontend/                                  # React 18 TypeScript Single Page Application
+|       |-- src/
+|       |   |-- assets/                            # Logo TDTU va hinh anh he thong
+|       |   |-- components/
+|       |   |   |-- common/                        # AdminNotificationModal, Navbar, Sidebar
+|       |   |   `-- student/                       # StudentEligibilityBanner
+|       |   |-- config/
+|       |   |   `-- firebase.config.ts             # Ket noi Firebase Auth va Cloud Firestore
+|       |   |-- pages/                             # 14 Trang chuc nang nghiep vu (.tsx)
+|       |   |   |-- AccountsPage.tsx               # Cai dat he thong va Prime RBAC
+|       |   |   |-- BulletinPage.tsx               # Bang tin tuyen dung va Thong bao hoc vu
+|       |   |   |-- CertificatesPage.tsx           # Ho so chung chi tieng Anh tot nghiep B1
+|       |   |   |-- DashboardPage.tsx              # Bang dieu khien ra quyet dinh
+|       |   |   |-- DeclarationPage.tsx            # Khai bao thuc tap 3 nhanh va tra cuu MST
+|       |   |   |-- DocumentsPage.tsx              # Trung tam in an A4 (Bo 6 bieu mau)
+|       |   |   |-- EmailJdPage.tsx                # Phe duyet JD tu dong tu Email
+|       |   |   |-- ExportDataPage.tsx             # Xuat bao cao hoc vu Excel
+|       |   |   |-- HandbookPage.tsx               # Cam nang thuc tap va quy che 320 gio
+|       |   |   |-- ImportDataPage.tsx             # Nap danh sach sinh vien Excel dau ky
+|       |   |   |-- LoginPage.tsx                  # Dang nhap Google SSO va Firebase
+|       |   |   |-- ProfilePage.tsx                # Ho so ca nhan sinh vien va link CV
+|       |   |   |-- SemestersPage.tsx              # Quan ly ke hoach hoc ky va han chot
+|       |   |   `-- StudentsPage.tsx               # Quan ly danh sach 91 sinh vien thuc te
+|       |   |-- services/
+|       |   |   |-- api.client.ts                  # HTTP Client, Firestore Sync va Cache
+|       |   |   `-- prime-rbac.ts                  # Kiem tra quyen phia Client
+|       |   |-- types/
+|       |   |   `-- index.ts                       # Dinh nghia Type hop dong dung chung
+|       |   |-- App.tsx                            # Bo dinh tuyen tong va TabErrorBoundary
+|       |   `-- index.css                          # Style sheet chuan TDTU va Media Print A4
+|       |-- index.html                             # Host HTML nap 22 TypeScript Modules
+|       |-- package.json
+|       `-- tsconfig.json
+|-- Adapter_Code/
+|   `-- reporting-adapter-demo/                    # Goi Demo kien truc Chart Router va Adapter
+|       |-- src/
+|       |   |-- chart-plugins.ts                   # Cac bieu do Pie va Bar dung chung Provider
+|       |   |-- chart-router.ts                    # Luong co Chart Router (Port 3102)
+|       |   |-- company-adapter.ts                 # Adapter xu ly Schema V1 va Schema V2
+|       |   |-- contracts.ts                       # Interface Provider va Chart
+|       |   |-- demo-page.ts                       # Giao dien so sanh truc quan 2 luong
+|       |   |-- main.ts                            # Entrypoint khoi chay 3 services
+|       |   |-- mock-company-service.ts            # Server upstream gia lap (Port 3200)
+|       |   |-- reporting-server.ts                # Server reporting (Port 3101 va 3102)
+|       |   |-- shared-http-client.ts              # Http client ho tro timeout va loi mang
+|       |   `-- widget-registry.ts                 # Luong khong Router (Port 3101)
+|       |-- tests/
+|       |   `-- demo.test.ts                       # 15 Bai kiem thu tu dong Adapter
+|       `-- README.md
+|-- docs/                                          # He thong tai lieu ky thuat va ban giao
+|   |-- architecture/                              # So do thiet ke Sequence va Routing Flow
+|   |-- plans/                                     # Ke hoach phat trien du an
+|   |-- API_SPECIFICATION.md                       # Dac ta toan bo 25+ RESTful API Endpoints
+|   |-- BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md # Bao cao tien do chi tiet cac giai doan
+|   |-- HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md        # Tai lieu ban giao ky thuat 2026 - 2031
+|   |-- HUONG_DAN_TAO_CHART_PLUGIN_MOI.md          # Huong dan tung buoc tao Chart Plugin
+|   `-- TAI_KHOAN_KIEM_THU.md                      # Huong dan dang nhap cac vai tro
+|-- .firebaserc                                    # Cau hinh dinh danh du an Firebase
+|-- firebase.json                                  # Quy tac Rewrite va Hosting Headers
+|-- firestore.rules                                # Luat bao mat Cloud Firestore
+|-- Dockerfile                                     # Dockerfile da tang (Multi-stage build)
+|-- docker-compose.yml                             # Khoi chay container nhanh
+|-- package.json                                   # Script dieu khien toan bo repository
+|-- start-local.bat                                # Script khoi chay 1-Click tren Windows
+|-- TAI_KHOAN_KIEM_THU.txt                         # Danh sach tai khoan test san sang
+`-- README.md                                      # Tai lieu gioi thieu tong the du an
 ```
 
 ---
 
-## 4. HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY HỆ THỐNG
+## 5. HUONG DAN CAI DAT VA KHOI CHAY
 
-### 4.1. Yêu cầu môi trường
-* **Node.js:** Phiên bản `>= 22.16` hoặc `24.x` (khuyến nghị Node.js 24 để tận dụng cờ `--experimental-strip-types` và SQLite tích hợp sẵn).
-* **Không yêu cầu cài thêm CSDL bên ngoài:** Hệ thống sử dụng engine SQLite tích hợp sẵn trong Node.js (`node:sqlite`), không cần cài đặt MySQL/PostgreSQL phức tạp.
+### 5.1. Yeu cau he thong
+- **Node.js:** Phien ban `>= 22.16.0` hoac `v24.x` (Khuyen nghi Node.js 24 de su dung tinh nang `--experimental-strip-types` va module CSDL `node:sqlite` co san).
+- **Khong can cai dat them CSDL ben ngoai:** He thong su dung tep SQLite cuc bo duoc quan ly tu dong boi Node.js, khong can cai MySQL, PostgreSQL hoac Redis.
 
-### 4.2. Khởi chạy Nhanh trên Máy tính Cá nhân (Windows / macOS / Linux)
-
-#### Cách 1: Khởi chạy 1-Click trên Windows
-Nhấp đúp chuột vào tệp tại thư mục gốc dự án:
-```bash
+### 5.2. Cach 1: Khoi chay 1-Click tren he dieu hanh Windows
+Nguoi dung nhap dup chuot vao tep tai thu muc goc cua du an:
+```cmd
 start-local.bat
 ```
-Script sẽ tự động:
-1. Kiểm tra môi trường Node.js.
-2. Thực thi bộ kiểm thử tự động TypeScript (`api.test.ts` & `prime-rbac.test.ts`).
-3. Mở trình duyệt Web tại địa chỉ `http://localhost:3000`.
-4. Khởi chạy máy chủ Backend phục vụ đồng thời RESTful API và giao diện Frontend TypeScript SPA.
+Tep lenh se thuc hien cac buoc tu dong:
+1. Kiem tra phien ban Node.js hien tai cua may tinh.
+2. Thuc thi toan bo 24 bai kiem thu tu dong (Unit Tests).
+3. Khoi dong Backend Server tai cong 3000 phuc vu ca API va Giao dien Web.
+4. Tu dong mo trinh duyet mac dinh tai dia chi `http://localhost:3000`.
 
-#### Cách 2: Khởi chạy bằng dòng lệnh (Terminal / PowerShell)
+### 5.3. Cach 2: Khoi chay bang Dong lenh (Terminal / PowerShell)
 ```bash
-# 1. Di chuyển vào thư mục gốc của dự án
-cd D:\KTCN_TSNN\Dashoard_TSNN-main
+# Buoc 1: Chuyen vao thu muc goc cua du an
+cd Dashoard_TSNN-main
 
-# 2. Chạy toàn bộ 24 bài kiểm thử tự động (API + Prime RBAC + Adapter Demo)
+# Buoc 2: Chay toan bo bo kiem thu tu dong (Backend API, Prime RBAC, Chart Adapter)
 npm test
 
-# 3. Khởi động máy chủ Backend & Frontend tại cổng 3000
+# Buoc 3: Khoi chay may chu ung dung
 npm start
 ```
-Mở trình duyệt truy cập: **`http://localhost:3000`**
+Mo trinh duyet va truy cap dia chi: **`http://localhost:3000`**
 
-#### Cách 3: Khởi chạy với Docker Compose
+### 5.4. Cach 3: Khoi chay bang Docker Compose
 ```bash
 docker compose up -d --build
 ```
+He thong se duoc container hoa hoan toan va mo cong 3000 de truy cap.
 
 ---
 
-## 5. DANH SÁCH TÀI KHOẢN TRUY CẬP KIỂM THỬ (TEST ACCOUNTS)
+## 6. DANH SACH TAI KHOAN KIEM THU THEO 4 VAI TRO
 
-Hệ thống đã nạp sẵn danh sách người dùng mẫu tương ứng với từng vai trò kiểm thử chức năng và phân quyền Prime RBAC:
+He thong ap dung nghiem ngat co che phan quyen Prime RBAC va ngan chan tuyet doi viec su dung email ngoai ten mien nha truong. Duoi day la danh sach tai khoan da duoc nap san vao he thong de phuc vu danh gia va kiem thu:
 
-| Vai trò (Role) | Email đăng nhập | Mật khẩu mặc định | Mô tả thẩm quyền |
-| :--- | :--- | :---: | :--- |
-| **Ban Chủ nhiệm / Admin** | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền cấu hình học kỳ, duyệt thông báo toàn trường, quản lý biểu đồ, cấp quyền tài khoản |
-| **Giảng viên Cố vấn** | `nguyenvana@tdtu.edu.vn` | `Lecturer@123456` | Thẩm duyệt hồ sơ thực tập, xem thông tin doanh nghiệp SV khai báo, duyệt JD email, xuất 6 mẫu in A4 |
-| **Giảng viên Điều phối** | `tranvanb@tdtu.edu.vn` | `Lecturer@123456` | Quản lý tiến độ sinh viên theo kỳ, theo dõi cảnh báo học vụ, nạp/xuất danh sách sinh viên |
-| **Sinh viên (KTCN + TSNN)** | `522H0045@student.tdtu.edu.vn` | `Student@123456` | Sinh viên học cả 2 môn song song, khai báo nơi thực tập & MST, nộp chứng chỉ ngoại ngữ, nhận popup thông báo |
-| **Sinh viên (Cần hỗ trợ)** | `522H0001@student.tdtu.edu.vn` | `Student@123456` | Đã nộp đơn nhờ Khoa điều phối nơi thực tập |
-
----
-
-## 6. TRUNG TÂM IN ẤN & BỘ 6 BIỂU MẪU CHUẨN A4 DÀNH CHO GIẢNG VIÊN
-
-Tại mục **Văn bản & Biểu mẫu** (`/documents`), Giảng viên có thể xem trước trực quan (A4 Live Preview) và in ấn/xuất file theo đúng chuẩn thể thức hành chính:
-
-1. **Mẫu 1 (`mau_tong_ket`):** Báo cáo Tổng kết & Xét duyệt Đợt Thực tập (Phục vụ họp Ban Chủ nhiệm Khoa, có 7 chỉ tiêu thống kê, bảng danh sách xét duyệt chi tiết, chữ ký 3 bên).
-2. **Mẫu 2 (`mau_phan_bo`):** Bảng Phân bổ Sinh viên theo Doanh nghiệp Tiếp nhận (Gửi FPT Software, VNG, Viettel, KMS... kèm thông tin mentor và danh sách SV).
-3. **Mẫu 3 (`mau_bang_diem`):** Bảng Theo dõi & Đánh giá Điểm Thực tập Cuối kỳ (Tính điểm theo trọng số: Nhật ký 20%, Doanh nghiệp BM-03 40%, Báo cáo Giảng viên 40%, Điểm chữ và Đạt/Không đạt).
-4. **Mẫu 4 (`mau_giay_gioi_thieu`):** Giấy Giới Thiệu Sinh viên Thực tập (Bản in A4 đứng có số công văn, quyết định và khung ký đóng dấu của Trưởng Khoa CNTT).
-5. **Mẫu 5 (`mau_dieu_phoi`):** Danh sách Sinh viên Cần hỗ trợ Điều phối (Có GPA, xếp loại, kỹ năng, nguyện vọng, SĐT để Giảng viên gửi Hội đồng Doanh nghiệp tuyển dụng).
-6. **Mẫu 6 (`mau_bieu_mau_bm`):** Bộ Biểu mẫu quy định chuẩn Khoa CNTT (BM-01 Phiếu tiếp nhận DN, BM-02 Nhật ký tuần, BM-03 Phiếu đánh giá DN, BM-04 Đề cương & Quy chế).
+| Nhom Vai tro | Ho va Ten | Email dang nhap (@tdtu.edu.vn / @student.tdtu.edu.vn) | Mat khau mac dinh | Pham vi tham quyen tren he thong |
+| :--- | :--- | :--- | :---: | :--- |
+| **1. Admin / BCN Khoa** | TS. Duong Huu Phuc | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` | Toan quyen he thong: quan ly hoc ky, cau hinh han chot, duyet thong bao toan truong, quan ly bieu do Dashboard, phan quyen Prime RBAC, in 6 bieu mau A4 |
+| **1. Admin phu** | TS. Pham Van C | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Toan quyen quan tri hoc vu va xuat bao cao |
+| **2. Giang vien Co van** | ThS. Nguyen Van A | `nguyenvana@tdtu.edu.vn` | `Lecturer@123456` | Quan ly 91 sinh vien, xem tien do va noi thuc tap SV khai bao, tra cuu chung chi tieng Anh, mo link CV, duyet JD tu email, xuat 6 mau in A4 |
+| **2. Giang vien Co van** | ThS. Tran Minh Lan | `tranminhlan@tdtu.edu.vn` | `Lecturer@123456` | Tham dinh ho so sinh vien theo chuyen nganh He thong thong tin va Mang |
+| **3. Sinh vien trong ky** | Nguyen Huu Nhan | `522h0045@student.tdtu.edu.vn` | `Student@123456` | Sinh vien du dieu kien hoc song song 2 hoc phan KTCN va TSNN, khai bao noi thuc tap va tra cuu MST, nop chung chi B1, xem Cam nang |
+| **3. Sinh vien thuc te** | Vo Duy Tri | `51900839@student.tdtu.edu.vn` | `Student@123456` | Sinh vien thuc te thuoc tap du lieu 91 SV (Lop 19050402 - Nganh HTTT) |
+| **3. Sinh vien can ho tro** | Nguyen Minh Anh | `522h0001@student.tdtu.edu.vn` | `Student@123456` | Da chon nhanh "Can Khoa ho tro dieu phoi", gui nguyen vong va link CV |
+| **4. Sinh vien ngoai ky** | Nguyen Van Ngoai Ky | `52100999@student.tdtu.edu.vn` | `Student@123456` | Sinh vien chua co ten trong danh sach hoc phan ky nay; he thong tu dong tinh gon giao dien chi con 3 muc: Bang dieu khien, Ho so ca nhan, Bang tin |
 
 ---
 
-## 7. HƯỚNG DẪN THÊM BIỂU ĐỒ MỚI (PLUG AND PLAY CHART PLUGIN)
+## 7. TRUNG TAM IN AN VA BO 6 BIEU MAU A4 THEO NGHI DINH 30/2020/ND-CP
 
-Nhờ áp dụng nguyên lý **Open-Closed Principle (OCP)**, khi cần bổ sung một biểu đồ thống kê mới vào Dashboard, lập trình viên **chỉ cần tạo đúng 01 file** trong thư mục `TDTU_DB_CNTT_System/backend/src/services/charts/ten-bieu-do.plugin.ts`:
+Tai phan he **Van ban va Bieu mau** (`/documents`), he thong cung cap cong cu xem truoc truc quan (A4 Live Preview) va xuat in an truc tiep ra kho giay A4 theo dung quy cach the thuc van ban hanh chinh nha nuoc:
+
+1. **Mau 1 (`mau_tong_ket`):** Bao cao Tong ket va Xet duyet Dot Thuc tap Doanh nghiep (Phuc vu cuoc hop Ban Chu nhiem Khoa, tong hop 7 chi so KPI cot loi, danh sach chi tiet va khung ky 3 ben: Nguoi lap, Truong Bo mon, Truong Khoa).
+2. **Mau 2 (`mau_phan_bo`):** Bang Phan bo Sinh vien theo Don vi Tiep nhan (Gui cac doanh nghiep doi tac nhu FPT Software, VNG, Viettel, TMA, KMS kem thong tin mentor va vi tri tiep nhan).
+3. **Mau 3 (`mau_bang_diem`):** Bang Tong hop Diem Danh gia Ket qua Thuc tap (Tong hop diem so theo cong thuc trong so: Nhat ky 20%, Danh gia Doanh nghiep BM-03 40%, Bao cao Giang vien 40%, quy doi he 10, he 4 va diem chu).
+4. **Mau 4 (`mau_giay_gioi_thieu`):** Giay Gioi thieu Sinh vien Thuc tap Doanh nghiep (Van ban hanh chinh trang trong co so cong van, thong tin phap ly cua Khoa va khung ky dong dau giay cua lanh dao Khoa).
+5. **Mau 5 (`mau_dieu_phoi`):** Danh sach Sinh vien De nghi Khoa Ho tro Ket noi Doanh nghiep (Tong hop GPA, chuyen nganh, ky nang, nguyen vong khu vuc va so dien thoai de Khoa gui toi Hoi dong Doanh nghiep doi tac).
+6. **Mau 6 (`mau_bieu_mau_bm`):** Bo Tai lieu Quy dinh va Huong dan Thuc tap (Tich hop bieu mau BM-01 Phieu tiep nhan, BM-02 Nhat ky thuc tap tuan, BM-03 Phieu danh gia doanh nghiep va de cuong quy dinh 320 gio lam viec thuc te).
+
+---
+
+## 8. HUONG DAN MO RONG: TAO PLUGIN BIEU DO MOI (PLUG-AND-PLAY)
+
+Nho kien truc **Chart Router** va **Widget Registry**, bat ky doi ngu ky su ke thua nao cung co the bo sung them bieu do moi ma khong can can thiep vao server router hay controller.
+
+### Quy trinh 3 buoc:
+1. Tao 01 file plugin moi tai thu muc `TDTU_DB_CNTT_System/backend/src/services/charts/ten-bieu-do.plugin.ts`.
+2. Trien khai interface `IChartPlugin` gom 2 ham: `getMetadata()` va `execute()`.
+3. Dang ky instance vao `widgetRegistry.register(plugin)`.
 
 ```typescript
 import { getDatabase } from '../../models/sqlite.db.ts';
 import { widgetRegistry } from '../widget-registry.ts';
 import type { IChartPlugin, WidgetMetadata, StandardChartPayload } from '../../models/reporting.contracts.ts';
 
-export class CustomAcademicPlugin implements IChartPlugin {
+export class EvaluationResultPlugin implements IChartPlugin {
+  // 1. Khai bao metadata cho danh muc Widget
   getMetadata(): WidgetMetadata {
     return {
-      id: 'custom-academic-chart',
-      name: 'Thống kê Kết quả Đánh giá Doanh nghiệp',
+      id: 'evaluation-result-chart',
+      name: 'Thong ke Ket qua Danh gia Thuc tap (BM-03)',
       category: 'academic',
-      description: 'Phân loại kết quả đánh giá sinh viên từ Mentor doanh nghiệp',
+      description: 'Phan bo xep loai thuc tap tu can bo huong dan doanh nghiep',
       defaultSize: 'medium',
       supportedChartTypes: ['pie', 'bar']
     };
   }
 
-  execute(): StandardChartPayload {
+  // 2. Logic truy van du lieu va dong goi theo hop dong StandardChartPayload
+  async execute(options: Record<string, any> = {}): Promise<StandardChartPayload> {
     const db = getDatabase();
+    
+    // Thuc hien truy van SQLite hoac goi dich vu khach
+    const categories = ['Xuat sac', 'Gioi', 'Kha', 'Trung binh'];
+    const data = [38, 42, 10, 1];
+
     return {
-      widgetId: 'custom-academic-chart',
-      title: 'Tỷ lệ Đánh giá Doanh nghiệp',
+      widgetId: 'evaluation-result-chart',
+      title: 'Xep loai Thuc tap tu Doanh nghiep',
       chartType: 'pie',
-      categories: ['Xuất sắc', 'Giỏi', 'Khá', 'Đạt'],
-      series: [{ name: 'Số lượng SV', type: 'pie', data: [35, 42, 12, 2], color: '#003087' }],
+      categories,
+      series: [
+        {
+          name: 'So luong sinh vien',
+          type: 'pie',
+          data,
+          color: '#003087'
+        }
+      ],
+      summaryStats: {
+        totalEvaluated: 91,
+        excellentRate: '41.8%'
+      },
       generatedAt: new Date().toISOString(),
       schemaVersion: 'standard'
     };
   }
 }
 
-// Tự động đăng ký vào WidgetRegistry (Cắm và chạy)
-const plugin = new CustomAcademicPlugin();
+// 3. Tu dong dang ky vao Widget Registry (Plug and Play)
+const plugin = new EvaluationResultPlugin();
 widgetRegistry.register(plugin);
 export default plugin;
 ```
-> Biểu đồ mới ngay lập tức xuất hiện trên API `GET /api/dashboard/widgets` mà **không cần sửa một dòng code nào trong `server.ts` hay `chart-router.ts`**.
+
+Sau khi tao xong file, bieu do moi se lap tuc xuat hien tren endpoint `GET /api/dashboard/widgets` va duoc render tu dong tren Dashboard giang vien ma khong phai khoi dong lai toan bo he thong.
 
 ---
 
-## 8. TRIỂN KHAI LÊN FIREBASE HOSTING (PRODUCTION)
+## 9. BO KIEM THU TU DONG (AUTOMATED TEST SUITES)
 
-Để triển khai phiên bản giao diện TypeScript mới nhất lên Firebase Hosting:
+He thong tich hop san 24 bai kiem thu tu dong (Unit Tests va Integration Tests) chay truc tiep qua Node.js native test runner:
+
 ```bash
-# Bước 1: Di chuyển vào thư mục gốc dự án
-cd D:\KTCN_TSNN\Dashoard_TSNN-main
+npm test
+```
 
-# Bước 2: Chạy lệnh deploy hosting (hoặc npm run deploy:firebase)
+### Ket qua kiem thu thuc te (24/24 Tests Passed):
+- **Phan he Reporting Adapter Demo (15 tests):**
+  - Kiem tra widget discovery va tra cuu registry.
+  - Kiem tra tinh dong nhat du lieu giua Schema V1 va Schema V2 khi di qua Adapter.
+  - Kiem tra kha nang tai su dung Adapter cho ca hai loai bieu do Pie va Bar.
+  - Kiem tra co che xu ly ma loi: 404 Not Found, 502 Bad Gateway khi upstream sai dinh dang, 503 Service Unavailable, va 504 Gateway Timeout.
+  - Kiem tra su tuong dong ve ket qua Chart JSON giua mo hinh Co Router va Khong Router.
+- **Phan he Backend API Core (6 tests):**
+  - Test 1: API Summary thong ke tong quan dot thuc tap.
+  - Test 2: API Tra cuu phap ly Ma so thue doanh nghiep (MST VNG `0303882213`).
+  - Test 3: API Bang tin tuyen dung va thong bao hoc vu.
+  - Test 4: API Widget Registry va Chart Router dispatch.
+  - Test 5: API Notification Anti-Spam (Bo qua thong bao trung lap trong 20 giay).
+  - Test 6: API Notification Admin Broadcast va xem truoc so luong nguoi nhan.
+- **Phan he Phan quyen Prime RBAC (3 tests):**
+  - Test 1: Kiem tra khop 100% ma tran so nguyen to chuan cua BCN Khoa CNTT.
+  - Test 2: Phep toan Cap quyen (Nhan so nguyen to) va Go quyen (Chia so nguyen to).
+  - Test 3: Giai ma mat na quyen (Explain Permission Mask).
+
+---
+
+## 10. TRIEN KHAI VA VAN HANH HE THONG (DEPLOYMENT)
+
+### 10.1. Trien khai len Firebase Hosting (Moi truong Static Production)
+Giao dien Frontend TypeScript duoc trien khai truc tiep tren ha tang mang phan phoi toan cau cua Google Firebase:
+```bash
+# Cai dat cong cu Firebase CLI neu chua co
+npm install -g firebase-tools
+
+# Thuc hien build va deploy len moi truong truc tuyen
+npm run deploy:firebase
+# Hoac chay lenh:
 npx firebase-tools deploy --only hosting
 ```
-Kiểm tra kết quả trực tuyến tại: **https://dashboard-39cf8.web.app**
+Truy cap kiem tra truc tiep: **https://dashboard-39cf8.web.app**
+
+### 10.2. Trien khai noi bo tren May chu Nha truong (On-Premises Production)
+Khi dua he thong ve van hanh tren ha tang server rieng cua Khoa CNTT hoac Trung tam May tinh TDTU:
+1. Su dung Docker Compose da duoc cau hinh san trong file `docker-compose.yml`.
+2. Thiet lap Nginx Reverse Proxy phia truoc de dieu phoi luong:
+   - `http://thuctap.cntt.tdtu.edu.vn/api/` -> chuyen tiep vao Node.js Backend Server tai cong 3000.
+   - `http://thuctap.cntt.tdtu.edu.vn/` -> phuc vu thu muc `TDTU_DB_CNTT_System/frontend/` voi fallback rewrite ve `index.html`.
 
 ---
 
-## 9. ĐỘI NGŨ PHÁT TRIỂN & BẢN QUYỀN
+## 11. DANH MUC TAI LIEU BAN GIAO LIEN QUAN
 
-* **Đơn vị chủ quản:** Khoa Công nghệ Thông tin — Trường Đại học Tôn Đức Thắng (TDTU)
-* **Khóa đào tạo & Đề tài:** Đồ án Chuyên ngành / Thực tập tốt nghiệp ngành Kỹ thuật Phần mềm
-* **Phiên bản hiện tại:** `v3.2.0 (100% TypeScript Enterprise Release)`
-* **Bản quyền:** © 2026 Khoa CNTT - Đại học Tôn Đức Thắng. Mọi quyền được bảo lưu.
+De ho tro cong tac ban giao tron tru va dinh huong phat trien tiep noi trong giai doan 2026 - 2031, cac tai lieu chuyen sau da duoc bien soan day du tai thu muc `docs/`:
+
+1. [HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md): Tai lieu huong dan ban giao, ban do kien truc va quy trinh tiep nhan code.
+2. [HUONG_DAN_TAO_CHART_PLUGIN_MOI.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/HUONG_DAN_TAO_CHART_PLUGIN_MOI.md): Cam nang lap trinh vien mo rong them cac bieu do truc quan hoa moi.
+3. [API_SPECIFICATION.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/API_SPECIFICATION.md): Ban dac ta chi tiet toan bo cac endpoint RESTful API kem vi du request/response JSON.
+4. [BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md): Bao cao tong ket tien do va ket qua thuc hien 6 giai doan du an.
+5. [TAI_KHOAN_KIEM_THU.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/TAI_KHOAN_KIEM_THU.md) va [TAI_KHOAN_KIEM_THU.txt](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/TAI_KHOAN_KIEM_THU.txt): Danh sach chi tiet tai khoan, mat khau va phan quyen phuc vu nghiem thu he thong.
+
+---
+
+## 12. DON VI QUAN LY VA BAN QUYEN
+
+- **Don vi chu quan:** Khoa Cong nghe Thong tin - Truong Dai hoc Ton Duc Thang (TDTU)
+- **Chu de de tai:** He thong Quan ly Thuc tap & Dashboard Ho tro Ra Quyet dinh (DB_CNTT)
+- **Giang vien huong dan & Chi dao kien truc:** TS. Duong Huu Phuc
+- **Nhanh ma nguon thuc hien:** `522H0045`
+- **Ban quyen ma nguon:** (c) 2026 Khoa CNTT, Truong Dai hoc Ton Duc Thang. Moi quyen duoc bao luu theo quy dinh so huu tri tue cua nha truong.
