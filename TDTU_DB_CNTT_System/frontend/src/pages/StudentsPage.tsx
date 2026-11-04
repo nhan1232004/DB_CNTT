@@ -125,8 +125,12 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         } catch {}
       }
       if (decl) {
+        const isComp = decl.internshipStatus === 'has_company';
         setSelectedStudent((prev: any) => prev ? ({
           ...prev,
+          status: isComp ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : prev.status)),
+          noCompanyOption: isComp ? null : (decl.noCompanyOption || prev.noCompanyOption),
+          hasChangedFromSupport: Boolean(isComp && (decl.hasChangedFromSupport || prev.hasChangedFromSupport || prev.noCompanyOption === 'faculty' || String(prev.status || '').includes('hỗ trợ'))) ? 1 : prev.hasChangedFromSupport,
           companyName: decl.companyName || prev.companyName || prev.company,
           company: decl.companyName || prev.company,
           taxCode: decl.taxCode || prev.taxCode,
@@ -146,8 +150,12 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get().then((doc: any) => {
           if (doc.exists) {
             const docData = doc.data();
+            const isComp = docData.internshipStatus === 'has_company';
             setSelectedStudent((prev: any) => prev ? ({
               ...prev,
+              status: isComp ? 'Có doanh nghiệp' : (docData.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (docData.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : prev.status)),
+              noCompanyOption: isComp ? null : (docData.noCompanyOption || prev.noCompanyOption),
+              hasChangedFromSupport: Boolean(isComp && (docData.hasChangedFromSupport || prev.hasChangedFromSupport || prev.noCompanyOption === 'faculty' || String(prev.status || '').includes('hỗ trợ'))) ? 1 : prev.hasChangedFromSupport,
               companyName: docData.companyName || prev.companyName || prev.company,
               company: docData.companyName || prev.company,
               taxCode: docData.taxCode || prev.taxCode,
@@ -222,6 +230,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         }
       }
       if (decl) {
+        const isComp = decl.internshipStatus === 'has_company';
         enriched = {
           ...enriched,
           companyName: decl.companyName || enriched.companyName || enriched.company,
@@ -238,7 +247,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           mentorEmail: decl.mentorEmail || decl.contactEmail || enriched.mentorEmail,
           representative: decl.representative || enriched.representative,
           declarationData: decl,
-          status: (decl.internshipStatus === 'has_company' ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : enriched.status)))
+          status: (isComp ? 'Có doanh nghiệp' : (decl.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (decl.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : enriched.status))),
+          noCompanyOption: isComp ? null : (decl.noCompanyOption || enriched.noCompanyOption),
+          hasChangedFromSupport: Boolean(isComp && (decl.hasChangedFromSupport || enriched.hasChangedFromSupport || enriched.noCompanyOption === 'faculty' || String(enriched.status || '').includes('hỗ trợ'))) ? 1 : enriched.hasChangedFromSupport
         };
       }
     } catch (e) {
@@ -435,10 +446,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           }
         }
 
+        const isComp = resolvedStatus === 'Có doanh nghiệp' || resolvedStatus === 'has_company';
+        const hasChangedFromSupport = Boolean(
+          isComp && (
+            decl?.hasChangedFromSupport ||
+            fsStudent?.hasChangedFromSupport ||
+            s.hasChangedFromSupport ||
+            s.noCompanyOption === 'faculty' ||
+            fsStudent?.noCompanyOption === 'faculty' ||
+            String(fsStudent?.status || '').includes('hỗ trợ') ||
+            String(s.status || '').includes('hỗ trợ') ||
+            String(fsStudent?.company || '').includes('hỗ trợ') ||
+            String(s.company || '').includes('hỗ trợ')
+          )
+        );
+        const resolvedNoCompanyOpt = isComp ? null : (decl?.noCompanyOption || fsStudent?.noCompanyOption || s.noCompanyOption);
+
         if (decl || fsStudent?.company || fsStudent?.companyName || fsStudent?.declarationData) {
           return {
             ...s,
             ...(fsStudent || {}),
+            noCompanyOption: resolvedNoCompanyOpt,
+            hasChangedFromSupport: hasChangedFromSupport ? 1 : 0,
             companyName: compName,
             company: resolvedCompany,
             taxCode: decl?.taxCode || fsStudent?.taxCode || s.taxCode,
@@ -464,6 +493,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         return {
           ...s,
           ...(fsStudent || {}),
+          noCompanyOption: resolvedNoCompanyOpt,
+          hasChangedFromSupport: hasChangedFromSupport ? 1 : 0,
           cvLink: cvLink,
           company: resolvedCompany,
           companyName: resolvedCompany,
@@ -531,53 +562,52 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
   // Status Badge Renderer - Tối ưu màu sắc trực quan theo phản hồi người dùng
   const renderStatusBadge = (status, noCompanyOption, hasChangedFromSupport) => {
-    let mainBadge = null;
     const sLower = String(status || '').trim().toLowerCase();
-    const isSupport = noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support';
     const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company';
-    const isWait = sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || noCompanyOption === 'self';
+    const isSupport = !isComp && (noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
+    const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || noCompanyOption === 'self');
 
-    if (isSupport) {
-      mainBadge = (
-        <span className="bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#dc2626] animate-pulse"></span>
-          <span>Cần hỗ trợ</span>
-        </span>
-      );
-    } else if (isComp) {
-      mainBadge = (
+    if (isComp) {
+      if (hasChangedFromSupport) {
+        return (
+          <span className="bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs" title="Sinh viên trước đó nhờ Khoa hỗ trợ, nay đã tự tìm được nơi thực tập">
+            <span className="w-2 h-2 rounded-full bg-[#003087]"></span>
+            <span>Đã tự tìm được</span>
+          </span>
+        );
+      }
+      return (
         <span className="bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-[#15803d]"></span>
           <span>Đã có nơi</span>
         </span>
       );
-    } else if (isWait) {
-      mainBadge = (
+    }
+
+    if (isSupport) {
+      return (
+        <span className="bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#dc2626] animate-pulse"></span>
+          <span>Cần hỗ trợ</span>
+        </span>
+      );
+    }
+
+    if (isWait) {
+      return (
         <span className="bg-[#fffbeb] text-[#b45309] border border-[#fde68a] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-[#b45309]"></span>
           <span>Chờ phỏng vấn</span>
         </span>
       );
-    } else {
-      mainBadge = (
-        <span className="bg-[#f8fafc] text-[#475569] border border-[#cbd5e1] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#64748b]"></span>
-          <span>Đang tìm nơi TT</span>
-        </span>
-      );
     }
 
-    if (hasChangedFromSupport) {
-      return (
-        <div className="flex flex-col items-center justify-center gap-1">
-          {mainBadge}
-          <span className="bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] px-2 py-0.5 rounded text-[11px] font-bold inline-flex items-center gap-1" title="Sinh viên đã tự tìm được nơi thực tập">
-            <span>Đã tự tìm được</span>
-          </span>
-        </div>
-      );
-    }
-    return mainBadge;
+    return (
+      <span className="bg-[#f8fafc] text-[#475569] border border-[#cbd5e1] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
+        <span className="w-2 h-2 rounded-full bg-[#64748b]"></span>
+        <span>Đang tìm nơi TT</span>
+      </span>
+    );
   };
 
   // Trích xuất danh sách lớp và ngành từ dữ liệu thực tế
@@ -603,11 +633,13 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const filteredStudents = React.useMemo(() => {
     return students.filter(s => {
       if (quickFilter === 'need_support') {
-        if (s.noCompanyOption !== 'faculty' && s.status !== 'need_support' && s.status !== 'Cần hỗ trợ') return false;
+        const isComp = s.status === 'has_company' || s.status === 'Đã có nơi' || s.status === 'Có doanh nghiệp';
+        if (isComp) return false;
+        if (s.noCompanyOption !== 'faculty' && s.status !== 'need_support' && s.status !== 'Cần hỗ trợ' && s.status !== 'Cần Khoa hỗ trợ') return false;
       } else if (quickFilter === 'has_company') {
         if (s.status !== 'has_company' && s.status !== 'Đã có nơi' && s.status !== 'Có doanh nghiệp') return false;
       } else if (quickFilter === 'no_company') {
-        if (s.status === 'has_company' || s.status === 'Đã có nơi' || s.status === 'Có doanh nghiệp' || s.status === 'need_support' || s.noCompanyOption === 'faculty') return false;
+        if (s.status === 'has_company' || s.status === 'Đã có nơi' || s.status === 'Có doanh nghiệp' || s.status === 'need_support' || s.status === 'Cần hỗ trợ' || s.status === 'Cần Khoa hỗ trợ' || s.noCompanyOption === 'faculty') return false;
       } else if (quickFilter === 'is_dual') {
         if (s.isDualCourse !== 1 && !s.courses?.includes('KTCN & TSNN')) return false;
       } else if (quickFilter === 'has_cert') {

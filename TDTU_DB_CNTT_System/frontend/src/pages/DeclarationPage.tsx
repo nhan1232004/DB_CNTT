@@ -675,12 +675,22 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     setMessage(null);
 
     try {
+      const wasFacultySupport = Boolean(
+        serverDeclaration && (
+          serverDeclaration.internshipStatus === 'need_support' ||
+          serverDeclaration.noCompanyOption === 'faculty' ||
+          (serverDeclaration.companyName && serverDeclaration.companyName.includes('hỗ trợ'))
+        )
+      );
+
       const payload = {
         studentId,
         studentName,
         selectedCourses,
         isDualCourse,
         internshipStatus: 'has_company',
+        hasChangedFromSupport: wasFacultySupport ? 1 : (serverDeclaration?.hasChangedFromSupport || 0),
+        noCompanyOption: null,
         companyName: companyInfo.name || '',
         taxCode: taxCode,
         address: companyInfo.address,
@@ -721,6 +731,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                 list[idx].companyAddress = payload.address;
                 list[idx].representative = payload.representative;
                 list[idx].status = 'Có doanh nghiệp';
+                list[idx].noCompanyOption = null;
+                if (wasFacultySupport) {
+                  list[idx].hasChangedFromSupport = 1;
+                }
                 list[idx].declarationData = payload;
                 list[idx].updated = new Date().toLocaleDateString('vi-VN');
                 localStorage.setItem(key, JSON.stringify(list));
@@ -748,6 +762,8 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
             companyAddress: payload.address,
             representative: payload.representative,
             status: 'Có doanh nghiệp',
+            noCompanyOption: null,
+            hasChangedFromSupport: wasFacultySupport ? 1 : (serverDeclaration?.hasChangedFromSupport || 0),
             declarationData: payload,
             updated: new Date().toLocaleDateString('vi-VN')
           }, { merge: true });
@@ -888,7 +904,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
             : (pendingCompany || (serverDeclaration?.internshipStatus === 'interviewing' ? serverDeclaration?.pendingCompany : '') || 'Đang tìm kiếm / Chờ PV'),
         taxCode: internshipStatus === 'has_company' ? (taxCode || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.taxCode : '') || '') : '',
         mentor: internshipStatus === 'has_company'
-          ? `${contactPerson || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPerson : '') || 'Chưa chỉ định'}${(contactPhone || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPhone : '')) ? ' · ' + (contactPhone || serverDeclaration?.contactPhone) : ''}`
+          ? (() => {
+              const raw = contactPerson || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPerson : '') || 'Chưa chỉ định';
+              return raw.split('·')[0].split('(')[0].trim() || 'Chưa chỉ định';
+            })()
           : internshipStatus === 'need_support'
             ? 'Trợ lý Doanh nghiệp Khoa CNTT'
             : 'Chờ kết quả phỏng vấn',
@@ -2263,7 +2282,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                 {taxCode && <div className="text-slate-500 font-mono">Mã số thuế: {taxCode}</div>}
                 {contactPerson && (
                   <div className="text-slate-700 dark:text-slate-300 pt-1 border-t border-blue-200/50 dark:border-blue-800/50">
-                    Cán bộ hướng dẫn (Mentor): <strong>{contactPerson}</strong> {contactPhone ? '(' + contactPhone + ')' : ''}
+                    Cán bộ hướng dẫn (Mentor): <strong>{contactPerson}</strong>
                   </div>
                 )}
               </div>

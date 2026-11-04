@@ -2842,7 +2842,7 @@ class ApiClient {
           const isSupp = dStatus === 'need_support' || declaration.noCompanyOption === 'faculty';
           const isComp = dStatus === 'has_company' && !isWait && !isSupp;
 
-          const wasFacultySupport = students[idx].noCompanyOption === 'faculty' || (students[idx].company && students[idx].company.includes('hỗ trợ'));
+          const wasFacultySupport = students[idx].noCompanyOption === 'faculty' || (students[idx].company && students[idx].company.includes('hỗ trợ')) || students[idx].status === 'Cần hỗ trợ' || students[idx].status === 'need_support';
           if (wasFacultySupport && isComp) {
             students[idx].hasChangedFromSupport = 1;
             students[idx].withdrawnSupportAt = new Date().toISOString();
@@ -2860,7 +2860,7 @@ class ApiClient {
           students[idx].companyAddress = isComp ? (declaration.address || '') : '';
           students[idx].representative = isComp ? (declaration.representative || '') : '';
           students[idx].taxCode = isComp ? (declaration.taxCode || '') : '';
-          students[idx].noCompanyOption = declaration.noCompanyOption;
+          students[idx].noCompanyOption = isComp ? null : declaration.noCompanyOption;
           students[idx].updated = new Date().toLocaleDateString('vi-VN');
           if (declaration.cvDriveLink) {
             students[idx].cvLink = declaration.cvDriveLink;

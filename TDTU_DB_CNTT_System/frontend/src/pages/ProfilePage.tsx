@@ -375,19 +375,14 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
             <label className="block text-sm font-semibold text-[#1f2937] mb-1.5">
               Đường dẫn Google Drive chia sẻ CV của bạn:
             </label>
-            <div className="relative">
+            <div>
               <input
                 type="url"
                 value={cvLink}
                 onChange={(e) => setCvLink(e.target.value)}
                 placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#e5e7eb] bg-[#f8fafc] text-sm font-mono text-[#1f2937] focus:ring-2 focus:ring-[#003087] outline-none transition"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#e5e7eb] bg-[#f8fafc] text-sm font-mono text-[#1f2937] focus:ring-2 focus:ring-[#003087] outline-none transition"
               />
-              <span className="absolute left-3 top-3 text-[#6b7280]">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-                </svg>
-              </span>
             </div>
           </div>
 
