@@ -1340,7 +1340,7 @@ class ApiClient {
         const sid = String(s.studentId || s.mssv || s.id || '').trim().toUpperCase();
         if (!sid) return s;
 
-        let decl = s.declarationData || firestoreDecls.get(sid);
+        let decl = firestoreDecls.get(sid) || s.declarationData;
         if (!decl) {
           try {
             const raw = localStorage.getItem('tdtu_decl_' + sid);
@@ -1353,29 +1353,56 @@ class ApiClient {
         const certObj = firestoreCerts.get(sid);
         const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
 
-        if (decl) {
-          const declStatus = String(decl.internshipStatus || '').trim().toLowerCase();
-          const isComp = declStatus === 'has_company';
-          const isWait = declStatus === 'interviewing' || decl.noCompanyOption === 'self';
-          const isSupp = declStatus === 'need_support' || decl.noCompanyOption === 'faculty';
+        const compName = decl?.companyName || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
+        const hasRealComp = Boolean(
+          compName && compName !== 'Chưa có' && compName !== '—' &&
+          !compName.toLowerCase().includes('chưa có') &&
+          !compName.toLowerCase().includes('đang tìm') &&
+          !compName.toLowerCase().includes('hỗ trợ') &&
+          !compName.toLowerCase().includes('khoa cntt') &&
+          !compName.toLowerCase().includes('chờ phỏng vấn')
+        );
+
+        const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();
+        const rawStatus = String(s.status || '').trim().toLowerCase();
+        const isComp = declStatus === 'has_company' || hasRealComp || rawStatus === 'có doanh nghiệp' || rawStatus === 'has_company';
+        const isWait = !isComp && (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawStatus.includes('chờ pv') || rawStatus.includes('phỏng vấn'));
+        const isSupp = !isComp && !isWait && (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty');
+
+        const wasFacultySupport = Boolean(
+          isComp && (
+            s.hasChangedFromSupport ||
+            decl?.hasChangedFromSupport ||
+            s.noCompanyOption === 'faculty' ||
+            String(s.status || '').includes('hỗ trợ') ||
+            String(s.company || '').includes('hỗ trợ')
+          )
+        );
+
+        const rawContact = decl?.contactPerson || decl?.mentorName || s.contactPerson;
+        const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
+
+        if (decl || hasRealComp) {
           return {
             ...s,
-            company: isComp ? (decl.companyName || s.company) : (isWait ? (decl.pendingCompany || decl.companyName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
-            companyName: decl.companyName || s.companyName || s.company,
-            taxCode: decl.taxCode || s.taxCode,
-            position: decl.position || s.position,
-            contactPerson: decl.contactPerson || decl.mentorName || s.contactPerson,
-            mentorName: decl.contactPerson || decl.mentorName || s.mentorName,
-            contactPhone: decl.contactPhone || decl.mentorPhone || s.contactPhone,
-            mentorPhone: decl.contactPhone || decl.mentorPhone || s.mentorPhone,
-            contactEmail: decl.contactEmail || decl.mentorEmail || s.contactEmail,
-            mentorEmail: decl.mentorEmail || decl.contactEmail || s.mentorEmail,
-            address: decl.address || s.address,
-            companyAddress: decl.address || s.companyAddress,
-            representative: decl.representative || s.representative,
+            company: isComp ? (decl?.companyName || compName || 'Doanh nghiệp tiếp nhận') : (isWait ? (decl?.pendingCompany || compName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
+            companyName: isComp ? (decl?.companyName || compName) : (decl?.companyName || s.companyName || s.company),
+            taxCode: decl?.taxCode || s.taxCode,
+            position: isComp ? (decl?.position || s.position || 'Thực tập sinh') : (isWait ? (decl?.desiredPosition || decl?.position || 'Đang chờ phỏng vấn') : (decl?.desiredPosition || 'Chờ Khoa hỗ trợ')),
+            contactPerson: cleanContact,
+            mentorName: cleanContact,
+            contactPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || s.contactPhone) : '',
+            mentorPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || s.mentorPhone) : '',
+            contactEmail: decl?.contactEmail || decl?.mentorEmail || s.contactEmail,
+            mentorEmail: decl?.mentorEmail || decl?.contactEmail || s.mentorEmail,
+            address: decl?.address || s.address,
+            companyAddress: decl?.address || s.companyAddress,
+            representative: decl?.representative || s.representative,
             status: isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : s.status)),
+            noCompanyOption: isComp ? null : (decl?.noCompanyOption || s.noCompanyOption),
+            hasChangedFromSupport: wasFacultySupport ? 1 : (s.hasChangedFromSupport || 0),
             declarationData: decl,
-            cvLink: decl.cvDriveLink || s.cvLink,
+            cvLink: decl?.cvDriveLink || s.cvLink,
             cert: certDisplay || s.cert,
             certificateDisplay: certDisplay || s.certificateDisplay,
             certName: certObj?.name || s.certName,
@@ -2851,17 +2878,18 @@ class ApiClient {
         const idx = students.findIndex(s => (String(s.mssv || s.studentId).toUpperCase() === sid));
         if (idx !== -1) {
           const dStatus = String(declaration.internshipStatus || '').trim().toLowerCase();
-          const isWait = dStatus === 'interviewing' || declaration.noCompanyOption === 'self';
-          const isSupp = dStatus === 'need_support' || declaration.noCompanyOption === 'faculty';
-          const isComp = dStatus === 'has_company' && !isWait && !isSupp;
+          const hasRealComp = Boolean(declaration.companyName && !declaration.companyName.includes('hỗ trợ') && !declaration.companyName.includes('Khoa CNTT') && declaration.companyName !== 'Chưa có');
+          const isComp = dStatus === 'has_company' || hasRealComp;
+          const isWait = !isComp && (dStatus === 'interviewing' || declaration.noCompanyOption === 'self');
+          const isSupp = !isComp && !isWait && (dStatus === 'need_support' || declaration.noCompanyOption === 'faculty');
 
-          const wasFacultySupport = students[idx].noCompanyOption === 'faculty' || (students[idx].company && students[idx].company.includes('hỗ trợ')) || students[idx].status === 'Cần hỗ trợ' || students[idx].status === 'need_support';
+          const wasFacultySupport = students[idx].noCompanyOption === 'faculty' || (students[idx].company && students[idx].company.includes('hỗ trợ')) || students[idx].status === 'Cần hỗ trợ' || students[idx].status === 'Cần Khoa hỗ trợ' || students[idx].status === 'need_support';
           if (wasFacultySupport && isComp) {
             students[idx].hasChangedFromSupport = 1;
             students[idx].withdrawnSupportAt = new Date().toISOString();
           }
 
-          students[idx].status = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần hỗ trợ' : 'Chưa có doanh nghiệp'));
+          students[idx].status = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa có doanh nghiệp'));
           students[idx].company = isComp ? (declaration.companyName || 'Doanh nghiệp đã khai báo') : (isWait ? (declaration.companyName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : 'Chưa có'));
           students[idx].companyName = declaration.companyName || students[idx].company;
           students[idx].position = isComp ? (declaration.position || '') : (declaration.desiredPosition || (isSupp ? 'Chờ Khoa phân bổ' : 'Đang tìm kiếm / Chờ PV'));

@@ -230,7 +230,14 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         }
       }
       if (decl) {
-        const isComp = decl.internshipStatus === 'has_company';
+        const comp = decl.companyName || enriched.companyName || enriched.company;
+        const hasRealComp = Boolean(
+          comp && comp !== 'Chưa có' && comp !== '—' && !comp.includes('hỗ trợ') && !comp.includes('Khoa CNTT') && !comp.includes('chờ')
+        );
+        const isComp = decl.internshipStatus === 'has_company' || hasRealComp;
+        const rawContact = decl.contactPerson || decl.mentorName || decl.mentor || enriched.contactPerson;
+        const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
+
         enriched = {
           ...enriched,
           companyName: decl.companyName || enriched.companyName || enriched.company,
@@ -239,10 +246,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           position: decl.position || enriched.position,
           companyAddress: decl.address || decl.companyAddress || enriched.companyAddress,
           address: decl.address || enriched.address,
-          contactPerson: decl.contactPerson || decl.mentorName || decl.mentor || enriched.contactPerson,
-          mentorName: decl.contactPerson || decl.mentorName || decl.mentor || enriched.mentorName,
-          mentorPhone: decl.contactPhone || decl.mentorPhone || enriched.mentorPhone,
-          contactPhone: decl.contactPhone || decl.mentorPhone || enriched.contactPhone,
+          contactPerson: cleanContact,
+          mentorName: cleanContact,
+          mentorPhone: isComp && cleanContact ? (decl.contactPhone || decl.mentorPhone || enriched.mentorPhone) : '',
+          contactPhone: isComp && cleanContact ? (decl.contactPhone || decl.mentorPhone || enriched.contactPhone) : '',
           contactEmail: decl.contactEmail || decl.mentorEmail || enriched.contactEmail,
           mentorEmail: decl.mentorEmail || decl.contactEmail || enriched.mentorEmail,
           representative: decl.representative || enriched.representative,
@@ -412,37 +419,22 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         let resolvedStatus = 'Chưa có doanh nghiệp';
         let resolvedCompany = 'Chưa có';
 
-        if (decl) {
-          const declStatus = String(decl.internshipStatus || '').trim().toLowerCase();
-          if (declStatus === 'interviewing' || decl.noCompanyOption === 'self') {
-            resolvedStatus = 'Đang chờ PV/KQPV';
-            resolvedCompany = decl.pendingCompany || decl.companyName || 'Đang chờ PV';
-          } else if (declStatus === 'need_support' || decl.noCompanyOption === 'faculty') {
-            resolvedStatus = 'Cần Khoa hỗ trợ';
-            resolvedCompany = 'Khoa CNTT hỗ trợ';
-          } else if (declStatus === 'has_company' || hasValidCompany) {
-            resolvedStatus = 'Có doanh nghiệp';
-            resolvedCompany = decl.companyName || compName || 'Doanh nghiệp tiếp nhận';
-          } else {
-            resolvedStatus = 'Chưa có doanh nghiệp';
-            resolvedCompany = 'Chưa có';
-          }
+        const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();
+        const rawFsStatus = String(fsStudent?.status || s.status || '').trim().toLowerCase();
+
+        // 1. Ưu tiên TUYỆT ĐỐI cho trạng thái Đã có nơi thực tập / Có doanh nghiệp hợp lệ
+        if (declStatus === 'has_company' || hasValidCompany || rawFsStatus === 'có doanh nghiệp' || rawFsStatus === 'has_company' || fsStudent?.companyName || (decl && decl.companyName && hasValidCompany)) {
+          resolvedStatus = 'Có doanh nghiệp';
+          resolvedCompany = decl?.companyName || compName || 'Doanh nghiệp tiếp nhận';
+        } else if (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawFsStatus.includes('chờ pv') || rawFsStatus.includes('phỏng vấn') || rawFsStatus === 'interviewing') {
+          resolvedStatus = 'Đang chờ PV/KQPV';
+          resolvedCompany = decl?.pendingCompany || compName || 'Đang chờ PV';
+        } else if (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawFsStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty') {
+          resolvedStatus = 'Cần Khoa hỗ trợ';
+          resolvedCompany = 'Khoa CNTT hỗ trợ';
         } else {
-          // Chưa có khai báo, xét dữ liệu đồng bộ từ Firestore hoặc file dữ liệu gốc
-          const rawStatus = String(fsStudent?.status || s.status || '').trim().toLowerCase();
-          if (rawStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty') {
-            resolvedStatus = 'Cần Khoa hỗ trợ';
-            resolvedCompany = 'Khoa CNTT hỗ trợ';
-          } else if (rawStatus.includes('chờ pv') || rawStatus.includes('phỏng vấn') || rawStatus === 'interviewing') {
-            resolvedStatus = 'Đang chờ PV/KQPV';
-            resolvedCompany = compName || 'Đang chờ PV';
-          } else if ((rawStatus === 'có doanh nghiệp' || rawStatus === 'has_company') && hasValidCompany) {
-            resolvedStatus = 'Có doanh nghiệp';
-            resolvedCompany = compName;
-          } else {
-            resolvedStatus = 'Chưa có doanh nghiệp';
-            resolvedCompany = 'Chưa có';
-          }
+          resolvedStatus = 'Chưa có doanh nghiệp';
+          resolvedCompany = 'Chưa có';
         }
 
         const isComp = resolvedStatus === 'Có doanh nghiệp' || resolvedStatus === 'has_company';
@@ -461,6 +453,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         );
         const resolvedNoCompanyOpt = isComp ? null : (decl?.noCompanyOption || fsStudent?.noCompanyOption || s.noCompanyOption);
 
+        const rawContact = decl?.contactPerson || decl?.mentorName || fsStudent?.contactPerson || fsStudent?.mentorName || s.contactPerson;
+        const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
+
         if (decl || fsStudent?.company || fsStudent?.companyName || fsStudent?.declarationData) {
           return {
             ...s,
@@ -473,10 +468,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
             position: decl?.position || fsStudent?.position || s.position,
             companyAddress: decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress,
             address: decl?.address || fsStudent?.address || s.address,
-            contactPerson: decl?.contactPerson || decl?.mentorName || fsStudent?.contactPerson || fsStudent?.mentorName || s.contactPerson,
-            mentorName: decl?.contactPerson || decl?.mentorName || fsStudent?.mentorName || fsStudent?.contactPerson || s.mentorName,
-            contactPhone: decl?.contactPhone || decl?.mentorPhone || fsStudent?.contactPhone || fsStudent?.mentorPhone || s.contactPhone,
-            mentorPhone: decl?.contactPhone || decl?.mentorPhone || fsStudent?.mentorPhone || fsStudent?.contactPhone || s.mentorPhone,
+            contactPerson: cleanContact,
+            mentorName: cleanContact,
+            contactPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.contactPhone || s.contactPhone) : '',
+            mentorPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.mentorPhone || s.mentorPhone) : '',
             contactEmail: decl?.contactEmail || decl?.mentorEmail || fsStudent?.contactEmail || fsStudent?.mentorEmail || s.contactEmail,
             mentorEmail: decl?.mentorEmail || decl?.contactEmail || fsStudent?.mentorEmail || fsStudent?.contactEmail || s.mentorEmail,
             representative: decl?.representative || fsStudent?.representative || s.representative,
@@ -560,9 +555,18 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   };
 
   // Status Badge Renderer - Tối ưu màu sắc trực quan theo phản hồi người dùng
-  const renderStatusBadge = (status, noCompanyOption, hasChangedFromSupport) => {
+  const renderStatusBadge = (status, noCompanyOption, hasChangedFromSupport, companyName = '') => {
+    const compStr = String(companyName || '').trim();
+    const hasRealComp = Boolean(
+      compStr && compStr !== 'Chưa có' && compStr !== '—' && compStr !== '-' &&
+      !compStr.toLowerCase().includes('chưa có') &&
+      !compStr.toLowerCase().includes('đang tìm') &&
+      !compStr.toLowerCase().includes('hỗ trợ') &&
+      !compStr.toLowerCase().includes('khoa cntt') &&
+      !compStr.toLowerCase().includes('chờ')
+    );
     const sLower = String(status || '').trim().toLowerCase();
-    const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company';
+    const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company' || hasRealComp;
     const isSupport = !isComp && (noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
     const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || noCompanyOption === 'self');
 
@@ -1370,14 +1374,23 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
                       <td className="py-3.5 px-3 text-center">
                         <div className="flex items-center justify-center">
-                          {renderStatusBadge(sv.status, sv.noCompanyOption, sv.hasChangedFromSupport)}
+                          {renderStatusBadge(sv.status, sv.noCompanyOption, sv.hasChangedFromSupport, sv.companyName || sv.company)}
                         </div>
                       </td>
 
                       <td className="py-3.5 px-3 text-[#1f2937]">
                         {(() => {
+                          const compStr = String(sv.companyName || sv.company || '').trim();
+                          const hasRealComp = Boolean(
+                            compStr && compStr !== 'Chưa có' && compStr !== '—' && compStr !== '-' &&
+                            !compStr.toLowerCase().includes('chưa có') &&
+                            !compStr.toLowerCase().includes('đang tìm') &&
+                            !compStr.toLowerCase().includes('hỗ trợ') &&
+                            !compStr.toLowerCase().includes('khoa cntt') &&
+                            !compStr.toLowerCase().includes('chờ')
+                          );
                           const sLower = String(sv.status || '').trim().toLowerCase();
-                          const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company';
+                          const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company' || hasRealComp;
                           const isSupport = !isComp && (sv.noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
                           const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || sv.noCompanyOption === 'self');
 
@@ -1407,6 +1420,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                             );
                           }
 
+                          const rawContact = sv.contactPerson || sv.mentorName;
+                          const cleanContact = rawContact && !rawContact.includes('Khoa CNTT') && !rawContact.includes('Trợ lý') ? rawContact : '';
+
                           return (
                             <>
                               <div className="font-bold text-[14.5px] text-[#003087] truncate">
@@ -1417,9 +1433,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                                   Vị trí: {sv.position}
                                 </div>
                               )}
-                              {sv.contactPerson && (
+                              {cleanContact && (
                                 <div className="text-[13px] text-[#003087] font-semibold mt-0.5 truncate">
-                                  Người hướng dẫn: {sv.contactPerson}
+                                  Người hướng dẫn: {cleanContact}
                                 </div>
                               )}
                             </>
@@ -1660,7 +1676,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               </div>
 
               <div className="scale-105 origin-right">
-                {renderStatusBadge(selectedStudent.status, selectedStudent.noCompanyOption, selectedStudent.hasChangedFromSupport)}
+                {renderStatusBadge(selectedStudent.status, selectedStudent.noCompanyOption, selectedStudent.hasChangedFromSupport, selectedStudent.companyName || selectedStudent.company)}
               </div>
             </div>
 
@@ -1914,14 +1930,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {(() => {
+                            const rawMentor = selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || selectedStudent.declarationData?.contactPerson;
+                            const isAssistant = rawMentor && (rawMentor.includes('Khoa CNTT') || rawMentor.includes('Trợ lý'));
+                            const displayMentor = isAssistant ? 'Đang cập nhật (Doanh nghiệp tiếp nhận)' : (rawMentor || 'Chưa cập nhật');
+                            return (
+                              <div>
+                                <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Người hướng dẫn:</div>
+                                <div className="text-[17px] font-extrabold text-[#003087]">
+                                  {displayMentor}
+                                </div>
+                              </div>
+                            );
+                          })()}
                           <div>
-                            <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Người hướng dẫn:</div>
-                            <div className="text-[17px] font-extrabold text-[#003087]">
-                              {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || selectedStudent.declarationData?.contactPerson || 'Chưa cập nhật'}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">SĐT người hướng dẫn:</div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Liên hệ doanh nghiệp:</div>
                             <div className="text-[16px] font-mono font-bold text-[#1f2937]">
                               {selectedStudent.contactPhone || selectedStudent.mentorPhone || selectedStudent.declarationData?.contactPhone || '—'}
                               {(selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail}` : ''}
