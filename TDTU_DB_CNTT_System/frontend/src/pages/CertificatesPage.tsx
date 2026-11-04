@@ -122,7 +122,8 @@ const getPaginationNumbers = (curr, total) => {
 // =========================================================================
 // PHẦN 1: GIAO DIỆN SCOPE ALL DÀNH CHO GIẢNG VIÊN VÀ ADMIN KHOA
 // =========================================================================
-const ScopeAllCertificatesView = ({ currentUser }) => {
+const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemesterChange }) => {
+  const [currentSemester, setCurrentSemester] = React.useState(activeSemester || 'hk1_2026_2027');
   const [certs, setCerts] = React.useState([]);
   const [totalEnrolledStudents, setTotalEnrolledStudents] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -136,37 +137,52 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
 
-  // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế từ API
-  const loadData = async () => {
+  // Đồng bộ prop activeSemester từ App/Navbar xuống component
+  React.useEffect(() => {
+    if (activeSemester && activeSemester !== currentSemester) {
+      setCurrentSemester(activeSemester);
+    }
+  }, [activeSemester]);
+
+  // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế theo học kỳ đã chọn
+  const loadData = React.useCallback(async (targetSemester = currentSemester) => {
     try {
       setLoading(true);
+      const sem = targetSemester || 'hk1_2026_2027';
+      if (window.ApiClient?.getLiveStudents) {
+        const students = await window.ApiClient.getLiveStudents(sem);
+        setTotalEnrolledStudents(Array.isArray(students) ? students.length : 0);
+      }
       if (window.ApiClient?.fetchAllCertificates) {
-        const data = await window.ApiClient.fetchAllCertificates();
+        const data = await window.ApiClient.fetchAllCertificates(sem);
         if (Array.isArray(data)) {
           setCerts(data);
         }
       }
-      if (window.ApiClient?.getLiveStudents) {
-        const students = await window.ApiClient.getLiveStudents();
-        if (Array.isArray(students) && students.length > 0) {
-          setTotalEnrolledStudents(students.length);
-        }
-      }
     } catch (err) {
-      console.warn('Lỗi tải danh sách Scope All:', err);
+      console.warn('Lỗi tải danh sách Scope All theo học kỳ:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentSemester]);
 
   React.useEffect(() => {
-    loadData();
+    loadData(currentSemester);
 
     const handleUpdate = () => {
-      loadData();
+      loadData(currentSemester);
+    };
+
+    const handleSemesterChange = (e) => {
+      const newSem = e?.detail?.semesterId || e?.detail;
+      if (newSem && newSem !== currentSemester) {
+        setCurrentSemester(newSem);
+        loadData(newSem);
+      }
     };
 
     window.addEventListener('tdtu_certs_updated', handleUpdate);
+    window.addEventListener('tdtu_semester_changed', handleSemesterChange);
     window.addEventListener('storage', handleUpdate);
     window.addEventListener('focus', handleUpdate);
 
@@ -174,21 +190,22 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.onmessage = (msg) => {
-        if (!msg.data || msg.data.type === 'cert_updated' || msg.data.type === 'cert_deleted') {
-          loadData();
+        if (!msg.data || msg.data.type === 'cert_updated' || msg.data.type === 'cert_deleted' || msg.data.type === 'semester_changed') {
+          loadData(currentSemester);
         }
       };
     } catch {}
 
     return () => {
       window.removeEventListener('tdtu_certs_updated', handleUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleSemesterChange);
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('focus', handleUpdate);
       if (bc) {
         try { bc.close(); } catch {}
       }
     };
-  }, [currentUser]);
+  }, [currentSemester, loadData]);
 
   // Lọc dữ liệu theo tìm kiếm và bộ lọc
   const filteredCerts = certs.filter(c => {
@@ -227,15 +244,15 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
   const endIndex = Math.min(startIndex + pageSize, totalItems);
   const paginatedCerts = filteredCerts.slice(startIndex, startIndex + pageSize);
 
-  // Tính toán số liệu thống kê nhanh (KPIs)
+  // Tính toán số liệu thống kê nhanh (KPIs) phản ánh chính xác học kỳ đang chọn
   const totalCount = certs.length;
   const passedCount = certs.filter(c => ['B1', 'B2', 'C1', 'C2'].includes(c.level)).length;
   const passedRate = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
   
-  // Tập hợp các MSSV duy nhất đã nộp chứng chỉ tiếng Anh
+  // Tập hợp các MSSV duy nhất đã nộp chứng chỉ tiếng Anh trong học kỳ này
   const studentIdsWithCert = new Set(certs.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
   const certSubmittedStudentCount = studentIdsWithCert.size;
-  const totalEffectiveStudents = totalEnrolledStudents > 0 ? totalEnrolledStudents : Math.max(92, certSubmittedStudentCount);
+  const totalEffectiveStudents = totalEnrolledStudents > 0 ? totalEnrolledStudents : certSubmittedStudentCount;
   const unsubmittedCount = Math.max(0, totalEffectiveStudents - certSubmittedStudentCount);
 
   // Thống kê phân bố chứng chỉ
@@ -245,28 +262,59 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
   const toeflCount = certs.filter(c => (c.name || '').toUpperCase().includes('TOEFL')).length;
   const cambridgeCount = certs.filter(c => (c.name || '').toUpperCase().includes('CAMBRIDGE')).length;
 
+  const semesterLabels = {
+    'hk1_2026_2027': 'Học kỳ 1 / 2026–2027 (Hiện tại)',
+    'hk2_2025_2026': 'Học kỳ 2 / 2025–2026',
+    'hk1_2025_2026': 'Học kỳ 1 / 2025–2026'
+  };
+
+  const handleSemesterSelect = (e) => {
+    const s = e.target.value;
+    setCurrentSemester(s);
+    if (onSemesterChange) onSemesterChange(s);
+    try { localStorage.setItem('tdtu_active_semester', s); } catch {}
+    window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: s } }));
+  };
+
   return (
     <div className="space-y-6 w-full pb-12">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          
-          <h1 className="text-2xl md:text-3xl font-black text-[#1f2937]  flex items-center gap-2.5">
+          <h1 className="text-2xl md:text-3xl font-black text-[#1f2937] flex items-center gap-2.5">
             <span>Quản lý Chứng chỉ Ngoại ngữ Toàn khoa</span>
           </h1>
+          <p className="text-xs text-[#4b5563] mt-1">
+            Học kỳ: <strong className="text-[#003087]">{semesterLabels[currentSemester] || currentSemester}</strong> · Tổng sinh viên: <strong>{totalEffectiveStudents} sinh viên</strong>
+          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={loadData}
-          disabled={loading}
-          className="px-4 py-2.5 bg-white  hover:bg-[#f8fafc]  text-[#003087]  border border-[#e5e7eb]  text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-        >
-          <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          <span>{loading ? 'Đang đồng bộ...' : 'Làm mới dữ liệu'}</span>
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-[#4b5563] whitespace-nowrap">Học kỳ:</span>
+            <select
+              value={currentSemester}
+              onChange={handleSemesterSelect}
+              className="px-3 py-2 bg-white text-[#003087] border border-[#cbd5e1] rounded-xl text-xs font-bold shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#003087]"
+            >
+              <option value="hk1_2026_2027">Học kỳ 1 / 2026–2027 (Hiện tại)</option>
+              <option value="hk2_2025_2026">Học kỳ 2 / 2025–2026</option>
+              <option value="hk1_2025_2026">Học kỳ 1 / 2025–2026</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => loadData(currentSemester)}
+            disabled={loading}
+            className="px-4 py-2 bg-white hover:bg-[#f8fafc] text-[#003087] border border-[#e5e7eb] text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+          >
+            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{loading ? 'Đang đồng bộ...' : 'Làm mới dữ liệu'}</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 Thẻ Thống kê nhanh (KPIs) - Lớn, rõ ràng, không có ô icon rỗng */}
@@ -1623,11 +1671,17 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
 // =========================================================================
 // ROUTER CHÍNH CỦA TRANG CHỨNG CHỈ (PHÂN QUYỀN RBAC DUAL-VIEW)
 // =========================================================================
-const CertificatesPage = ({ currentUser }) => {
-  const isLecturerOrAdmin = currentUser?.role === 'lecturer' || Boolean(currentUser?.isAdmin);
+const CertificatesPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemesterChange }) => {
+  const isLecturerOrAdmin = currentUser?.role === 'lecturer' || Boolean(currentUser?.isAdmin) || currentUser?.role === 'admin';
 
   if (isLecturerOrAdmin) {
-    return <ScopeAllCertificatesView currentUser={currentUser} />;
+    return (
+      <ScopeAllCertificatesView
+        currentUser={currentUser}
+        activeSemester={activeSemester}
+        onSemesterChange={onSemesterChange}
+      />
+    );
   }
 
   return <StudentPersonalCertificatesView currentUser={currentUser} />;

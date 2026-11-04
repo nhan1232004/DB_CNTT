@@ -561,7 +561,11 @@ const AppInner = () => {
               )}
 
               {activeTab === 'certs' && currentUser?.role !== 'partner' && (
-                <window.CertificatesPage currentUser={currentUser} />
+                <window.CertificatesPage
+                  currentUser={currentUser}
+                  activeSemester={activeSemester}
+                  onSemesterChange={handleSemesterChange}
+                />
               )}
 
               {activeTab === 'bulletin' && (

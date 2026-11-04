@@ -210,7 +210,7 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         setLiveStudents(Array.isArray(list) ? list : []);
       }
       if (window.ApiClient?.fetchAllCertificates) {
-        const certs = await window.ApiClient.fetchAllCertificates();
+        const certs = await window.ApiClient.fetchAllCertificates(activeSemester);
         setAllCerts(Array.isArray(certs) ? certs : []);
       }
 

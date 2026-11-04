@@ -4082,7 +4082,7 @@ class ApiClient {
 
   // ==========================================
   // Lấy toàn bộ chứng chỉ sinh viên toàn khoa (Scope All - Quyền Giảng viên & Admin Khoa)
-  static async fetchAllCertificates() {
+  static async fetchAllCertificates(semester = null) {
     let list = [];
     const existingIds = new Set();
 
@@ -4161,6 +4161,49 @@ class ApiClient {
           } catch {}
         }
       }
+    }
+
+    // 5. Nếu có truyền học kỳ cụ thể, cách ly và lọc theo danh sách sinh viên của học kỳ đó
+    if (semester) {
+      const semStudents = await this.getLiveStudents(semester);
+      const studentMap = new Map();
+      semStudents.forEach(s => {
+        studentMap.set(String(s.mssv || s.studentId).toUpperCase(), s);
+      });
+
+      let semCerts = list.filter(c => {
+        const sid = String(c.studentId || c.mssv || '').toUpperCase();
+        if (!studentMap.has(sid)) return false;
+        if (c.semester && c.semester !== semester) return false;
+        return true;
+      });
+
+      // Bổ sung các chứng chỉ được khai báo trong thông tin sinh viên học kỳ đó (như cột cert / certName / certScore)
+      semStudents.forEach(s => {
+        const sid = String(s.mssv || s.studentId).toUpperCase();
+        if (s.cert && s.cert !== 'Chưa có' && s.cert !== '—' && !semCerts.some(c => String(c.studentId || '').toUpperCase() === sid)) {
+          const parts = String(s.cert).trim().split(/\s+/);
+          const cName = s.certName || parts[0] || 'Chứng chỉ';
+          const cScore = s.certScore || parts.slice(1).join(' ') || '';
+          semCerts.push({
+            id: `cert_${sid}_${semester}`,
+            studentId: sid,
+            studentName: s.name || s.fullName || sid,
+            className: s.class || s.className || '',
+            name: cName,
+            score: cScore,
+            level: s.cefrLevel || 'B1',
+            examDate: s.examDate || '',
+            issueDate: s.issueDate || s.examDate || '',
+            driveLink: s.cvDriveLink || s.cvLink || '',
+            proofData: s.cvDriveLink || s.cvLink || '',
+            status: 'Đã nộp',
+            semester: semester
+          });
+        }
+      });
+
+      return semCerts;
     }
 
     return list;
