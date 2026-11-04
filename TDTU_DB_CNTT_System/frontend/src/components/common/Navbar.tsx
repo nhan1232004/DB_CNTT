@@ -26,6 +26,18 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
     ];
   });
   const [deadlineText, setDeadlineText] = React.useState('Hạn chót: Còn 18 ngày');
+  const [isSemesterOpen, setIsSemesterOpen] = React.useState(false);
+  const semesterDropdownRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (semesterDropdownRef.current && !semesterDropdownRef.current.contains(e.target)) {
+        setIsSemesterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   const computeDeadline = React.useCallback(() => {
     try {
@@ -200,38 +212,72 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
         {/* Right Side Controls: Semester Selector, Deadline Pill, Notification Bell */}
         <div className="flex items-center gap-3 sm:gap-4">
           
-          {/* Semester Selector cho toàn bộ người dùng với giao diện tinh gọn, chuẩn TDTU */}
-          <div className="relative inline-flex items-center">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ebf3ff] hover:bg-[#dbeafe] rounded-lg border border-[#bfdbfe] transition cursor-pointer shadow-2xs">
-              <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-[12.5px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
-              <div className="relative inline-flex items-center">
-                <select
-                  value={activeSemester || 'hk1_2026_2027'}
-                  onChange={e => onSemesterChange(e.target.value)}
-                  style={{
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    appearance: 'none',
-                    background: 'transparent'
-                  }}
-                  className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none pr-5 appearance-none"
+          {/* Custom Semester Selector Dropdown (Loại bỏ hoàn toàn thẻ select native, chống 100% lỗi 2 mũi tên) */}
+          {(() => {
+            const currentSemesterObj = semesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || semesters[0];
+            const currentSemesterLabel = currentSemesterObj ? (currentSemesterObj.name || currentSemesterObj.id) : 'HK1 2026–2027 (Hiện tại)';
+            return (
+              <div className="relative" ref={semesterDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsSemesterOpen(prev => !prev)}
                   title="Chọn học kỳ để xem dữ liệu tương ứng"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#ebf3ff] hover:bg-[#dbeafe] rounded-lg border border-[#bfdbfe] transition cursor-pointer shadow-2xs select-none"
                 >
-                  {semesters.map(sem => (
-                    <option key={sem.id} value={sem.id} className="text-[#1f2937] font-semibold bg-white">
-                      {sem.name || sem.id} {sem.isActive ? '(Hiện tại)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <svg className="w-3.5 h-3.5 text-[#003087] pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                </svg>
+                  <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[12.5px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
+                  <span className="text-[13px] font-bold text-[#003087]">
+                    {currentSemesterLabel}
+                  </span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-[#003087] transition-transform duration-200 shrink-0 ${isSemesterOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu Popup */}
+                {isSemesterOpen && (
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-[#cbd5e1] py-1.5 z-50 animate-fadeIn">
+                    <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#64748b] border-b border-[#f1f5f9]">
+                      Danh sách Học kỳ
+                    </div>
+                    {semesters.map(sem => {
+                      const isSelected = (activeSemester || 'hk1_2026_2027') === sem.id;
+                      const label = `${sem.name || sem.id} ${sem.isActive && !String(sem.name || '').includes('Hiện tại') ? '(Hiện tại)' : ''}`.trim();
+                      return (
+                        <button
+                          key={sem.id}
+                          type="button"
+                          onClick={() => {
+                            onSemesterChange(sem.id);
+                            setIsSemesterOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 text-[13px] flex items-center justify-between transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#ebf3ff] text-[#003087] font-bold'
+                              : 'text-[#1f2937] hover:bg-[#f8fafc] font-medium'
+                          }`}
+                        >
+                          <span className="truncate">{label}</span>
+                          {isSelected && (
+                            <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Urgent Deadline Alert Badge (Cập nhật động theo hạn chót học kỳ) */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#fef2f2] text-[#dc2626] font-bold text-[12.5px] rounded-full border border-[#fecaca] whitespace-nowrap shadow-2xs">
