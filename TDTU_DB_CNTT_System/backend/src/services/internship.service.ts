@@ -354,23 +354,55 @@ export class InternshipService {
       }
     }
 
-    // 5. Gửi thông báo học vụ RIÊNG cho chính sinh viên này (Không public, không spam Thầy/Cô)
+    // 5. Gửi thông báo học vụ CHỈ ĐẾN GIẢNG VIÊN VÀ ADMIN ở thanh thông báo bên hông (Gọn tối đa, hỗ trợ Popup xem chi tiết)
     try {
+      let shortTitle = '';
+      if (isNowHasCompany || currentStatusKey === 'has_company') {
+        shortTitle = `SV ${dto.studentId} - ${studentName} đã khai báo DN: ${finalCompanyName}`;
+      } else if (currentStatusKey === 'interviewing' || noCompanyOption === 'self') {
+        const comp = dto.pendingCompany ? ` (${dto.pendingCompany})` : '';
+        shortTitle = `SV ${dto.studentId} - ${studentName} đã cập nhật: Đang chờ PV${comp}`;
+      } else {
+        shortTitle = `SV ${dto.studentId} - ${studentName} đã cập nhật: Cần Khoa hỗ trợ`;
+      }
+
+      const shortContent = `Sinh viên ${studentName} (${dto.studentId} - Lớp ${student.classId || 'CNTT'}) vừa cập nhật thông tin thực tập. Nhấn để xem chi tiết hồ sơ.`;
+
+      const metadataPayload = {
+        isStudentDeclaration: true,
+        studentId: dto.studentId,
+        studentName: studentName,
+        classId: student.classId || '',
+        major: student.major || '',
+        internshipStatus: currentStatusKey,
+        statusLabel: currentStatusLabel,
+        companyName: finalCompanyName,
+        pendingCompany: dto.pendingCompany || '',
+        position: dto.position || '',
+        desiredPosition: dto.desiredPosition || '',
+        taxCode: dto.taxCode || '',
+        address: dto.address || '',
+        contactPerson: dto.contactPerson || '',
+        contactPhone: dto.contactPhone || '',
+        contactEmail: dto.contactEmail || '',
+        supportReason: dto.supportReason || '',
+        desiredLocation: dto.desiredLocation || '',
+        cvDriveLink: dto.cvDriveLink || '',
+        supportNote: dto.supportNote || '',
+        submittedAt: now
+      };
+
       notificationService.createNotification({
-        title: wasNeedSupport && isNowHasCompany
-          ? `Cập nhật: Đã trúng tuyển "${finalCompanyName}"`
-          : `Tiếp nhận Khai báo Thực tập - ${finalCompanyName}`,
-        content: wasNeedSupport && isNowHasCompany
-          ? `Khoa CNTT ghi nhận bạn đã trúng tuyển doanh nghiệp "${finalCompanyName}". Yêu cầu Khoa hỗ trợ trước đó đã được tự động hoàn tất/rút lại.`
-          : `Khoa CNTT xác nhận đã tiếp nhận hồ sơ khai báo nơi thực tập của bạn tại "${finalCompanyName}". Vui lòng hoàn tất nộp phiếu tiếp nhận đúng hạn.`,
-        type: 'declaration',
-        priority: 'normal',
-        targetAudience: 'specific_student',
+        title: shortTitle,
+        content: shortContent,
+        type: 'student_declaration_update',
+        priority: currentStatusKey === 'need_support' ? 'high' : 'normal',
+        targetAudience: 'all_lecturers',
         targetStudentId: dto.studentId,
-        targetEmail: studentEmail,
-        senderRole: 'system',
-        senderName: 'Khoa Công nghệ Thông tin',
-        senderEmail: 'khoacntt@tdtu.edu.vn'
+        metadata: metadataPayload,
+        senderRole: 'student',
+        senderName: studentName,
+        senderEmail: studentEmail
       });
     } catch (notifErr) {
       console.warn('[InternshipService] Notification creation warning:', notifErr);

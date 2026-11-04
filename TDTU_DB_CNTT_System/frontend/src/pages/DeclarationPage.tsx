@@ -585,6 +585,14 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         }
       } catch {}
 
+      if (window.ApiClient?.notifyLecturersOfStudentDeclaration) {
+        window.ApiClient.notifyLecturersOfStudentDeclaration({
+          studentId,
+          studentName,
+          declaration: payload
+        });
+      }
+
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({
@@ -706,6 +714,14 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
           }
         }
       } catch {}
+
+      if (window.ApiClient?.notifyLecturersOfStudentDeclaration) {
+        window.ApiClient.notifyLecturersOfStudentDeclaration({
+          studentId,
+          studentName,
+          declaration: payload
+        });
+      }
 
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
@@ -873,6 +889,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
             setDeclarationHistory(parsed);
           } catch {}
         }
+      }
+      if (window.ApiClient?.notifyLecturersOfStudentDeclaration) {
+        window.ApiClient.notifyLecturersOfStudentDeclaration({
+          studentId,
+          studentName,
+          declaration: payload
+        });
       }
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));

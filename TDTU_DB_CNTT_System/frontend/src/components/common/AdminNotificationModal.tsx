@@ -112,9 +112,9 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
         targetAudience,
         targetMajor: targetAudience === 'students_by_major' ? targetMajor : undefined,
         targetStudentId: targetAudience === 'specific_student' ? targetStudentId.trim().toUpperCase() : undefined,
-        senderRole: 'admin',
-        senderName: currentUser?.name || 'Ban Quản trị Khoa CNTT',
-        senderEmail: currentUser?.email || 'admin-cntt@tdtu.edu.vn'
+        senderRole: currentUser?.isAdmin ? 'admin' : (currentUser?.role || 'lecturer'),
+        senderName: currentUser?.name || (currentUser?.role === 'lecturer' ? 'Giảng viên Khoa CNTT' : 'Ban Quản trị Khoa CNTT'),
+        senderEmail: currentUser?.email || 'khoacntt@tdtu.edu.vn'
       };
 
       if (window.ApiClient?.createAdminNotification) {

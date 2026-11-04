@@ -130,7 +130,15 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
           const unread = list.find(a => {
             const aId = a.id || a.title;
             const dismissed = localStorage.getItem(`tdtu_dismissed_ann_${studentId}_${aId}`);
-            return !dismissed;
+            if (dismissed) return false;
+            // Lọc phân luồng theo nhóm đối tượng
+            const aud = a.targetAudience;
+            if (!aud || aud === 'all' || aud === 'all_students') return true;
+            if (aud === 'specific_student') return String(a.targetStudentId || '').toUpperCase() === studentId;
+            if (aud === 'students_seeking' && (currentUser?.status === 'seeking' || currentUser?.status === 'Chưa có doanh nghiệp')) return true;
+            if (aud === 'students_need_support' && (currentUser?.noCompanyOption === 'faculty' || currentUser?.status === 'Cần hỗ trợ' || currentUser?.status === 'Cần Khoa hỗ trợ')) return true;
+            if (aud === 'students_by_major' && a.targetMajor && currentUser?.major) return currentUser.major.toLowerCase().includes(a.targetMajor.toLowerCase());
+            return false;
           });
           if (unread) {
             setActiveAnnouncement(unread);
@@ -511,6 +519,7 @@ const AppInner = () => {
           currentUser={currentUser}
           activeSemester={activeSemester}
           onSemesterChange={handleSemesterChange}
+          onNavigateTab={setActiveTab}
         />
 
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5 lg:px-6 bg-white w-full">

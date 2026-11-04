@@ -37,8 +37,10 @@ export class NotificationService {
 
     // 1. Phân quyền người gửi (RBAC Enforcement)
     if (sender && sender.role === 'student') {
-      // Sinh viên CHỈ có quyền tạo thông báo riêng cho CHÍNH MÌNH (xác nhận học vụ, khai báo, nộp chứng chỉ, ứng tuyển)
-      dto.targetAudience = 'specific_student';
+      // Nếu là sinh viên gửi thông báo cập nhật hồ sơ tới Giảng viên/Admin: giữ nguyên targetAudience là 'all_lecturers'
+      if (dto.targetAudience !== 'all_lecturers') {
+        dto.targetAudience = 'specific_student';
+      }
       dto.targetStudentId = sender.studentId || dto.targetStudentId;
       dto.targetEmail = sender.email || dto.targetEmail;
       dto.senderRole = 'student';
@@ -118,6 +120,11 @@ export class NotificationService {
    * - Giảng viên & Admin: KHÔNG bị tràn ngập thông báo cá nhân của từng sinh viên (để tránh loãng hộp thư)
    */
   getNotificationsForUser(user?: UserClaims): any[] {
+    // Tự động xóa thông báo thường sau 5 ngày theo quy định
+    try {
+      this.db.prepare("DELETE FROM notifications WHERE datetime(createdAt) < datetime('now', '-5 days')").run();
+    } catch {}
+
     if (!user) {
       // Khách vãng lai chưa đăng nhập: chỉ thấy thông báo toàn trường chung
       return this.db.prepare(`
@@ -370,16 +377,27 @@ export class NotificationService {
 
     // Diễn giải nhãn đối tượng hiển thị
     let audienceLabel = 'Toàn trường';
-    switch (notif.targetAudience) {
-      case 'all': audienceLabel = 'Toàn hệ thống'; break;
-      case 'all_students': audienceLabel = 'Toàn bộ Sinh viên'; break;
-      case 'all_lecturers': audienceLabel = 'Toàn bộ Giảng viên'; break;
-      case 'students_seeking': audienceLabel = 'Nhóm: Chưa có nơi thực tập'; break;
-      case 'students_need_support': audienceLabel = 'Nhóm: Cần Khoa hỗ trợ'; break;
-      case 'students_no_cert': audienceLabel = 'Nhóm: Chưa nộp chứng chỉ'; break;
-      case 'students_dual_course': audienceLabel = 'Nhóm: Học song song 2 môn'; break;
-      case 'students_by_major': audienceLabel = `Ngành: ${notif.targetMajor || 'Chuyên ngành'}`; break;
-      case 'specific_student': audienceLabel = 'Cá nhân bạn'; break;
+    if (notif.type === 'student_declaration_update') {
+      audienceLabel = 'Cập nhật SV';
+    } else {
+      switch (notif.targetAudience) {
+        case 'all': audienceLabel = 'Toàn hệ thống'; break;
+        case 'all_students': audienceLabel = 'Toàn bộ Sinh viên'; break;
+        case 'all_lecturers': audienceLabel = 'Toàn bộ Giảng viên'; break;
+        case 'students_seeking': audienceLabel = 'Nhóm: Chưa có nơi thực tập'; break;
+        case 'students_need_support': audienceLabel = 'Nhóm: Cần Khoa hỗ trợ'; break;
+        case 'students_no_cert': audienceLabel = 'Nhóm: Chưa nộp chứng chỉ'; break;
+        case 'students_dual_course': audienceLabel = 'Nhóm: Học song song 2 môn'; break;
+        case 'students_by_major': audienceLabel = `Ngành: ${notif.targetMajor || 'Chuyên ngành'}`; break;
+        case 'specific_student': audienceLabel = 'Cá nhân bạn'; break;
+      }
+    }
+
+    let parsedMeta = null;
+    if (notif.metadata) {
+      try {
+        parsedMeta = typeof notif.metadata === 'string' ? JSON.parse(notif.metadata) : notif.metadata;
+      } catch {}
     }
 
     return {
@@ -397,6 +415,7 @@ export class NotificationService {
       senderEmail: notif.senderEmail,
       createdAt: notif.createdAt,
       read: isRead,
+      metadata: parsedMeta,
       isPrivate: notif.targetAudience === 'specific_student'
     };
   }

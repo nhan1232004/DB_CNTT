@@ -747,7 +747,27 @@ class ApiClient {
       list = [];
     }
 
-    // Lọc bỏ thông báo mẫu ảo cũ nếu còn sót và thông báo đã xóa trong blacklist
+    // 1. Tự động xóa thông báo thường sau 5 ngày (5 * 24 * 60 * 60 * 1000 ms) theo quy định
+    const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    let hadExpired = false;
+    list = list.filter(n => {
+      if (!n) return false;
+      const createdTime = new Date(n.createdAt || n.timestamp || 0).getTime();
+      if (!isNaN(createdTime) && createdTime > 0 && (now - createdTime > FIVE_DAYS_MS)) {
+        hadExpired = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (hadExpired) {
+      try {
+        localStorage.setItem(this.notificationKey, JSON.stringify(list));
+      } catch {}
+    }
+
+    // 2. Lọc bỏ thông báo mẫu ảo cũ nếu còn sót và thông báo đã xóa trong blacklist
     const deletedSet = new Set(this.getDeletedNotificationIds());
     list = list.filter(n => n && n.id !== 'notif_init_01' && n.id !== 'notif_init_02' && !deletedSet.has(String(n.id)));
 
@@ -766,26 +786,28 @@ class ApiClient {
       return n.targetAudience || 'all';
     };
 
-    // Role Admin: Nhìn thấy toàn bộ thông báo hệ thống và chiến dịch
-    if (currentUser.isAdmin) {
-      return list;
-    }
-
-    // Role Giảng viên: CHỈ nhận thông báo cho toàn trường hoặc toàn giảng viên
-    // TUYỆT ĐỐI KHÔNG nhận thông báo cá nhân của từng sinh viên
-    if (currentUser.role === 'lecturer') {
+    // Role Admin & Giảng viên: Nhận thông báo toàn hệ thống, toàn giảng viên và các thông báo cập nhật hồ sơ từ sinh viên
+    if (currentUser.isAdmin || currentUser.role === 'lecturer') {
       return list.filter(n => {
         const aud = resolveAudience(n);
-        return aud === 'all' || aud === 'all_lecturers';
+        // Nhận thông báo chung, thông báo giảng viên, hoặc cập nhật hồ sơ từ sinh viên
+        if (aud === 'all' || aud === 'all_lecturers' || n.type === 'student_declaration_update') return true;
+        // Nếu là admin, cho phép xem thêm các thông báo phát hành
+        if (currentUser.isAdmin && (aud === 'all_students' || aud.startsWith('students_'))) return true;
+        return false;
       });
     }
 
     // Role Sinh viên:
+    // TUYỆT ĐỐI KHÔNG nhận thông báo all_lecturers hoặc cập nhật của sinh viên khác!
     const mySid = (currentUser.studentId || currentUser.mssv || '').toUpperCase();
     const myEmail = (currentUser.email || '').toLowerCase();
 
     return list.filter(n => {
       const aud = resolveAudience(n);
+      if (aud === 'all_lecturers' || n.type === 'student_declaration_update') {
+        return false;
+      }
       if (aud === 'all' || aud === 'all_students') return true;
 
       // Thông báo cá nhân riêng tư: Chỉ chính sinh viên này mới được xem
@@ -799,7 +821,7 @@ class ApiClient {
       if (aud === 'students_seeking' && (currentUser.status === 'seeking' || currentUser.status === 'Chưa có doanh nghiệp')) {
         return true;
       }
-      if (aud === 'students_need_support' && (currentUser.noCompanyOption === 'faculty' || currentUser.status === 'Cần hỗ trợ')) {
+      if (aud === 'students_need_support' && (currentUser.noCompanyOption === 'faculty' || currentUser.status === 'Cần hỗ trợ' || currentUser.status === 'Cần Khoa hỗ trợ')) {
         return true;
       }
       if (aud === 'students_dual_course' && (currentUser.isDualCourse || currentUser.isDualCourse === 1)) {
@@ -1092,9 +1114,168 @@ class ApiClient {
       } catch {}
     }
 
+    // 3.1 Đồng thời lưu vào khung thông báo của Bảng tin (tdtu_announcements) theo đúng nhóm đối tượng
+    try {
+      const ancItem = {
+        id: notificationItem.id,
+        title: notificationItem.title,
+        content: notificationItem.content,
+        priority: notificationItem.priority,
+        targetAudience: notificationItem.targetAudience,
+        targetMajor: notificationItem.targetMajor,
+        targetStudentId: notificationItem.targetStudentId,
+        targetAudienceLabel: notificationItem.targetAudienceLabel,
+        author: notificationItem.senderName || 'Ban Quản trị Khoa CNTT',
+        authorRole: notificationItem.senderRole === 'admin' ? 'Ban Quản trị Khoa' : 'Giảng viên',
+        date: now.toLocaleDateString('vi-VN'),
+        createdAt: now.toISOString(),
+        pinned: notificationItem.priority === 'urgent' || notificationItem.priority === 'high'
+      };
+      const existingAncs = this.getLecturerAnnouncements();
+      const updatedAncs = [ancItem, ...existingAncs.filter(a => a.id !== ancItem.id)];
+      localStorage.setItem('tdtu_announcements', JSON.stringify(updatedAncs.slice(0, 50)));
+      if (window.FirebaseService?.db) {
+        window.FirebaseService.db.collection('tdtu_announcements').doc(ancItem.id).set(ancItem, { merge: true }).catch(() => {});
+      }
+      window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: updatedAncs }));
+    } catch {}
+
     // 4. Phát sự kiện toàn cục cập nhật chuông và danh sách
     window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: notificationItem }));
     return notificationItem;
+  }
+
+  // Phân luồng thông báo khi Sinh viên khai báo / cập nhật: CHỈ gửi đến Giảng viên và Admin ở thanh bên
+  static async notifyLecturersOfStudentDeclaration({ studentId, studentName, declaration }) {
+    const sid = String(studentId || '').trim().toUpperCase();
+    const name = studentName || sid;
+    const decl = declaration || {};
+    const dStatus = String(decl.internshipStatus || '').trim().toLowerCase();
+    const hasRealComp = Boolean(
+      decl.companyName &&
+      !decl.companyName.includes('hỗ trợ') &&
+      !decl.companyName.includes('Khoa CNTT') &&
+      decl.companyName !== 'Chưa có' &&
+      decl.companyName !== '—'
+    );
+    const isComp = dStatus === 'has_company' || hasRealComp;
+    const isWait = !isComp && (dStatus === 'interviewing' || decl.noCompanyOption === 'self');
+    const isSupp = !isComp && !isWait && (dStatus === 'need_support' || decl.noCompanyOption === 'faculty');
+
+    let shortTitle = '';
+    let statusLabel = '';
+    if (isComp) {
+      shortTitle = `SV ${sid} - ${name} đã khai báo DN: ${decl.companyName || 'Doanh nghiệp mới'}`;
+      statusLabel = 'Đã có nơi thực tập';
+    } else if (isWait) {
+      const comp = decl.pendingCompany ? ` (${decl.pendingCompany})` : '';
+      shortTitle = `SV ${sid} - ${name} đã cập nhật: Đang chờ PV${comp}`;
+      statusLabel = 'Đang tìm / Chờ PV';
+    } else {
+      shortTitle = `SV ${sid} - ${name} đã cập nhật: Cần Khoa hỗ trợ`;
+      statusLabel = 'Cần Khoa hỗ trợ';
+    }
+
+    // Tra cứu nhanh thông tin lớp và chuyên ngành
+    let studentClass = '';
+    let studentMajor = '';
+    try {
+      const students = await this.getLiveStudents('hk1_2026_2027');
+      const found = students.find(s => String(s.mssv || s.studentId).toUpperCase() === sid);
+      if (found) {
+        studentClass = found.classId || found.lop || found.class || '';
+        studentMajor = found.major || found.nganh || '';
+      }
+    } catch {}
+
+    const shortContent = `Sinh viên ${name} (${sid}${studentClass ? ` - Lớp ${studentClass}` : ''}) vừa cập nhật thông tin thực tập. Nhấn để xem chi tiết hồ sơ.`;
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + now.toLocaleDateString('vi-VN');
+
+    const metadataPayload = {
+      isStudentDeclaration: true,
+      studentId: sid,
+      studentName: name,
+      classId: studentClass,
+      major: studentMajor,
+      internshipStatus: isComp ? 'has_company' : (isWait ? 'interviewing' : 'need_support'),
+      statusLabel: statusLabel,
+      companyName: decl.companyName || (isSupp ? 'Khoa CNTT hỗ trợ điều phối' : (isWait ? (decl.pendingCompany || 'Đang tìm nơi thực tập') : '')),
+      pendingCompany: decl.pendingCompany || '',
+      position: decl.position || decl.desiredPosition || (isSupp ? 'Chờ Khoa phân bổ' : 'Thực tập sinh'),
+      desiredPosition: decl.desiredPosition || '',
+      taxCode: decl.taxCode || '',
+      address: decl.address || '',
+      contactPerson: decl.contactPerson || '',
+      contactPhone: decl.contactPhone || '',
+      contactEmail: decl.contactEmail || '',
+      supportReason: decl.supportReason || '',
+      desiredLocation: decl.desiredLocation || '',
+      cvDriveLink: decl.cvDriveLink || '',
+      supportNote: decl.supportNote || '',
+      submittedAt: timeStr
+    };
+
+    const notifItem = {
+      id: `notif_decl_${sid}`,
+      title: shortTitle,
+      subject: shortTitle,
+      content: shortContent,
+      type: 'student_declaration_update',
+      priority: isSupp ? 'high' : 'normal',
+      targetAudience: 'all_lecturers',
+      targetAudienceLabel: 'Cập nhật SV',
+      targetStudentId: sid,
+      senderRole: 'student',
+      senderName: name,
+      read: false,
+      createdAt: nowIso,
+      timestamp: timeStr,
+      time: timeStr,
+      metadata: metadataPayload
+    };
+
+    // 1. Lưu LocalStorage
+    try {
+      const saved = localStorage.getItem(this.notificationKey);
+      let list = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(list)) list = [];
+      list = list.filter(n => n.id !== notifItem.id);
+      list.unshift(notifItem);
+      localStorage.setItem(this.notificationKey, JSON.stringify(list.slice(0, 100)));
+    } catch {}
+
+    // 2. Đồng bộ Firestore
+    if (window.FirebaseService?.db) {
+      try {
+        window.FirebaseService.db.collection('tdtu_notifications').doc(notifItem.id).set(notifItem, { merge: true }).catch(() => {});
+      } catch {}
+    }
+
+    // 3. Gửi lên backend
+    try {
+      const token = this.getToken();
+      fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          title: notifItem.title,
+          content: notifItem.content,
+          type: notifItem.type,
+          priority: notifItem.priority,
+          targetAudience: notifItem.targetAudience,
+          targetStudentId: notifItem.targetStudentId,
+          metadata: metadataPayload
+        })
+      }).catch(() => {});
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: notifItem }));
+    return notifItem;
   }
 
   // 3. TÍNH NĂNG XUẤT BÁO CÁO EXCEL (MULTI-TAB EXCEL EXPORT FEATURE)
