@@ -143,19 +143,38 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     const handleNotifSent = (e) => {
       const newNote = e.detail;
       loadNotifications();
-      setToast({
-        title: 'Thông báo hệ thống',
-        message: 'Đã tiếp nhận và cập nhật hồ sơ vào hệ thống học vụ thành công',
-        subject: newNote.subject || newNote.title || 'Khai báo thực tập'
-      });
-      setTimeout(() => {
-        setToast(null);
-      }, 4000);
+      if (newNote) {
+        const isStudentUpdate = newNote.type === 'student_declaration_update' || newNote.metadata?.isStudentDeclaration;
+        setToast({
+          title: isStudentUpdate ? 'Cập nhật Khai báo Thực tập' : 'Thông báo hệ thống',
+          message: newNote.content || 'Đã tiếp nhận và cập nhật hồ sơ vào hệ thống học vụ thành công',
+          subject: newNote.subject || newNote.title || 'Khai báo thực tập'
+        });
+        setTimeout(() => {
+          setToast(null);
+        }, 4500);
+      }
     };
 
     const handleNotifReceived = () => {
       loadNotifications();
     };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'tdtu_notifications' || e.key === 'tdtu_deleted_notifications' || (e.key && e.key.startsWith('tdtu_decl_'))) {
+        loadNotifications();
+      }
+    };
+
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (msg) => {
+        if (msg?.data?.type === 'notification_sent' || msg?.data?.type === 'declaration_updated') {
+          loadNotifications();
+        }
+      };
+    } catch {}
 
     const handleSemestersUpdated = (e) => {
       if (e?.detail?.list && Array.isArray(e.detail.list)) {
@@ -168,6 +187,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       computeDeadline();
     };
 
+    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tdtu_notification_sent', handleNotifSent);
     window.addEventListener('tdtu_notification_received', handleNotifReceived);
     window.addEventListener('tdtu_semesters_updated', handleSemestersUpdated);
@@ -175,6 +195,10 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     window.addEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
 
     return () => {
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
+      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tdtu_notification_sent', handleNotifSent);
       window.removeEventListener('tdtu_notification_received', handleNotifReceived);
       window.removeEventListener('tdtu_semesters_updated', handleSemestersUpdated);
@@ -352,7 +376,10 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
           {/* Notification Service Bell Icon */}
           <button
             type="button"
-            onClick={() => setShowDrawer(true)}
+            onClick={() => {
+              loadNotifications();
+              setShowDrawer(true);
+            }}
             title="Hộp thư Thông báo Học vụ & Email Tự động"
             className="relative p-2 rounded-lg text-[#1f2937] hover:text-[#003087] hover:bg-[#ebf3ff] transition cursor-pointer"
           >

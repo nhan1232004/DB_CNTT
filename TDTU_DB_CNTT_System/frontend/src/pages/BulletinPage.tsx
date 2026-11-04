@@ -88,7 +88,7 @@ const BulletinPage = ({ currentUser }) => {
         // Hợp nhất thông báo học vụ hệ thống (tdtu_notifications) và thông báo giảng viên
         const sysNotifs = (window.ApiClient.getNotifications ? window.ApiClient.getNotifications(currentUser) : []) || [];
         // Lọc bỏ các thông báo cập nhật hồ sơ cá nhân của sinh viên (chỉ dành riêng cho thanh bên của GV/Admin)
-        const filteredSysNotifs = sysNotifs.filter(n => n && n.type !== 'student_declaration_update' && n.type !== 'declaration');
+        const filteredSysNotifs = sysNotifs.filter(n => n && n.type !== 'student_declaration_update' && n.type !== 'declaration' && !n.metadata?.isStudentDeclaration);
         const normSysNotifs = filteredSysNotifs.map(n => ({
           id: n.id,
           title: n.title || n.subject || 'Thông báo học vụ',

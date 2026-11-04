@@ -187,18 +187,35 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
       {/* Status Alert Banner - Hiển thị tương ứng theo đúng tình trạng khai báo của sinh viên trong kỳ */}
       {isEnrolledStudent && declaration && (() => {
         const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
+        const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase();
+        const compNameLower = String(declaration?.companyName || '').trim().toLowerCase();
+
+        const isWait = declStatus === 'interviewing' ||
+                       noCompOpt === 'self' ||
+                       compNameLower.includes('chờ phỏng vấn') ||
+                       compNameLower.includes('phỏng vấn') ||
+                       compNameLower.includes('đang tìm') ||
+                       compNameLower.includes('chờ pv');
+
+        const isSupp = !isWait && (
+          declStatus === 'need_support' ||
+          noCompOpt === 'faculty' ||
+          compNameLower.includes('hỗ trợ') ||
+          compNameLower.includes('khoa cntt')
+        );
+
         const hasRealComp = Boolean(
           declaration?.companyName &&
           declaration.companyName !== 'Chưa có' &&
           declaration.companyName !== '—' &&
-          !declaration.companyName.includes('hỗ trợ') &&
-          !declaration.companyName.includes('Đang tìm') &&
-          !declaration.companyName.includes('Chờ phỏng vấn') &&
-          !declaration.companyName.includes('Khoa CNTT')
+          !compNameLower.includes('hỗ trợ') &&
+          !compNameLower.includes('khoa cntt') &&
+          !compNameLower.includes('đang tìm') &&
+          !compNameLower.includes('phỏng vấn') &&
+          !compNameLower.includes('chờ pv')
         );
-        const isComp = declStatus === 'has_company' || hasRealComp;
-        const isWait = !isComp && (declStatus === 'interviewing' || declaration?.noCompanyOption === 'self');
-        const isSupp = !isComp && !isWait && (declStatus === 'need_support' || declaration?.noCompanyOption === 'faculty');
+
+        const isComp = !isWait && !isSupp && (declStatus === 'has_company' || hasRealComp);
 
         if (isComp && declaration.companyName) {
           return (
@@ -342,18 +359,35 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
           {(() => {
             const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
+            const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase();
+            const compNameLower = String(declaration?.companyName || '').trim().toLowerCase();
+
+            const isWait = declStatus === 'interviewing' ||
+                           noCompOpt === 'self' ||
+                           compNameLower.includes('chờ phỏng vấn') ||
+                           compNameLower.includes('phỏng vấn') ||
+                           compNameLower.includes('đang tìm') ||
+                           compNameLower.includes('chờ pv');
+
+            const isSupp = !isWait && (
+              declStatus === 'need_support' ||
+              noCompOpt === 'faculty' ||
+              compNameLower.includes('hỗ trợ') ||
+              compNameLower.includes('khoa cntt')
+            );
+
             const hasRealComp = Boolean(
               declaration?.companyName &&
               declaration.companyName !== 'Chưa có' &&
               declaration.companyName !== '—' &&
-              !declaration.companyName.includes('hỗ trợ') &&
-              !declaration.companyName.includes('Đang tìm') &&
-              !declaration.companyName.includes('Chờ phỏng vấn') &&
-              !declaration.companyName.includes('Khoa CNTT')
+              !compNameLower.includes('hỗ trợ') &&
+              !compNameLower.includes('khoa cntt') &&
+              !compNameLower.includes('đang tìm') &&
+              !compNameLower.includes('phỏng vấn') &&
+              !compNameLower.includes('chờ pv')
             );
-            const isComp = declStatus === 'has_company' || hasRealComp;
-            const isWait = !isComp && (declStatus === 'interviewing' || declaration?.noCompanyOption === 'self');
-            const isSupp = !isComp && !isWait && (declStatus === 'need_support' || declaration?.noCompanyOption === 'faculty');
+
+            const isComp = !isWait && !isSupp && (declStatus === 'has_company' || hasRealComp);
 
             let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
             let badgeLabel = 'Chưa mở hồ sơ';
@@ -366,7 +400,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                 descText = `Đã tiếp nhận tại ${declaration.companyName}`;
               } else if (isWait) {
                 badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
-                badgeLabel = 'Đang chờ PV/KQPV';
+                badgeLabel = 'Đang tìm / Chờ phỏng vấn';
                 descText = declaration?.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : 'Tự liên hệ & đang chờ kết quả phỏng vấn';
               } else if (isSupp) {
                 badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
@@ -475,11 +509,15 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
               <div>
                 <div className="font-bold text-[#1f2937] text-sm">Cập nhật Trạng thái</div>
                 <div className="text-xs text-[#4b5563]">
-                  {declaration?.internshipStatus === 'has_company'
-                    ? 'Có doanh nghiệp'
-                    : (declaration?.internshipStatus === 'interviewing'
-                        ? 'Đang chờ PV'
-                        : (declaration?.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : 'Đang cập nhật'))}
+                  {(() => {
+                    const ds = String(declaration?.internshipStatus || '').toLowerCase();
+                    const cn = String(declaration?.companyName || '').toLowerCase();
+                    const opt = String(declaration?.noCompanyOption || '').toLowerCase();
+                    if (ds === 'interviewing' || opt === 'self' || cn.includes('chờ phỏng vấn') || cn.includes('phỏng vấn') || cn.includes('đang tìm') || cn.includes('chờ pv')) return 'Đang chờ PV';
+                    if (ds === 'need_support' || opt === 'faculty' || cn.includes('hỗ trợ') || cn.includes('khoa cntt')) return 'Cần Khoa hỗ trợ';
+                    if (ds === 'has_company' || (declaration?.companyName && declaration.companyName !== 'Chưa có' && declaration.companyName !== '—')) return 'Có doanh nghiệp';
+                    return 'Đang cập nhật';
+                  })()}
                 </div>
               </div>
             </div>

@@ -786,14 +786,28 @@ class ApiClient {
       return n.targetAudience || 'all';
     };
 
+    const cleanEmail = String(currentUser?.email || '').toLowerCase();
+    const isLecturerOrAdmin = Boolean(
+      currentUser.isAdmin ||
+      currentUser.role === 'admin' ||
+      currentUser.role === 'lecturer' ||
+      currentUser.isFaculty === true ||
+      cleanEmail === 'duonghuuphuc@tdtu.edu.vn' ||
+      cleanEmail === 'phamvanc@tdtu.edu.vn' ||
+      cleanEmail === 'nguyenvana@tdtu.edu.vn' ||
+      cleanEmail === 'thayphuc@tdtu.edu.vn' ||
+      cleanEmail === 'admin@tdtu.edu.vn'
+    );
+
     // Role Admin & Giảng viên: Nhận thông báo toàn hệ thống, toàn giảng viên và các thông báo cập nhật hồ sơ từ sinh viên
-    if (currentUser.isAdmin || currentUser.role === 'lecturer') {
+    if (isLecturerOrAdmin) {
       return list.filter(n => {
         const aud = resolveAudience(n);
         // Nhận thông báo chung, thông báo giảng viên, hoặc cập nhật hồ sơ từ sinh viên
-        if (aud === 'all' || aud === 'all_lecturers' || n.type === 'student_declaration_update') return true;
-        // Nếu là admin, cho phép xem thêm các thông báo phát hành
-        if (currentUser.isAdmin && (aud === 'all_students' || aud.startsWith('students_'))) return true;
+        if (aud === 'all' || aud === 'all_lecturers' || n.type === 'student_declaration_update' || n.metadata?.isStudentDeclaration) return true;
+        // Nếu là admin, cho phép xem thêm các thông báo phát hành đến sinh viên
+        const isAdminUser = currentUser.isAdmin || currentUser.role === 'admin' || cleanEmail.includes('phuc') || cleanEmail.includes('admin') || cleanEmail === 'phamvanc@tdtu.edu.vn';
+        if (isAdminUser && (aud === 'all_students' || aud.startsWith('students_') || aud === 'specific_student')) return true;
         return false;
       });
     }
@@ -805,7 +819,7 @@ class ApiClient {
 
     return list.filter(n => {
       const aud = resolveAudience(n);
-      if (aud === 'all_lecturers' || n.type === 'student_declaration_update') {
+      if (aud === 'all_lecturers' || n.type === 'student_declaration_update' || n.metadata?.isStudentDeclaration) {
         return false;
       }
       if (aud === 'all' || aud === 'all_students') return true;
@@ -1151,16 +1165,35 @@ class ApiClient {
     const name = studentName || sid;
     const decl = declaration || {};
     const dStatus = String(decl.internshipStatus || '').trim().toLowerCase();
+    const noComp = String(decl.noCompanyOption || '').trim().toLowerCase();
+    const compNameLower = String(decl.companyName || '').toLowerCase();
+
+    const isWait = dStatus === 'interviewing' ||
+                   noComp === 'self' ||
+                   compNameLower.includes('chờ phỏng vấn') ||
+                   compNameLower.includes('phỏng vấn') ||
+                   compNameLower.includes('đang tìm') ||
+                   compNameLower.includes('chờ pv');
+
+    const isSupp = !isWait && (
+      dStatus === 'need_support' ||
+      noComp === 'faculty' ||
+      compNameLower.includes('hỗ trợ') ||
+      compNameLower.includes('khoa cntt')
+    );
+
     const hasRealComp = Boolean(
       decl.companyName &&
-      !decl.companyName.includes('hỗ trợ') &&
-      !decl.companyName.includes('Khoa CNTT') &&
       decl.companyName !== 'Chưa có' &&
-      decl.companyName !== '—'
+      decl.companyName !== '—' &&
+      !compNameLower.includes('hỗ trợ') &&
+      !compNameLower.includes('khoa cntt') &&
+      !compNameLower.includes('đang tìm') &&
+      !compNameLower.includes('phỏng vấn') &&
+      !compNameLower.includes('chờ pv')
     );
-    const isComp = dStatus === 'has_company' || hasRealComp;
-    const isWait = !isComp && (dStatus === 'interviewing' || decl.noCompanyOption === 'self');
-    const isSupp = !isComp && !isWait && (dStatus === 'need_support' || decl.noCompanyOption === 'faculty');
+
+    const isComp = !isWait && !isSupp && (dStatus === 'has_company' || hasRealComp);
 
     let shortTitle = '';
     let statusLabel = '';
@@ -1217,8 +1250,23 @@ class ApiClient {
       submittedAt: timeStr
     };
 
+    // Tạo ID duy nhất kèm timestamp để đảm bảo không bị trùng ID cũ và không bị chặn bởi danh sách blacklist đã xóa
+    const notifUniqueId = `notif_decl_${sid}_${Date.now()}`;
+
+    // Xóa bỏ triệt để các ID cũ của sinh viên này khỏi danh sách đen đã xóa (để khi sinh viên nộp lại sẽ luôn hiển thị)
+    try {
+      const rawDel = localStorage.getItem('tdtu_deleted_notifications');
+      if (rawDel) {
+        let delList = JSON.parse(rawDel);
+        if (Array.isArray(delList)) {
+          delList = delList.filter(id => !String(id).includes(`notif_decl_${sid}`));
+          localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delList));
+        }
+      }
+    } catch {}
+
     const notifItem = {
-      id: `notif_decl_${sid}`,
+      id: notifUniqueId,
       title: shortTitle,
       subject: shortTitle,
       content: shortContent,
@@ -1236,12 +1284,12 @@ class ApiClient {
       metadata: metadataPayload
     };
 
-    // 1. Lưu LocalStorage
+    // 1. Lưu LocalStorage - Giữ thông báo mới nhất của sinh viên này
     try {
       const saved = localStorage.getItem(this.notificationKey);
       let list = saved ? JSON.parse(saved) : [];
       if (!Array.isArray(list)) list = [];
-      list = list.filter(n => n.id !== notifItem.id);
+      list = list.filter(n => !(n && n.type === 'student_declaration_update' && String(n.targetStudentId || '').toUpperCase() === sid));
       list.unshift(notifItem);
       localStorage.setItem(this.notificationKey, JSON.stringify(list.slice(0, 100)));
     } catch {}
@@ -1274,7 +1322,17 @@ class ApiClient {
       }).catch(() => {});
     } catch {}
 
+    // 4. Phát sự kiện toàn cục và BroadcastChannel sang các tab khác
     window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: notifItem }));
+    window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: notifItem }));
+    window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: notifItem }));
+
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'notification_sent', data: notifItem });
+      bc.close();
+    } catch {}
+
     return notifItem;
   }
 
@@ -3207,6 +3265,15 @@ class ApiClient {
           window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(declaration, { merge: true });
         } catch {}
       }
+
+      // Tự động phát thông báo tới thanh bên của Giảng viên & Admin
+      try {
+        this.notifyLecturersOfStudentDeclaration({
+          studentId: sid,
+          studentName: declaration.studentName || sid,
+          declaration
+        });
+      } catch {}
 
       // Broadcast across tabs
       try {

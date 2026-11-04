@@ -140,7 +140,7 @@ export class NotificationService {
     `).all() as any[];
 
     // 1. Nếu là ROLE ADMIN: Xem được toàn bộ thông báo hệ thống và các chiến dịch phát thông báo
-    if (user.isAdmin) {
+    if (user.isAdmin || user.role === 'admin') {
       return allNotifs.map(n => this.formatNotificationForUser(n, user));
     }
 
