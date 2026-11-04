@@ -217,16 +217,27 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
 
     window.addEventListener('tdtu_data_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_certs_updated', handleRealtimeUpdate);
     window.addEventListener('storage', handleRealtimeUpdate);
     window.addEventListener('focus', handleRealtimeUpdate);
 
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = () => handleRealtimeUpdate();
+    } catch {}
+
     return () => {
       window.removeEventListener('tdtu_data_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_certs_updated', handleRealtimeUpdate);
       window.removeEventListener('storage', handleRealtimeUpdate);
       window.removeEventListener('focus', handleRealtimeUpdate);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
     };
   }, [currentUser]);
 

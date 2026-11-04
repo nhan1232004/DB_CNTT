@@ -112,8 +112,24 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
 
     window.addEventListener('tdtu_certs_updated', handleUpdate);
     window.addEventListener('tdtu_decl_updated', handleUpdate);
+    window.addEventListener('tdtu_declarations_updated', handleUpdate);
     window.addEventListener('tdtu_declaration_updated', handleUpdate);
+    window.addEventListener('tdtu_data_updated', handleUpdate);
+    window.addEventListener('tdtu_cv_updated', handleUpdate);
+    window.addEventListener('tdtu_semester_changed', handleUpdate);
     window.addEventListener('storage', handleUpdate);
+
+    // Heartbeat Revalidation định kỳ mỗi 4s và khi tab active
+    const heartbeatTimer = setInterval(() => {
+      loadProfileData(false);
+    }, 4000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadProfileData(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     let bc = null;
     try {
@@ -127,8 +143,14 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
       isMountedRef.current = false;
       window.removeEventListener('tdtu_certs_updated', handleUpdate);
       window.removeEventListener('tdtu_decl_updated', handleUpdate);
+      window.removeEventListener('tdtu_declarations_updated', handleUpdate);
       window.removeEventListener('tdtu_declaration_updated', handleUpdate);
+      window.removeEventListener('tdtu_data_updated', handleUpdate);
+      window.removeEventListener('tdtu_cv_updated', handleUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
+      clearInterval(heartbeatTimer);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }

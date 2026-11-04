@@ -433,6 +433,52 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       const cv = window.ApiClient.getStudentCvLink(studentId);
       if (cv) setCvDriveLink(cv);
     }
+
+    const handleDeclUpdate = () => {
+      loadExistingOrDraft();
+      if (window.ApiClient?.getStudentCvLink) {
+        const cv = window.ApiClient.getStudentCvLink(studentId);
+        if (cv) setCvDriveLink(cv);
+      }
+    };
+
+    window.addEventListener('tdtu_decl_updated', handleDeclUpdate);
+    window.addEventListener('tdtu_declarations_updated', handleDeclUpdate);
+    window.addEventListener('tdtu_declaration_updated', handleDeclUpdate);
+    window.addEventListener('tdtu_cv_updated', handleDeclUpdate);
+    window.addEventListener('tdtu_data_updated', handleDeclUpdate);
+    window.addEventListener('storage', handleDeclUpdate);
+
+    // Heartbeat Revalidation mỗi 4s và khi tab active
+    const heartbeat = setInterval(handleDeclUpdate, 4000);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') handleDeclUpdate();
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (msg) => {
+        if (!msg.data || msg.data.type === 'declaration_updated' || msg.data.type === 'cv_updated') {
+          handleDeclUpdate();
+        }
+      };
+    } catch {}
+
+    return () => {
+      window.removeEventListener('tdtu_decl_updated', handleDeclUpdate);
+      window.removeEventListener('tdtu_declarations_updated', handleDeclUpdate);
+      window.removeEventListener('tdtu_declaration_updated', handleDeclUpdate);
+      window.removeEventListener('tdtu_cv_updated', handleDeclUpdate);
+      window.removeEventListener('tdtu_data_updated', handleDeclUpdate);
+      window.removeEventListener('storage', handleDeclUpdate);
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', handleVis);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
+    };
   }, [loadExistingOrDraft, studentId]);
 
   // Navigation handlers

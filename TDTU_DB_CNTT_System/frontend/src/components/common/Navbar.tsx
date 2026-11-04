@@ -170,7 +170,13 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.onmessage = (msg) => {
-        if (msg?.data?.type === 'notification_sent' || msg?.data?.type === 'declaration_updated') {
+        if (!msg?.data || 
+            msg.data.type === 'notification_sent' || 
+            msg.data.type === 'notification_received' || 
+            msg.data.type === 'notification_deleted' ||
+            msg.data.type === 'announcement_created' ||
+            msg.data.type === 'announcement_deleted' ||
+            msg.data.type === 'declaration_updated') {
           loadNotifications();
         }
       };
@@ -187,20 +193,35 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       computeDeadline();
     };
 
+    // Heartbeat Interval mỗi 4s nạp lại thông báo tức thì
+    const notifTimer = setInterval(loadNotifications, 4000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadNotifications();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tdtu_notification_sent', handleNotifSent);
     window.addEventListener('tdtu_notification_received', handleNotifReceived);
+    window.addEventListener('tdtu_notifications_updated', handleNotifReceived);
+    window.addEventListener('tdtu_announcements_updated', handleNotifReceived);
     window.addEventListener('tdtu_semesters_updated', handleSemestersUpdated);
     window.addEventListener('tdtu_semester_changed', handleDeadlinesUpdated);
     window.addEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
 
     return () => {
+      clearInterval(notifTimer);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('tdtu_notification_sent', handleNotifSent);
       window.removeEventListener('tdtu_notification_received', handleNotifReceived);
+      window.removeEventListener('tdtu_notifications_updated', handleNotifReceived);
+      window.removeEventListener('tdtu_announcements_updated', handleNotifReceived);
       window.removeEventListener('tdtu_semesters_updated', handleSemestersUpdated);
       window.removeEventListener('tdtu_semester_changed', handleDeadlinesUpdated);
       window.removeEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);

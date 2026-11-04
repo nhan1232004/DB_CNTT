@@ -518,9 +518,22 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
     window.addEventListener('tdtu_data_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_declaration_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_certs_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_cv_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_semester_changed', handleRealtimeUpdate);
     window.addEventListener('storage', handleRealtimeUpdate);
     window.addEventListener('focus', handleRealtimeUpdate);
+
+    // Heartbeat Revalidation mỗi 4s và khi tab active
+    const timer = setInterval(handleRealtimeUpdate, 4000);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') {
+        handleRealtimeUpdate();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
 
     let bc = null;
     try {
@@ -531,9 +544,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     } catch {}
 
     return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVis);
       window.removeEventListener('tdtu_data_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_declaration_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_certs_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_cv_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleRealtimeUpdate);
       window.removeEventListener('storage', handleRealtimeUpdate);
       window.removeEventListener('focus', handleRealtimeUpdate);
       if (bc) {

@@ -34,6 +34,8 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
     const handleRealtimeUpdate = () => { load(); };
     window.addEventListener('tdtu_data_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_certs_updated', handleRealtimeUpdate);
     window.addEventListener('storage', handleRealtimeUpdate);
     window.addEventListener('focus', handleRealtimeUpdate);
 
@@ -46,6 +48,8 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
     return () => {
       window.removeEventListener('tdtu_data_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_decl_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_certs_updated', handleRealtimeUpdate);
       window.removeEventListener('storage', handleRealtimeUpdate);
       window.removeEventListener('focus', handleRealtimeUpdate);
       if (bc) { try { bc.close(); } catch {} }
