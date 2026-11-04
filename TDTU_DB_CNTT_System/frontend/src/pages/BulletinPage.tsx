@@ -53,7 +53,7 @@ const BulletinPage = ({ currentUser }) => {
 
         // Hợp nhất thông báo học vụ hệ thống (tdtu_notifications) và thông báo giảng viên
         const sysNotifs = (window.ApiClient.getNotifications ? window.ApiClient.getNotifications(currentUser) : []) || [];
-        const normSysNotifs = sysNotifs.map((n: any) => ({
+        const normSysNotifs = sysNotifs.map(n => ({
           id: n.id,
           title: n.title || n.subject || 'Thông báo học vụ',
           content: n.content || '',

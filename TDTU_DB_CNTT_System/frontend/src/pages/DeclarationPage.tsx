@@ -1436,9 +1436,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                   </div>
                 </div>
               )}
-                  </div>
-                </div>
-              )}
 
               {/* Step 2: Rẽ nhánh theo trạng thái đã chọn */}
               {currentStep === 2 && (

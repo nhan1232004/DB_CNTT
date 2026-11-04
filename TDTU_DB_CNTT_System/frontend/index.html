@@ -132,6 +132,16 @@
       background: #94a3b8;
     }
 
+    /* Native select appearance reset across all browsers */
+    select.appearance-none, .appearance-none {
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      appearance: none !important;
+    }
+    select.appearance-none::-ms-expand, .appearance-none::-ms-expand {
+      display: none !important;
+    }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -153,14 +163,21 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script>
     if (window.Babel && window.Babel.registerPreset) {
-      var isBabel8 = String(window.Babel.version || '').indexOf('8.') === 0;
-      var tsOpts = isBabel8 ? { ignoreExtensions: true } : { isTSX: true, allExtensions: true };
-      window.Babel.registerPreset('tsx', {
-        presets: [
-          [window.Babel.availablePresets['typescript'], tsOpts],
-          [window.Babel.availablePresets['react'], { runtime: 'classic' }]
-        ]
-      });
+      try {
+        window.Babel.registerPreset('tsx', {
+          presets: [
+            [window.Babel.availablePresets['typescript'], { ignoreExtensions: true }],
+            [window.Babel.availablePresets['react'], { runtime: 'classic' }]
+          ]
+        });
+      } catch (err) {
+        window.Babel.registerPreset('tsx', {
+          presets: [
+            [window.Babel.availablePresets['typescript'], { isTSX: true, allExtensions: true }],
+            [window.Babel.availablePresets['react'], { runtime: 'classic' }]
+          ]
+        });
+      }
     }
   </script>
 
@@ -173,28 +190,28 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Modular Frontend TypeScript (.ts / .tsx) Services, Components & Pages -->
-  <script type="text/babel" data-presets="tsx" src="./src/config/firebase.config.ts?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/services/prime-rbac.ts?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/services/api.client.ts?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/AdminNotificationModal.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/Navbar.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/Sidebar.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/student/StudentEligibilityBanner.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/LoginPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DashboardPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ProfilePage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DeclarationPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/CertificatesPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/HandbookPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/StudentsPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/BulletinPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/EmailJdPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/SemestersPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ImportDataPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ExportDataPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DocumentsPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/AccountsPage.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/App.tsx?v=20261104_v77_comprehensive_feedback_fixes"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/config/firebase.config.ts?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/services/prime-rbac.ts?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/services/api.client.ts?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/AdminNotificationModal.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/Navbar.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/common/Sidebar.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/components/student/StudentEligibilityBanner.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/LoginPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DashboardPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ProfilePage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DeclarationPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/CertificatesPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/HandbookPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/StudentsPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/BulletinPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/EmailJdPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/SemestersPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ImportDataPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/ExportDataPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/DocumentsPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/pages/AccountsPage.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
+  <script type="text/babel" data-presets="tsx" src="./src/App.tsx?v=20261104_v78_fix_student_tabs_dropdown_progbar"></script>
 
   <!-- DevTools & Source Protection Guard (Bảo vệ an toàn thông tin & chống lộ mã nguồn F12) -->
   <script>

@@ -207,21 +207,29 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="text-[12.5px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
-              <select
-                value={activeSemester || 'hk1_2026_2027'}
-                onChange={e => onSemesterChange(e.target.value)}
-                className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none pr-4 appearance-none"
-                title="Chọn học kỳ để xem dữ liệu tương ứng"
-              >
-                {semesters.map(sem => (
-                  <option key={sem.id} value={sem.id} className="text-[#1f2937] font-semibold bg-white">
-                    {sem.name || sem.id} {sem.isActive ? '(Hiện tại)' : ''}
-                  </option>
-                ))}
-              </select>
-              <svg className="w-3.5 h-3.5 text-[#003087] pointer-events-none -ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-              </svg>
+              <div className="relative inline-flex items-center">
+                <select
+                  value={activeSemester || 'hk1_2026_2027'}
+                  onChange={e => onSemesterChange(e.target.value)}
+                  style={{
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                    background: 'transparent'
+                  }}
+                  className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none pr-5 appearance-none"
+                  title="Chọn học kỳ để xem dữ liệu tương ứng"
+                >
+                  {semesters.map(sem => (
+                    <option key={sem.id} value={sem.id} className="text-[#1f2937] font-semibold bg-white">
+                      {sem.name || sem.id} {sem.isActive ? '(Hiện tại)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <svg className="w-3.5 h-3.5 text-[#003087] pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 

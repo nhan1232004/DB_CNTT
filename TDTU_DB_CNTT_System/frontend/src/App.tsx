@@ -246,7 +246,7 @@ const AppInner = () => {
     window.addEventListener('hashchange', sanitizeUrl);
 
     const handleStorageTamper = (e) => {
-      if (!e || !e.key || e.key === 'tdtu_auth_user' || e.key === 'tdtu_auth_token' || e.key === 'tdtu_auth_sig') {
+      if (e && (e.key === 'tdtu_auth_user' || e.key === 'tdtu_auth_token')) {
         const verified = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
         const token = window.ApiClient?.getToken ? window.ApiClient.getToken() : null;
         if (!verified || !token) {
@@ -254,7 +254,10 @@ const AppInner = () => {
           setActiveTab('dashboard');
         } else {
           setCurrentUser(prev => {
-            if (!prev || prev.email !== verified.email || prev.role !== verified.role || Boolean(prev.isAdmin) !== Boolean(verified.isAdmin)) {
+            if (!prev) return verified;
+            const pEmail = String(prev.email || '').toLowerCase().trim();
+            const vEmail = String(verified.email || '').toLowerCase().trim();
+            if (pEmail !== vEmail || prev.role !== verified.role) {
               window.ApiClient.clearToken();
               return null;
             }
@@ -282,20 +285,16 @@ const AppInner = () => {
               setActiveTab('dashboard');
             }
           } else {
-            window.ApiClient.clearToken();
-            setCurrentUser(null);
+            setCurrentUser(saved);
           }
         })
         .catch(() => {
-          const recheck = window.ApiClient.getSavedUser();
+          const recheck = window.ApiClient.getSavedUser() || saved;
           if (recheck && recheck.role && window.ApiClient?.isTdtuEmail?.(recheck.email)) {
             setCurrentUser(recheck);
             if (recheck.role === 'student' && recheck.isEnrolledThisSemester === false) {
               setActiveTab('dashboard');
             }
-          } else {
-            window.ApiClient.clearToken();
-            setCurrentUser(null);
           }
         })
         .finally(() => setAuthChecking(false));

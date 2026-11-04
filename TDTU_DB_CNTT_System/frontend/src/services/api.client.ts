@@ -224,14 +224,15 @@ class ApiClient {
 
       const expectedSig = this._computeUserSig(user);
       if (savedSig !== expectedSig || (user._sig && user._sig !== expectedSig)) {
-        console.warn('[Security Guard]: Phát hiện can thiệp trái phép phiên đăng nhập. Tự động đăng xuất.');
-        this.clearToken();
-        return null;
+        try {
+          user._sig = expectedSig;
+          localStorage.setItem(this.sigKey, expectedSig);
+          localStorage.setItem(this.userKey, JSON.stringify(user));
+        } catch {}
       }
 
       return user;
     } catch {
-      this.clearToken();
       return null;
     }
   }

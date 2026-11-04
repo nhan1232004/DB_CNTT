@@ -694,52 +694,6 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         </div>
       </div>
 
-      {/* THANH TIẾN ĐỘ MÔN HỌC TRONG HỌC KỲ (SEMESTER PROGRESSION BAR) */}
-      <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#003087] animate-pulse"></span>
-            <span className="text-[13.5px] font-bold text-[#1f2937]">
-              Tiến độ Thực tập Học kỳ {activeSemester.toUpperCase().replace(/_/g, ' ')}
-            </span>
-            <span className="text-[12px] font-bold text-[#003087] bg-[#ebf3ff] px-2 py-0.5 rounded border border-[#bfdbfe]">
-              Tuần 9 / 15 (60%)
-            </span>
-          </div>
-          <span className="text-[12px] text-[#4b5563] font-medium">
-            Giai đoạn: Thực tập tại Doanh nghiệp & Hoàn thiện hồ sơ
-          </span>
-        </div>
-
-        {/* Multi-step progression line */}
-        <div className="w-full bg-[#e2e8f0] h-2.5 rounded-full overflow-hidden mb-3">
-          <div 
-            className="bg-[#003087] h-full rounded-full transition-all duration-500 ease-out" 
-            style={{ width: '60%' }}
-          ></div>
-        </div>
-
-        {/* 4 Milestones */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11.5px] pt-1">
-          <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
-            <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center text-[10px]">✓</span>
-            <span>1. Khai báo DN</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
-            <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center text-[10px]">✓</span>
-            <span>2. Nộp Chứng chỉ B1</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[#003087] font-bold">
-            <span className="w-4 h-4 rounded-full bg-[#ebf3ff] border border-[#bfdbfe] text-[#003087] flex items-center justify-center text-[10px]">●</span>
-            <span>3. GV Thẩm định</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[#64748b] font-medium">
-            <span className="w-4 h-4 rounded-full bg-slate-100 border border-slate-300 text-slate-500 flex items-center justify-center text-[10px]">4</span>
-            <span>4. Báo cáo Tổng kết</span>
-          </div>
-        </div>
-      </div>
-
       {/* 2. DÀNH CHO SINH VIÊN: BANNER ĐIỀU KIỆN & TÌNH TRẠNG THỰC TẬP (ITEM 1 - TÁCH 2 TRƯỜNG HỢP LOẠI TRỪ NHAU) */}
       {isStudent && window.StudentEligibilityBanner && (
         <window.StudentEligibilityBanner
