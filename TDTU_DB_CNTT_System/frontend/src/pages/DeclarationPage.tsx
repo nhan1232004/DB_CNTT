@@ -323,7 +323,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       }
       if (!decl && window.ApiClient?.getDeclaration) {
         const res = await window.ApiClient.getDeclaration(studentId);
-        if (res?.data) decl = res.data;
+        decl = res?.data || res;
       }
     } catch (err) {
       console.warn('Cannot fetch remote declaration, using fallback draft:', err);
@@ -527,18 +527,64 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         isConfirmed: true
       };
 
-      const res = await window.ApiClient.declareInternship(payload);
-      if (res?.data?.declaration) {
-        setServerDeclaration(res.data.declaration);
-        if (res.data.declaration.declarationHistory) {
-          try {
-            const parsed = typeof res.data.declaration.declarationHistory === 'string'
-              ? JSON.parse(res.data.declaration.declarationHistory)
-              : res.data.declaration.declarationHistory;
-            setDeclarationHistory(parsed);
-          } catch {}
-        }
+      const sid = String(studentId || '').trim().toUpperCase();
+      try {
+        localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
+
+        const updateCachedList = (key: string) => {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const idx = list.findIndex((s: any) => String(s.mssv || s.studentId).toUpperCase() === sid);
+              if (idx !== -1) {
+                list[idx].company = payload.companyName;
+                list[idx].companyName = payload.companyName;
+                list[idx].position = payload.position;
+                list[idx].status = 'Đang chờ PV/KQPV';
+                list[idx].noCompanyOption = 'self';
+                list[idx].declarationData = payload;
+                list[idx].updated = new Date().toLocaleDateString('vi-VN');
+                localStorage.setItem(key, JSON.stringify(list));
+              }
+            }
+          }
+        };
+        updateCachedList('tdtu_imported_students_hk1_2026_2027');
+        updateCachedList('tdtu_live_students');
+      } catch {}
+
+      if (window.FirebaseService?.db) {
+        try {
+          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+            company: payload.companyName,
+            companyName: payload.companyName,
+            position: payload.position,
+            status: 'Đang chờ PV/KQPV',
+            noCompanyOption: 'self',
+            updated: new Date().toLocaleDateString('vi-VN')
+          }, { merge: true });
+        } catch {}
       }
+
+      setServerDeclaration(payload);
+      try {
+        const res = await window.ApiClient.declareInternship(payload);
+        if (res?.data?.declaration) {
+          setServerDeclaration(res.data.declaration);
+          if (res.data.declaration.declarationHistory) {
+            try {
+              const parsed = typeof res.data.declaration.declarationHistory === 'string'
+                ? JSON.parse(res.data.declaration.declarationHistory)
+                : res.data.declaration.declarationHistory;
+              setDeclarationHistory(parsed);
+            } catch {}
+          }
+        }
+      } catch {}
+
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({
@@ -603,18 +649,64 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         isConfirmed: true
       };
 
-      const res = await window.ApiClient.declareInternship(payload);
-      if (res?.data?.declaration) {
-        setServerDeclaration(res.data.declaration);
-        if (res.data.declaration.declarationHistory) {
-          try {
-            const parsed = typeof res.data.declaration.declarationHistory === 'string'
-              ? JSON.parse(res.data.declaration.declarationHistory)
-              : res.data.declaration.declarationHistory;
-            setDeclarationHistory(parsed);
-          } catch {}
-        }
+      const sid = String(studentId || '').trim().toUpperCase();
+      try {
+        localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
+
+        const updateCachedList = (key: string) => {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const idx = list.findIndex((s: any) => String(s.mssv || s.studentId).toUpperCase() === sid);
+              if (idx !== -1) {
+                list[idx].company = payload.companyName;
+                list[idx].companyName = payload.companyName;
+                list[idx].position = payload.position;
+                list[idx].status = 'Cần Khoa hỗ trợ';
+                list[idx].noCompanyOption = 'faculty';
+                list[idx].declarationData = payload;
+                list[idx].updated = new Date().toLocaleDateString('vi-VN');
+                localStorage.setItem(key, JSON.stringify(list));
+              }
+            }
+          }
+        };
+        updateCachedList('tdtu_imported_students_hk1_2026_2027');
+        updateCachedList('tdtu_live_students');
+      } catch {}
+
+      if (window.FirebaseService?.db) {
+        try {
+          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+            company: payload.companyName,
+            companyName: payload.companyName,
+            position: payload.position,
+            status: 'Cần Khoa hỗ trợ',
+            noCompanyOption: 'faculty',
+            updated: new Date().toLocaleDateString('vi-VN')
+          }, { merge: true });
+        } catch {}
       }
+
+      setServerDeclaration(payload);
+      try {
+        const res = await window.ApiClient.declareInternship(payload);
+        if (res?.data?.declaration) {
+          setServerDeclaration(res.data.declaration);
+          if (res.data.declaration.declarationHistory) {
+            try {
+              const parsed = typeof res.data.declaration.declarationHistory === 'string'
+                ? JSON.parse(res.data.declaration.declarationHistory)
+                : res.data.declaration.declarationHistory;
+              setDeclarationHistory(parsed);
+            } catch {}
+          }
+        }
+      } catch {}
+
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({

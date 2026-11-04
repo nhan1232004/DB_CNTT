@@ -185,34 +185,110 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         </div>
       </div>
 
-      {/* Status Alert Banner - Chỉ hiện khi ĐÃ CÓ NƠI THỰC TẬP và là SINH VIÊN TRONG KỲ */}
-      {isEnrolledStudent && declaration?.internshipStatus === 'has_company' && declaration?.companyName && (
-        <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5] border-[#A7F3D0] shadow-xs">
-          <div className="flex items-center gap-3.5">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff] text-[#003087]">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-[16px] font-bold text-[#1f2937]">
-                Đã có nơi thực tập: {declaration.companyName}
-              </div>
-              <div className="text-[14px] text-[#4b5563]">
-                {declaration.position || 'Thực tập sinh'}{declaration.department ? (' · ' + declaration.department) : ''}
-              </div>
-            </div>
-          </div>
+      {/* Status Alert Banner - Hiển thị tương ứng theo đúng tình trạng khai báo của sinh viên trong kỳ */}
+      {isEnrolledStudent && declaration && (() => {
+        const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
+        const hasRealComp = Boolean(
+          declaration?.companyName &&
+          declaration.companyName !== 'Chưa có' &&
+          declaration.companyName !== '—' &&
+          !declaration.companyName.includes('hỗ trợ') &&
+          !declaration.companyName.includes('Đang tìm') &&
+          !declaration.companyName.includes('Chờ phỏng vấn') &&
+          !declaration.companyName.includes('Khoa CNTT')
+        );
+        const isComp = declStatus === 'has_company' || hasRealComp;
+        const isWait = !isComp && (declStatus === 'interviewing' || declaration?.noCompanyOption === 'self');
+        const isSupp = !isComp && !isWait && (declStatus === 'need_support' || declaration?.noCompanyOption === 'faculty');
 
-          <button
-            type="button"
-            onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-            className="px-4 py-2 bg-white text-[#1f2937] border border-[#e5e7eb] rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
-          >
-            Cập nhật trạng thái
-          </button>
-        </div>
-      )}
+        if (isComp && declaration.companyName) {
+          return (
+            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5] border-[#A7F3D0] shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff] text-[#003087]">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-[16px] font-bold text-[#1f2937]">
+                    Đã có nơi thực tập: {declaration.companyName}
+                  </div>
+                  <div className="text-[14px] text-[#4b5563]">
+                    {declaration.position || 'Thực tập sinh'}{declaration.department ? (' · ' + declaration.department) : ''}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
+                className="px-4 py-2 bg-white text-[#1f2937] border border-[#e5e7eb] rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
+              >
+                Cập nhật trạng thái
+              </button>
+            </div>
+          );
+        }
+
+        if (isSupp) {
+          return (
+            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#FFF1F2] border-[#FECDD3] shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#FFE4E6] text-[#E11D48] font-bold text-sm">
+                  !
+                </div>
+                <div>
+                  <div className="text-[16px] font-bold text-[#E11D48]">
+                    Tình trạng thực tập: Cần Khoa CNTT hỗ trợ điều phối
+                  </div>
+                  <div className="text-[14px] text-[#4b5563]">
+                    Vị trí định hướng: <strong>{declaration.desiredPosition || 'Chờ Khoa phân bổ'}</strong> · Khu vực: <strong>{declaration.desiredLocation || 'TP. Hồ Chí Minh'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
+                className="px-4 py-2 bg-white text-[#E11D48] border border-[#FECDD3] rounded-xl text-[14px] font-bold hover:bg-[#FFF1F2] shadow-xs transition shrink-0 cursor-pointer"
+              >
+                Cập nhật nguyện vọng
+              </button>
+            </div>
+          );
+        }
+
+        if (isWait) {
+          return (
+            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#FFFBEB] border-[#FDE68A] shadow-xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#FEF3C7] text-[#D97706] font-bold text-sm">
+                  ⏳
+                </div>
+                <div>
+                  <div className="text-[16px] font-bold text-[#B45309]">
+                    Tình trạng thực tập: Đang tìm kiếm / Chờ kết quả phỏng vấn
+                  </div>
+                  <div className="text-[14px] text-[#4b5563]">
+                    {declaration.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : 'Tự liên hệ nơi thực tập'} · Vị trí: <strong>{declaration.desiredPosition || 'Thực tập sinh'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
+                className="px-4 py-2 bg-white text-[#B45309] border border-[#FDE68A] rounded-xl text-[14px] font-bold hover:bg-[#FFFBEB] shadow-xs transition shrink-0 cursor-pointer"
+              >
+                Cập nhật kết quả
+              </button>
+            </div>
+          );
+        }
+
+        return null;
+      })()}
 
       {/* 4 Summary Cards Row matching Student Academic Profile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -263,33 +339,71 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           )}
         </div>
 
-        {/* Card 3: Tình trạng hồ sơ */}
+        {/* Card 3: Tình trạng hồ sơ (Đồng bộ chính xác 100% với trạng thái đã khai báo) */}
         <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Tình trạng hồ sơ</span>
-            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-              !isEnrolledStudent 
-                ? 'bg-gray-100 text-gray-600 border-gray-200' 
-                : (declaration?.companyName ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-[#ebf3ff] text-[#003087] border-[#bfdbfe]')
-            }`}>
-              {!isEnrolledStudent ? 'Chưa mở hồ sơ' : (declaration?.companyName ? 'Đã có nơi TT' : 'Đang tìm kiếm')}
-            </span>
-          </div>
-          <div className="text-xs text-[#1f2937] mt-2">
-            {!isEnrolledStudent 
-              ? 'Sinh viên chưa thuộc đợt thực tập kỳ này' 
-              : (declaration?.companyName ? `Đã khai báo tại ${declaration.companyName}` : 'Khoa đang tiếp nhận thông tin khai báo')}
-          </div>
-          {isEnrolledStudent && (
-            <button
-              type="button"
-              onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-              className="text-xs font-bold text-[#003087] hover:underline mt-3 inline-flex items-center gap-1 cursor-pointer"
-            >
-              <span>Xem hồ sơ</span>
-              <span>→</span>
-            </button>
-          )}
+          {(() => {
+            const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
+            const hasRealComp = Boolean(
+              declaration?.companyName &&
+              declaration.companyName !== 'Chưa có' &&
+              declaration.companyName !== '—' &&
+              !declaration.companyName.includes('hỗ trợ') &&
+              !declaration.companyName.includes('Đang tìm') &&
+              !declaration.companyName.includes('Chờ phỏng vấn') &&
+              !declaration.companyName.includes('Khoa CNTT')
+            );
+            const isComp = declStatus === 'has_company' || hasRealComp;
+            const isWait = !isComp && (declStatus === 'interviewing' || declaration?.noCompanyOption === 'self');
+            const isSupp = !isComp && !isWait && (declStatus === 'need_support' || declaration?.noCompanyOption === 'faculty');
+
+            let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+            let badgeLabel = 'Chưa mở hồ sơ';
+            let descText = 'Sinh viên chưa thuộc đợt thực tập kỳ này';
+
+            if (isEnrolledStudent) {
+              if (isComp) {
+                badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                badgeLabel = 'Đã có nơi TT';
+                descText = `Đã tiếp nhận tại ${declaration.companyName}`;
+              } else if (isWait) {
+                badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+                badgeLabel = 'Đang chờ PV/KQPV';
+                descText = declaration?.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : 'Tự liên hệ & đang chờ kết quả phỏng vấn';
+              } else if (isSupp) {
+                badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                badgeLabel = 'Cần Khoa hỗ trợ';
+                descText = 'Khoa CNTT tiếp nhận hỗ trợ phân bổ doanh nghiệp';
+              } else {
+                badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                badgeLabel = 'Chưa khai báo';
+                descText = 'Khoa đang tiếp nhận thông tin khai báo thực tập';
+              }
+            }
+
+            return (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Tình trạng hồ sơ</span>
+                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
+                    {badgeLabel}
+                  </span>
+                </div>
+                <div className="text-xs text-[#1f2937] mt-2">
+                  {descText}
+                </div>
+                {isEnrolledStudent && (
+                  <button
+                    type="button"
+                    onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
+                    className="text-xs font-bold text-[#003087] hover:underline mt-3 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Xem hồ sơ khai báo</span>
+                    <span>→</span>
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Card 4: Hồ sơ học tập & Điểm tích lũy (GPA Hệ 10 & Xếp loại học lực) */}
@@ -320,7 +434,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-[#1f2937] text-[17px]">Tiến trình hồ sơ</h3>
             <span className="text-[14px] font-bold text-[#003087]">
-              {declaration?.internshipStatus === 'has_company' ? 'Hoàn thành 3/4 bước' : 'Đang xử lý 2/4 bước'}
+              {declaration ? (certs.length > 0 ? 'Hoàn thành 4/4 bước' : 'Hoàn thành 3/4 bước') : 'Đang xử lý 2/4 bước'}
             </span>
           </div>
 
@@ -350,8 +464,8 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full ${declaration?.internshipStatus === 'has_company' ? 'bg-[#003087] text-white border-[#003087]' : 'bg-gray-100 text-gray-500 border-gray-300'} flex items-center justify-center font-bold text-sm shrink-0 border shadow-xs`}>
-                {declaration?.internshipStatus === 'has_company' ? (
+              <div className={`w-8 h-8 rounded-full ${declaration ? 'bg-[#003087] text-white border-[#003087]' : 'bg-gray-100 text-gray-500 border-gray-300'} flex items-center justify-center font-bold text-sm shrink-0 border shadow-xs`}>
+                {declaration ? (
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                   </svg>
@@ -361,7 +475,13 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
               </div>
               <div>
                 <div className="font-bold text-[#1f2937] text-sm">Cập nhật Trạng thái</div>
-                <div className="text-xs text-[#4b5563]">{declaration?.internshipStatus === 'has_company' ? 'Có doanh nghiệp' : 'Đang cập nhật'}</div>
+                <div className="text-xs text-[#4b5563]">
+                  {declaration?.internshipStatus === 'has_company'
+                    ? 'Có doanh nghiệp'
+                    : (declaration?.internshipStatus === 'interviewing'
+                        ? 'Đang chờ PV'
+                        : (declaration?.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : 'Đang cập nhật'))}
+                </div>
               </div>
             </div>
 

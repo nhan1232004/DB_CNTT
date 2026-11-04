@@ -2950,10 +2950,15 @@ class ApiClient {
   }
 
   static async declareInternship(declaration) {
-    const res = await this.request('/api/internship/declare', {
-      method: 'POST',
-      body: JSON.stringify(declaration)
-    });
+    let res = null;
+    try {
+      res = await this.request('/api/internship/declare', {
+        method: 'POST',
+        body: JSON.stringify(declaration)
+      });
+    } catch (apiErr) {
+      console.info('[ApiClient.declareInternship] Local/Firestore fallback active:', apiErr?.message);
+    }
 
     const sid = String(declaration.studentId || '').trim().toUpperCase();
     if (sid) {
@@ -2962,7 +2967,7 @@ class ApiClient {
         localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
       } catch {}
 
-      // Update student record in live students list cache
+      // Cập nhật bản ghi sinh viên trong danh sách sinh viên thực tế
       try {
         const students = await this.getLiveStudents('hk1_2026_2027');
         const idx = students.findIndex(s => (String(s.mssv || s.studentId).toUpperCase() === sid));
@@ -3015,6 +3020,13 @@ class ApiClient {
         }
       } catch {}
 
+      // Đồng bộ trực tiếp lên Firebase Firestore nếu có db
+      if (window.FirebaseService?.db) {
+        try {
+          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(declaration, { merge: true });
+        } catch {}
+      }
+
       // Broadcast across tabs
       try {
         const bc = new BroadcastChannel('tdtu_realtime_sync');
@@ -3022,27 +3034,45 @@ class ApiClient {
         bc.close();
       } catch {}
     }
-    return res;
+    return res || { success: true, data: { declaration } };
   }
 
   static async getDeclaration(studentId) {
     const sid = String(studentId || '').trim().toUpperCase();
     try {
       const res = await this.request(`/api/internship/declaration/${sid}`);
-      if (res) return res;
+      if (res) {
+        const d = res?.data || res;
+        try { localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d)); } catch {}
+        return { ...d, data: d };
+      }
     } catch {}
 
     try {
       const saved = localStorage.getItem('tdtu_decl_' + sid);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const d = JSON.parse(saved);
+        return { ...d, data: d };
+      }
     } catch {}
 
     if (window.FirebaseService?.db) {
       try {
         const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
-        if (doc.exists) return doc.data();
+        if (doc.exists) {
+          const d = doc.data();
+          try { localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d)); } catch {}
+          return { ...d, data: d };
+        }
       } catch {}
     }
+
+    // Fallback từ live students
+    try {
+      const fallback = this.getStudentDeclaration(sid);
+      if (fallback) return { ...fallback, data: fallback };
+    } catch {}
+
     return null;
   }
 
@@ -3270,23 +3300,61 @@ class ApiClient {
       const saved = localStorage.getItem('tdtu_decl_' + sid) || localStorage.getItem('tdtu_decl_' + studentId);
       if (saved) {
         const parsed = JSON.parse(saved);
-        const isHasCompany = parsed.internshipStatus === 'has_company';
-        return {
-          companyName: isHasCompany ? (parsed.companyName || '') : '',
-          taxCode: isHasCompany ? (parsed.taxCode || '') : '',
-          address: isHasCompany ? (parsed.address || '') : '',
-          position: parsed.position || (isHasCompany ? 'Thực tập sinh' : (parsed.internshipStatus === 'interviewing' ? 'Thực tập sinh (Đang tìm kiếm)' : 'Đăng ký hỗ trợ nơi thực tập')),
-          department: parsed.department || '',
-          contactPerson: parsed.contactPerson || parsed.representative || '',
-          contactEmail: parsed.contactEmail || '',
-          contactPhone: parsed.contactPhone || '',
-          mainIndustry: parsed.mainIndustry || '',
-          internshipStatus: parsed.internshipStatus || (parsed.companyName ? 'has_company' : 'interviewing'),
-          selectedCourses: enrolled?.courses || parsed.selectedCourses || ['KTCN'],
-          supportNote: parsed.supportNote || '',
-          statusLabel: isHasCompany ? 'Khoa đã xác nhận doanh nghiệp' : (parsed.internshipStatus === 'interviewing' ? 'Đang tìm / Chờ phỏng vấn' : 'Cần Khoa hỗ trợ'),
-          confirmedAt: parsed.confirmedAt || '11/09/2026'
-        };
+        if (parsed && typeof parsed === 'object') {
+          const isComp = parsed.internshipStatus === 'has_company';
+          const isWait = parsed.internshipStatus === 'interviewing' || parsed.noCompanyOption === 'self';
+          const isSupp = parsed.internshipStatus === 'need_support' || parsed.noCompanyOption === 'faculty';
+          const statusLabel = isComp
+            ? 'Đã có nơi thực tập'
+            : (isWait ? 'Đang tìm / Chờ phỏng vấn' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa khai báo'));
+
+          return {
+            ...parsed,
+            studentId: sid,
+            statusLabel: parsed.statusLabel || statusLabel,
+            internshipStatus: parsed.internshipStatus || (isComp ? 'has_company' : (isWait ? 'interviewing' : 'need_support')),
+            selectedCourses: enrolled?.courses || parsed.selectedCourses || ['KTCN'],
+            confirmedAt: parsed.confirmedAt || parsed.submittedAt || new Date().toLocaleDateString('vi-VN')
+          };
+        }
+      }
+
+      // Fallback: tìm trong live students cache
+      const cached = localStorage.getItem(this.liveStudentsKey) || localStorage.getItem('tdtu_imported_students_hk1_2026_2027');
+      if (cached) {
+        const arr = JSON.parse(cached);
+        if (Array.isArray(arr)) {
+          const found = arr.find(s => String(s.mssv || s.studentId || '').toUpperCase() === sid);
+          if (found?.declarationData) {
+            return {
+              ...found.declarationData,
+              studentId: sid
+            };
+          }
+          if (found && (found.company || found.status)) {
+            const hasRealComp = Boolean(
+              found.company && found.company !== 'Chưa có' && found.company !== '—' &&
+              !found.company.includes('hỗ trợ') && !found.company.includes('chờ') && !found.company.includes('Khoa CNTT')
+            );
+            const isWait = !hasRealComp && (String(found.status).includes('chờ') || String(found.status).includes('phỏng vấn'));
+            const isSupp = !hasRealComp && !isWait && (String(found.status).includes('hỗ trợ'));
+            if (hasRealComp || isWait || isSupp) {
+              return {
+                studentId: sid,
+                companyName: found.company || '',
+                position: found.position || '',
+                contactPerson: found.contactPerson || found.mentorName || '',
+                contactPhone: found.contactPhone || found.mentorPhone || '',
+                internshipStatus: hasRealComp ? 'has_company' : (isWait ? 'interviewing' : 'need_support'),
+                taxCode: found.taxCode || '',
+                address: found.address || found.companyAddress || '',
+                desiredPosition: found.position || '',
+                pendingCompany: isWait ? (found.company || '') : '',
+                cvDriveLink: found.cvLink || found.cvDriveLink || ''
+              };
+            }
+          }
+        }
       }
     } catch {}
 

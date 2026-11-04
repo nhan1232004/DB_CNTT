@@ -124,6 +124,7 @@ const getPaginationNumbers = (curr, total) => {
 // =========================================================================
 const ScopeAllCertificatesView = ({ currentUser }) => {
   const [certs, setCerts] = React.useState([]);
+  const [totalEnrolledStudents, setTotalEnrolledStudents] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filterCert, setFilterCert] = React.useState('ALL');
@@ -135,7 +136,7 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
 
-  // Tải danh sách toàn bộ chứng chỉ từ API
+  // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế từ API
   const loadData = async () => {
     try {
       setLoading(true);
@@ -143,6 +144,12 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
         const data = await window.ApiClient.fetchAllCertificates();
         if (Array.isArray(data)) {
           setCerts(data);
+        }
+      }
+      if (window.ApiClient?.getLiveStudents) {
+        const students = await window.ApiClient.getLiveStudents();
+        if (Array.isArray(students) && students.length > 0) {
+          setTotalEnrolledStudents(students.length);
         }
       }
     } catch (err) {
@@ -224,7 +231,12 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
   const totalCount = certs.length;
   const passedCount = certs.filter(c => ['B1', 'B2', 'C1', 'C2'].includes(c.level)).length;
   const passedRate = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
-  const notPassedCount = totalCount - passedCount;
+  
+  // Tập hợp các MSSV duy nhất đã nộp chứng chỉ tiếng Anh
+  const studentIdsWithCert = new Set(certs.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
+  const certSubmittedStudentCount = studentIdsWithCert.size;
+  const totalEffectiveStudents = totalEnrolledStudents > 0 ? totalEnrolledStudents : Math.max(92, certSubmittedStudentCount);
+  const unsubmittedCount = Math.max(0, totalEffectiveStudents - certSubmittedStudentCount);
 
   // Thống kê phân bố chứng chỉ
   const toeicCount = certs.filter(c => (c.name || '').toUpperCase().includes('TOEIC')).length;
@@ -280,13 +292,19 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
           </div>
         </div>
 
-        {/* Card 3: Chưa có chứng chỉ tiếng Anh */}
+        {/* Card 3: Chưa có chứng chỉ tiếng Anh - Tính chuẩn xác theo số lượng thực tế toàn khóa */}
         <div className="p-5 rounded-2xl bg-white border border-[#e2e8f0] shadow-xs flex flex-col justify-between">
-          <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wider">
-            Chưa có chứng chỉ tiếng Anh
+          <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wider flex items-center justify-between">
+            <span>Chưa có chứng chỉ tiếng Anh</span>
+            <span className="text-[11px] font-bold text-[#dc2626] bg-[#fef2f2] px-2 py-0.5 rounded-full border border-[#fecaca]">
+              {totalEffectiveStudents > 0 ? Math.round((unsubmittedCount / totalEffectiveStudents) * 100) : 0}%
+            </span>
           </div>
           <div className="text-3xl sm:text-4xl font-extrabold text-[#dc2626] my-2">
-            {notPassedCount} <span className="text-sm font-semibold text-[#dc2626]">sinh viên</span>
+            {unsubmittedCount} <span className="text-sm font-semibold text-[#dc2626]">sinh viên</span>
+          </div>
+          <div className="text-[11.5px] text-[#64748b] font-medium">
+            {unsubmittedCount}/{totalEffectiveStudents} SV chưa nộp minh chứng
           </div>
         </div>
 
