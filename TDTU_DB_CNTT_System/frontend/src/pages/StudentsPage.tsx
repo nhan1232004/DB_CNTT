@@ -32,7 +32,6 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [studentCvLink, setStudentCvLink] = React.useState('');
   const [showCvModalPreview, setShowCvModalPreview] = React.useState(false);
   const [noteSaved, setNoteSaved] = React.useState(false);
-  const [openActionMenuId, setOpenActionMenuId] = React.useState(null);
 
   const formatDateVN = (dateVal) => {
     if (!dateVal) return '—';
@@ -1445,94 +1444,19 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         {formatDateVN(sv.updatedAt || sv.updated || '2026-09-22')}
                       </td>
 
-                      <td className="py-3.5 px-4 text-center relative">
-                        <div className="relative inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenActionMenuId(openActionMenuId === id ? null : id);
-                            }}
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer border shadow-2xs ${
-                              openActionMenuId === id
-                                ? 'bg-[#003087] text-white border-[#003087]'
-                                : 'bg-white hover:bg-[#ebf3ff] text-[#1f2937] hover:text-[#003087] border-[#cbd5e1]'
-                            }`}
-                            title="Tùy chọn thao tác"
-                          >
-                            {/* Dấu 3 chấm xoay ngang theo yêu cầu */}
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <circle cx="5" cy="12" r="2" />
-                              <circle cx="12" cy="12" r="2" />
-                              <circle cx="19" cy="12" r="2" />
-                            </svg>
-                          </button>
-
-                          {openActionMenuId === id && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-30"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenActionMenuId(null);
-                                }}
-                              />
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl shadow-xl border border-[#e5e7eb] py-1.5 z-40 text-left"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenActionMenuId(null);
-                                    handleOpenStudentDetail(sv);
-                                  }}
-                                  className="w-full px-4 py-2 text-[12.5px] font-bold text-[#1f2937] hover:bg-[#ebf3ff] hover:text-[#003087] flex items-center gap-2.5 transition text-left cursor-pointer"
-                                >
-                                  <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  <span>Hồ sơ</span>
-                                </button>
-
-                                {isAdmin && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenActionMenuId(null);
-                                        handleOpenEditStudent(sv);
-                                      }}
-                                      className="w-full px-4 py-2 text-[12.5px] font-bold text-[#1f2937] hover:bg-[#ebf3ff] hover:text-[#003087] flex items-center gap-2.5 transition text-left cursor-pointer"
-                                    >
-                                      <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                      <span>Sửa</span>
-                                    </button>
-
-                                    <div className="my-1 border-t border-[#f1f5f9]"></div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOpenActionMenuId(null);
-                                        handleDeleteSingleStudent(sv);
-                                      }}
-                                      className="w-full px-4 py-2 text-[12.5px] font-bold text-[#dc2626] hover:bg-[#fef2f2] flex items-center gap-2.5 transition text-left cursor-pointer"
-                                    >
-                                      <svg className="w-4 h-4 text-[#dc2626] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                      <span>Xóa</span>
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenStudentDetail(sv)}
+                          className="w-9 h-9 mx-auto rounded-lg flex items-center justify-center bg-white hover:bg-[#ebf3ff] text-[#003087] hover:text-[#002266] border border-[#cbd5e1] hover:border-[#003087] transition cursor-pointer shadow-2xs hover:shadow-xs"
+                          title="Xem hồ sơ chi tiết sinh viên"
+                        >
+                          {/* Icon con mắt xem hồ sơ trực tiếp, loại bỏ menu 3 chấm rườm rà */}
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   );
