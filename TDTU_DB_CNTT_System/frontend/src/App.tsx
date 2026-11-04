@@ -18,34 +18,79 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="min-h-screen bg-white flex items-center justify-center p-6 text-[#1f2937]">
           <div className="bg-white p-8 rounded-2xl border border-[#e5e7eb] shadow-xl max-w-lg w-full text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#fef2f2] text-[#dc2626] mx-auto flex items-center justify-center font-bold">
-              <svg className="w-8 h-8 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div className="w-14 h-14 rounded-2xl bg-[#ebf3ff] text-[#003087] mx-auto flex items-center justify-center font-bold">
+              <svg className="w-8 h-8 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </div>
             <h2 className="text-[20px] font-bold text-[#1f2937]">Đang tải lại Cổng thông tin</h2>
-            <p className="text-[12.5px] text-[#1f2937] leading-relaxed text-justify">
-              Hệ thống đang đồng bộ dữ liệu phiên làm việc mới nhất. Bạn có thể bấm nút bên dưới để làm mới trang hoặc đăng nhập lại.
+            <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
+              Hệ thống đang tự động tối ưu hóa phiên làm việc của bạn. Vui lòng bấm nút bên dưới để tải lại giao diện.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[12px] font-bold transition shadow-xs cursor-pointer"
-              >
-                Làm mới trang
-              </button>
-              <button
-                type="button"
                 onClick={() => {
-                  if (window.ApiClient) window.ApiClient.clearToken();
+                  this.setState({ hasError: false, error: null });
                   window.location.reload();
                 }}
-                className="px-4 py-2 bg-[#dc2626] hover:bg-[#b91c1c] text-white rounded-lg text-[12px] font-bold transition cursor-pointer"
+                className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[12.5px] font-bold transition shadow-xs cursor-pointer"
               >
-                Đăng nhập lại
+                Tải lại trang
               </button>
             </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+class TabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.warn('[TDTU TabErrorBoundary caught]:', error, errorInfo);
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.activeTab !== this.props.activeTab && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 max-w-xl mx-auto my-8 bg-white border border-[#e5e7eb] rounded-2xl shadow-sm text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-[#ebf3ff] text-[#003087] mx-auto flex items-center justify-center font-bold">
+            <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-[17px] font-bold text-[#1f2937]">Đang đồng bộ dữ liệu giao diện</h3>
+          <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
+            Hệ thống đang nạp thông tin mới nhất. Bạn có thể nhấn thử lại hoặc chuyển sang mục khác bên thanh điều hướng.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[12px] font-bold transition shadow-xs cursor-pointer"
+            >
+              Thử lại mục này
+            </button>
+            <button
+              type="button"
+              onClick={() => this.props.onResetToDashboard && this.props.onResetToDashboard()}
+              className="px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#1f2937] rounded-lg text-[12px] font-bold transition cursor-pointer"
+            >
+              Về Bảng điều khiển
+            </button>
           </div>
         </div>
       );
@@ -247,18 +292,21 @@ const AppInner = () => {
 
     const handleStorageTamper = (e) => {
       if (e && (e.key === 'tdtu_auth_user' || e.key === 'tdtu_auth_token')) {
-        const verified = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
-        const token = window.ApiClient?.getToken ? window.ApiClient.getToken() : null;
-        if (!verified || !token) {
+        const rawToken = localStorage.getItem('tdtu_auth_token');
+        const rawData = localStorage.getItem('tdtu_auth_user');
+        if (!rawToken || !rawData) {
           setCurrentUser(null);
           setActiveTab('dashboard');
-        } else {
+          return;
+        }
+        const verified = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
+        if (verified) {
           setCurrentUser(prev => {
             if (!prev) return verified;
             const pEmail = String(prev.email || '').toLowerCase().trim();
             const vEmail = String(verified.email || '').toLowerCase().trim();
             if (pEmail !== vEmail || prev.role !== verified.role) {
-              window.ApiClient.clearToken();
+              window.ApiClient?.clearToken?.();
               return null;
             }
             return prev;
@@ -444,76 +492,78 @@ const AppInner = () => {
 
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5 lg:px-6 bg-white w-full">
           <div className="w-full">
-            {activeTab === 'dashboard' && (
-              <window.DashboardPage
-                activeSemester={activeSemester}
-                onSemesterChange={handleSemesterChange}
-                currentUser={currentUser}
-                onNavigateTab={setActiveTab}
-              />
-            )}
-
-            {activeTab === 'profile' && (
-              <window.ProfilePage
-                currentUser={currentUser}
-                onNavigateTab={setActiveTab}
-                onSemesterChange={handleSemesterChange}
-              />
-            )}
-            
-            {activeTab === 'declaration' && (
-              <window.DeclarationPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
-
-            {activeTab === 'students' && (
-              window.StudentsPage ? (
-                <window.StudentsPage
-                  currentUser={currentUser}
+            <TabErrorBoundary activeTab={activeTab} onResetToDashboard={() => setActiveTab('dashboard')}>
+              {activeTab === 'dashboard' && (
+                <window.DashboardPage
                   activeSemester={activeSemester}
                   onSemesterChange={handleSemesterChange}
+                  currentUser={currentUser}
+                  onNavigateTab={setActiveTab}
                 />
-              ) : (
-                <div className="p-8 text-center text-[#1f2937] font-bold">
-                  Đang tải trang Quản lý sinh viên...
-                </div>
-              )
-            )}
+              )}
 
-            {activeTab === 'certs' && currentUser?.role !== 'partner' && (
-              <window.CertificatesPage currentUser={currentUser} />
-            )}
+              {activeTab === 'profile' && (
+                <window.ProfilePage
+                  currentUser={currentUser}
+                  onNavigateTab={setActiveTab}
+                  onSemesterChange={handleSemesterChange}
+                />
+              )}
+              
+              {activeTab === 'declaration' && (
+                <window.DeclarationPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
 
-            {activeTab === 'bulletin' && (
-              <window.BulletinPage currentUser={currentUser} />
-            )}
+              {activeTab === 'students' && (
+                window.StudentsPage ? (
+                  <window.StudentsPage
+                    currentUser={currentUser}
+                    activeSemester={activeSemester}
+                    onSemesterChange={handleSemesterChange}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">
+                    Đang tải trang Quản lý sinh viên...
+                  </div>
+                )
+              )}
 
-            {activeTab === 'email_jd' && (
-              <window.EmailJdPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
+              {activeTab === 'certs' && currentUser?.role !== 'partner' && (
+                <window.CertificatesPage currentUser={currentUser} />
+              )}
 
-            {activeTab === 'semesters' && (
-              <window.SemestersPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
+              {activeTab === 'bulletin' && (
+                <window.BulletinPage currentUser={currentUser} />
+              )}
 
-            {activeTab === 'import' && (
-              <window.ImportDataPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
+              {activeTab === 'email_jd' && (
+                <window.EmailJdPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
 
-            {activeTab === 'export' && (
-              <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
+              {activeTab === 'semesters' && (
+                <window.SemestersPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
 
-            {activeTab === 'documents' && (
-              <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
-            )}
+              {activeTab === 'import' && (
+                <window.ImportDataPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
 
-            {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
-              <window.AccountsPage currentUser={currentUser} />
-            )}
+              {activeTab === 'export' && (
+                <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
 
-            {activeTab === 'handbook' && (
-              <window.HandbookPage currentUser={currentUser} />
-            )}
+              {activeTab === 'documents' && (
+                <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+              )}
+
+              {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
+                <window.AccountsPage currentUser={currentUser} />
+              )}
+
+              {activeTab === 'handbook' && (
+                <window.HandbookPage currentUser={currentUser} />
+              )}
+            </TabErrorBoundary>
           </div>
         </main>
       </div>

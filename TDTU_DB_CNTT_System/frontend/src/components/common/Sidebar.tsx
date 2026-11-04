@@ -182,6 +182,7 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
     if (isFacultyStaff && (item.id === 'declaration' || item.id === 'profile')) return false;
     if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(item.id)) return false;
     if (item.id === 'handbook' && isLecturer) return false;
+    if (item.id === 'handbook') return true;
     if (isPartner) return ['dashboard', 'profile', 'bulletin', 'handbook'].includes(item.id);
 
     // Sinh viên không có trong danh sách kỳ thực tập hiện tại: CHỈ THẤY ĐÚNG 3 MỤC: Bảng điều khiển, Hồ sơ cá nhân & Bảng tin

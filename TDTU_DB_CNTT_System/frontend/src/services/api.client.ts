@@ -186,43 +186,34 @@ class ApiClient {
   static getSavedUser() {
     try {
       const data = localStorage.getItem(this.userKey);
-      const savedSig = localStorage.getItem(this.sigKey);
-      if (!data || !savedSig) return null;
+      if (!data) return null;
       const user = JSON.parse(data);
       if (!user || !user.email || !this.isTdtuEmail(user.email)) {
-        this.clearToken();
         return null;
       }
 
       const cleanEmail = String(user.email).trim().toLowerCase();
-      // Ràng buộc chặt chẽ vai trò theo tên miền TDTU để chống giả mạo role / chuyển đổi tài khoản
+      // Ràng buộc vai trò chuẩn xác theo tên miền TDTU
       if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
         const expectedSid = cleanEmail.split('@')[0].toUpperCase();
-        if (user.role !== 'student' || user.isAdmin === true || (user.studentId && String(user.studentId).toUpperCase() !== expectedSid)) {
-          this.clearToken();
-          return null;
-        }
         user.role = 'student';
         user.isAdmin = false;
         user.studentId = expectedSid;
       } else if (cleanEmail.endsWith('@tdtu.edu.vn')) {
-        if (user.role === 'student') {
-          this.clearToken();
-          return null;
-        }
         if (this.isAdminEmail(cleanEmail)) {
           user.isAdmin = true;
           user.role = 'lecturer';
           if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
             user.name = user.name || 'TS. Dương Hữu Phúc';
           }
-        } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
+        } else {
           user.isAdmin = false;
           user.role = 'lecturer';
         }
       }
 
       const expectedSig = this._computeUserSig(user);
+      const savedSig = localStorage.getItem(this.sigKey);
       if (savedSig !== expectedSig || (user._sig && user._sig !== expectedSig)) {
         try {
           user._sig = expectedSig;
@@ -1699,7 +1690,6 @@ class ApiClient {
       if (saved && saved.role && this.isTdtuEmail(saved.email)) {
         return { user: saved, role: saved.role, ...saved };
       }
-      this.clearToken();
       throw new Error('Chưa đăng nhập hoặc phiên làm việc đã hết hạn.');
     }
 
