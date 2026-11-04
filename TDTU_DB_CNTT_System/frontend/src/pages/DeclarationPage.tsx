@@ -362,9 +362,19 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
 
       if (decl.contactPerson) setContactPerson(decl.contactPerson);
       if (decl.contactPhone) setContactPhone(decl.contactPhone);
-      if (decl.position) {
-        setPosition(decl.position);
-        setDesiredPosition(decl.position);
+
+      const isDeclComp = decl.internshipStatus === 'has_company';
+      if (isDeclComp) {
+        setPosition(decl.position || '');
+        setDesiredPosition('');
+      } else {
+        // Trạng thái đang chờ hoặc cần hỗ trợ: Xóa sạch vị trí của doanh nghiệp cũ
+        setPosition('');
+        const cleanDesired = (decl.desiredPosition && !decl.desiredPosition.includes('Fullstack') && !decl.desiredPosition.includes('NodeJS')) ? decl.desiredPosition : '';
+        setDesiredPosition(cleanDesired);
+        if (decl.position && (decl.position.includes('Fullstack') || decl.position.includes('NodeJS') || decl.position === 'Thực tập sinh')) {
+          decl.position = decl.internshipStatus === 'need_support' ? 'Chờ Khoa phân bổ' : 'Đang tìm kiếm / Chờ PV';
+        }
       }
       if (decl.department) setDepartment(decl.department);
       if (decl.supportReason) setSupportReason(decl.supportReason);
@@ -508,7 +518,8 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         representative: '',
         contactPerson: '',
         contactPhone: '',
-        position: desiredPosition.trim() || 'Thực tập sinh',
+        position: desiredPosition.trim() || (pendingCompany.trim() ? `Ứng tuyển: ${pendingCompany.trim()}` : 'Đang tìm kiếm / Chờ PV'),
+        desiredPosition: desiredPosition.trim(),
         department: '',
         pendingCompany: pendingCompany.trim(),
         interviewProgress: interviewProgress.trim(),
@@ -871,17 +882,30 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         status: internshipStatus,
         statusLabel: statusLabel,
         companyName: internshipStatus === 'has_company'
-          ? (companyInfo.name || serverDeclaration?.companyName || 'Doanh nghiệp đã khai báo')
+          ? (companyInfo.name || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.companyName : '') || 'Doanh nghiệp đã khai báo')
           : internshipStatus === 'need_support'
             ? 'Khoa CNTT hỗ trợ điều phối'
-            : (pendingCompany || serverDeclaration?.pendingCompany || 'Đang tìm kiếm / Chờ PV'),
-        taxCode: internshipStatus === 'has_company' ? (taxCode || serverDeclaration?.taxCode || '') : '',
+            : (pendingCompany || (serverDeclaration?.internshipStatus === 'interviewing' ? serverDeclaration?.pendingCompany : '') || 'Đang tìm kiếm / Chờ PV'),
+        taxCode: internshipStatus === 'has_company' ? (taxCode || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.taxCode : '') || '') : '',
         mentor: internshipStatus === 'has_company'
-          ? `${contactPerson || serverDeclaration?.contactPerson || 'Chưa chỉ định'}${(contactPhone || serverDeclaration?.contactPhone) ? ' · ' + (contactPhone || serverDeclaration?.contactPhone) : ''}`
+          ? `${contactPerson || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPerson : '') || 'Chưa chỉ định'}${(contactPhone || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPhone : '')) ? ' · ' + (contactPhone || serverDeclaration?.contactPhone) : ''}`
           : internshipStatus === 'need_support'
             ? 'Trợ lý Doanh nghiệp Khoa CNTT'
             : 'Chờ kết quả phỏng vấn',
-        position: position || serverDeclaration?.position || desiredPosition || 'Thực tập sinh',
+        position: (() => {
+          if (internshipStatus === 'has_company') {
+            return position || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.position : '') || 'Thực tập sinh';
+          }
+          if (internshipStatus === 'need_support') {
+            const pos = desiredPosition || (serverDeclaration?.internshipStatus === 'need_support' ? (serverDeclaration?.desiredPosition || serverDeclaration?.position) : '');
+            return (pos && !pos.includes('Fullstack') && !pos.includes('NodeJS')) ? pos : 'Chờ Khoa phân bổ';
+          }
+          // interviewing
+          const pos = desiredPosition || (serverDeclaration?.internshipStatus === 'interviewing' ? (serverDeclaration?.desiredPosition || serverDeclaration?.position) : '');
+          if (pos && !pos.includes('Fullstack') && !pos.includes('NodeJS')) return pos;
+          if (pendingCompany) return `Ứng tuyển: ${pendingCompany}`;
+          return 'Đang tìm kiếm / Chờ PV';
+        })(),
         submissionTime: actualSubmissionTime || new Date().toLocaleString('vi-VN'),
         receiptId: `KBTT-${studentId}-20261`,
         cvDriveLink: cvDriveLink || serverDeclaration?.cvDriveLink || '',
