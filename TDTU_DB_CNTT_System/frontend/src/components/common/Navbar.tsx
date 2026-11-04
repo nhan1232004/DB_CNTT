@@ -193,15 +193,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       computeDeadline();
     };
 
-    // Heartbeat Interval mỗi 4s nạp lại thông báo tức thì
-    const notifTimer = setInterval(loadNotifications, 4000);
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        loadNotifications();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('tdtu_notification_sent', handleNotifSent);
     window.addEventListener('tdtu_notification_received', handleNotifReceived);
@@ -212,8 +203,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     window.addEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
 
     return () => {
-      clearInterval(notifTimer);
-      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }

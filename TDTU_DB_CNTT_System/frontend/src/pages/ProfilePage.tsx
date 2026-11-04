@@ -119,18 +119,6 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
     window.addEventListener('tdtu_semester_changed', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
-    // Heartbeat Revalidation định kỳ mỗi 4s và khi tab active
-    const heartbeatTimer = setInterval(() => {
-      loadProfileData(false);
-    }, 4000);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        loadProfileData(false);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     let bc = null;
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
@@ -149,8 +137,6 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
       window.removeEventListener('tdtu_cv_updated', handleUpdate);
       window.removeEventListener('tdtu_semester_changed', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
-      clearInterval(heartbeatTimer);
-      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }
@@ -217,7 +203,9 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                        compNameLower.includes('chờ phỏng vấn') ||
                        compNameLower.includes('phỏng vấn') ||
                        compNameLower.includes('đang tìm') ||
-                       compNameLower.includes('chờ pv');
+                       compNameLower.includes('chờ pv') ||
+                       compNameLower.includes('tuyển dụng') ||
+                       compNameLower.includes('ứng tuyển');
 
         const isSupp = !isWait && (
           declStatus === 'need_support' ||
@@ -226,18 +214,23 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           compNameLower.includes('khoa cntt')
         );
 
+        const isPlaceholder = compNameLower.includes('hỗ trợ') ||
+                             compNameLower.includes('khoa cntt') ||
+                             compNameLower.includes('đang tìm') ||
+                             compNameLower.includes('phỏng vấn') ||
+                             compNameLower.includes('chờ pv') ||
+                             compNameLower.includes('tuyển dụng') ||
+                             compNameLower.includes('ứng tuyển') ||
+                             compNameLower === 'chưa có' ||
+                             compNameLower === '—' ||
+                             compNameLower === '-';
+
         const hasRealComp = Boolean(
           declaration?.companyName &&
-          declaration.companyName !== 'Chưa có' &&
-          declaration.companyName !== '—' &&
-          !compNameLower.includes('hỗ trợ') &&
-          !compNameLower.includes('khoa cntt') &&
-          !compNameLower.includes('đang tìm') &&
-          !compNameLower.includes('phỏng vấn') &&
-          !compNameLower.includes('chờ pv')
+          !isPlaceholder
         );
 
-        const isComp = !isWait && !isSupp && (declStatus === 'has_company' || hasRealComp);
+        const isComp = !isWait && !isSupp && !isPlaceholder && (declStatus === 'has_company' || hasRealComp);
 
         if (isComp && declaration.companyName) {
           return (
@@ -389,7 +382,9 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                            compNameLower.includes('chờ phỏng vấn') ||
                            compNameLower.includes('phỏng vấn') ||
                            compNameLower.includes('đang tìm') ||
-                           compNameLower.includes('chờ pv');
+                           compNameLower.includes('chờ pv') ||
+                           compNameLower.includes('tuyển dụng') ||
+                           compNameLower.includes('ứng tuyển');
 
             const isSupp = !isWait && (
               declStatus === 'need_support' ||
@@ -398,18 +393,23 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
               compNameLower.includes('khoa cntt')
             );
 
+            const isPlaceholder = compNameLower.includes('hỗ trợ') ||
+                                 compNameLower.includes('khoa cntt') ||
+                                 compNameLower.includes('đang tìm') ||
+                                 compNameLower.includes('phỏng vấn') ||
+                                 compNameLower.includes('chờ pv') ||
+                                 compNameLower.includes('tuyển dụng') ||
+                                 compNameLower.includes('ứng tuyển') ||
+                                 compNameLower === 'chưa có' ||
+                                 compNameLower === '—' ||
+                                 compNameLower === '-';
+
             const hasRealComp = Boolean(
               declaration?.companyName &&
-              declaration.companyName !== 'Chưa có' &&
-              declaration.companyName !== '—' &&
-              !compNameLower.includes('hỗ trợ') &&
-              !compNameLower.includes('khoa cntt') &&
-              !compNameLower.includes('đang tìm') &&
-              !compNameLower.includes('phỏng vấn') &&
-              !compNameLower.includes('chờ pv')
+              !isPlaceholder
             );
 
-            const isComp = !isWait && !isSupp && (declStatus === 'has_company' || hasRealComp);
+            const isComp = !isWait && !isSupp && !isPlaceholder && (declStatus === 'has_company' || hasRealComp);
 
             let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
             let badgeLabel = 'Chưa mở hồ sơ';

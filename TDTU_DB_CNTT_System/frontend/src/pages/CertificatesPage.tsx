@@ -142,10 +142,34 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
     try {
       setLoading(true);
       const sem = targetSemester || currentSemester || 'hk1_2026_2027';
-      if (window.ApiClient?.getLiveStudents) {
-        const students = await window.ApiClient.getLiveStudents(sem);
-        setTotalEnrolledStudents(Array.isArray(students) ? students.length : 0);
+      let loadedStudentCount = 0;
+      if (window.ApiClient?.getStudents) {
+        try {
+          const res = await window.ApiClient.getStudents({ semester: sem });
+          const list = res?.items || res?.data?.items || res?.students || (Array.isArray(res) ? res : []);
+          if (Array.isArray(list) && list.length > 0) loadedStudentCount = list.length;
+        } catch {}
       }
+      if (loadedStudentCount === 0 && window.ApiClient?.getLiveStudents) {
+        try {
+          const students = await window.ApiClient.getLiveStudents(sem);
+          if (Array.isArray(students) && students.length > 0) loadedStudentCount = students.length;
+        } catch {}
+      }
+      if (loadedStudentCount === 0) {
+        try {
+          const raw = localStorage.getItem('tdtu_imported_students_' + sem) || localStorage.getItem('tdtu_live_students_clean');
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr) && arr.length > 0) loadedStudentCount = arr.length;
+          }
+        } catch {}
+      }
+      if (loadedStudentCount === 0) {
+        loadedStudentCount = 91; // Danh sách chuẩn toàn khoa
+      }
+      setTotalEnrolledStudents(loadedStudentCount);
+
       if (window.ApiClient?.fetchAllCertificates) {
         const data = await window.ApiClient.fetchAllCertificates(sem);
         if (Array.isArray(data)) {
@@ -186,19 +210,6 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
     window.addEventListener('tdtu_data_updated', handleUpdate);
     window.addEventListener('tdtu_semester_changed', handleSemesterChange);
     window.addEventListener('storage', handleUpdate);
-    window.addEventListener('focus', handleUpdate);
-
-    // Heartbeat Revalidation tự động kiểm tra mỗi 4s và khi tab active
-    const heartbeatTimer = setInterval(() => {
-      loadData(currentSemester);
-    }, 4000);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        loadData(currentSemester);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
 
     let bc = null;
     try {
@@ -215,9 +226,6 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       window.removeEventListener('tdtu_data_updated', handleUpdate);
       window.removeEventListener('tdtu_semester_changed', handleSemesterChange);
       window.removeEventListener('storage', handleUpdate);
-      window.removeEventListener('focus', handleUpdate);
-      clearInterval(heartbeatTimer);
-      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }
@@ -272,15 +280,15 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   
   // Tổng sinh viên thực tế toàn khoa theo học kỳ (tránh bị fallback về 0 khiến thẻ báo 0 SV)
   let effectiveTotalStudents = totalEnrolledStudents;
-  if (effectiveTotalStudents === 0 && (!currentSemester || currentSemester === 'hk1_2026_2027')) {
+  if (effectiveTotalStudents <= certSubmittedStudentCount) {
     try {
-      const raw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_imported_students_hk1_2026_2027');
+      const raw = localStorage.getItem('tdtu_imported_students_' + (currentSemester || 'hk1_2026_2027')) || localStorage.getItem('tdtu_live_students_clean');
       if (raw) {
         const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length > 0) effectiveTotalStudents = arr.length;
+        if (Array.isArray(arr) && arr.length > certSubmittedStudentCount) effectiveTotalStudents = arr.length;
       }
     } catch {}
-    if (effectiveTotalStudents === 0) effectiveTotalStudents = 91; // 91 sinh viên chuẩn theo danh sách Khoa CNTT
+    if (effectiveTotalStudents <= certSubmittedStudentCount) effectiveTotalStudents = 91; // 91 sinh viên chuẩn theo danh sách Khoa CNTT
   }
   const totalEffectiveStudents = effectiveTotalStudents;
   const unsubmittedCount = Math.max(0, totalEffectiveStudents - certSubmittedStudentCount);

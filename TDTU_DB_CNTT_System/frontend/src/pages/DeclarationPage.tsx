@@ -349,32 +349,49 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         setInternshipStatus('has_company');
       }
 
-      setTaxCode(decl.taxCode || '');
-      setCompanyInfo({
-        name: decl.companyName || '',
-        address: decl.address || '',
-        representative: decl.representative || '',
-        taxDepartment: decl.taxDepartment || '',
-        status: decl.companyStatus || (decl.companyName ? 'NNT đang hoạt động' : ''),
-        updatedAt: decl.taxUpdatedAt || '',
-        orgType: decl.orgType || '',
-      });
-
-      if (decl.contactPerson) setContactPerson(decl.contactPerson);
-      if (decl.contactPhone) setContactPhone(decl.contactPhone);
-
       const isDeclComp = decl.internshipStatus === 'has_company';
-      if (isDeclComp) {
+      const isRealCompany = isDeclComp &&
+        decl.companyName &&
+        !decl.companyName.toLowerCase().includes('đang chờ') &&
+        !decl.companyName.toLowerCase().includes('hỗ trợ') &&
+        !decl.companyName.toLowerCase().includes('khoa cntt') &&
+        !decl.companyName.toLowerCase().includes('đang tìm') &&
+        !decl.companyName.toLowerCase().includes('chờ pv');
+
+      if (isRealCompany) {
+        setTaxCode(decl.taxCode || '');
+        setCompanyInfo({
+          name: decl.companyName || '',
+          address: decl.address || '',
+          representative: decl.representative || '',
+          taxDepartment: decl.taxDepartment || '',
+          status: decl.companyStatus || (decl.companyName ? 'NNT đang hoạt động' : ''),
+          updatedAt: decl.taxUpdatedAt || '',
+          orgType: decl.orgType || '',
+        });
+        if (decl.contactPerson) setContactPerson(decl.contactPerson);
+        if (decl.contactPhone) setContactPhone(decl.contactPhone);
+        setTaxConfirmed(Boolean(decl.taxCode || decl.companyName));
         setPosition(decl.position || '');
         setDesiredPosition('');
       } else {
-        // Trạng thái đang chờ hoặc cần hỗ trợ: Xóa sạch vị trí của doanh nghiệp cũ
+        // Trạng thái đang chờ hoặc cần hỗ trợ: XÓA SẠCH các ô doanh nghiệp, KHÔNG ĐƯỢC điền text tạm vào form
+        setTaxCode('');
+        setCompanyInfo({
+          name: '',
+          address: '',
+          representative: '',
+          taxDepartment: '',
+          status: '',
+          updatedAt: '',
+          orgType: '',
+        });
+        setContactPerson('');
+        setContactPhone('');
         setPosition('');
+        setTaxConfirmed(false);
         const cleanDesired = (decl.desiredPosition && !decl.desiredPosition.includes('Fullstack') && !decl.desiredPosition.includes('NodeJS')) ? decl.desiredPosition : '';
         setDesiredPosition(cleanDesired);
-        if (decl.position && (decl.position.includes('Fullstack') || decl.position.includes('NodeJS') || decl.position === 'Thực tập sinh')) {
-          decl.position = decl.internshipStatus === 'need_support' ? 'Chờ Khoa phân bổ' : 'Đang tìm kiếm / Chờ PV';
-        }
       }
       if (decl.department) setDepartment(decl.department);
       if (decl.supportReason) setSupportReason(decl.supportReason);
@@ -393,7 +410,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
         setSupportNote(cleanNote.trim());
       }
 
-      setTaxConfirmed(Boolean(decl.companyName));
+      setTaxConfirmed(Boolean(isRealCompany && (decl.taxCode || decl.companyName)));
       setFinalConfirmed(Boolean(decl.isConfirmed));
       return;
     }
@@ -427,6 +444,49 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     } catch {}
   }, [studentId]);
 
+  const viewModeRef = React.useRef(viewMode);
+  React.useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
+
+  // Hàm mở form khai báo / cập nhật an toàn, làm sạch các trường dữ liệu nếu bắt đầu nhập mới
+  const handleOpenDeclarationForm = (resetToNew = false) => {
+    if (serverDeclaration && !canUpdate) {
+      alert('Tài khoản của bạn chưa được cấp quyền Cập nhật (Update - Mã 5) hồ sơ khai báo.');
+      return;
+    }
+    if (!serverDeclaration && !canCreate) {
+      alert('Tài khoản của bạn chưa được cấp quyền Thêm mới (Create - Mã 3) hồ sơ khai báo.');
+      return;
+    }
+
+    const hasReal = serverDeclaration?.internshipStatus === 'has_company' &&
+      serverDeclaration.companyName &&
+      !serverDeclaration.companyName.toLowerCase().includes('đang chờ') &&
+      !serverDeclaration.companyName.toLowerCase().includes('hỗ trợ') &&
+      !serverDeclaration.companyName.toLowerCase().includes('khoa cntt') &&
+      !serverDeclaration.companyName.toLowerCase().includes('đang tìm') &&
+      !serverDeclaration.companyName.toLowerCase().includes('chờ pv');
+
+    if (resetToNew || !hasReal) {
+      setInternshipStatus('has_company');
+      setTaxCode('');
+      setCompanyInfo({ name: '', address: '', representative: '', taxDepartment: '', status: '', updatedAt: '', orgType: '' });
+      setPosition('');
+      setDepartment('');
+      setContactPerson('');
+      setContactPhone('');
+      setDesiredPosition('');
+      setPendingCompany('');
+      setInterviewProgress('');
+      setSupportNote('');
+      setTaxConfirmed(false);
+      setFinalConfirmed(false);
+    }
+    setViewMode('form');
+    setCurrentStep(1);
+  };
+
   React.useEffect(() => {
     loadExistingOrDraft();
     if (window.ApiClient?.getStudentCvLink) {
@@ -435,6 +495,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     }
 
     const handleDeclUpdate = () => {
+      // Khi người dùng đang ở chế độ biểu mẫu nhập liệu (viewMode === 'form'), không can thiệp hay ghi đè state
+      if (viewModeRef.current === 'form') {
+        return;
+      }
       loadExistingOrDraft();
       if (window.ApiClient?.getStudentCvLink) {
         const cv = window.ApiClient.getStudentCvLink(studentId);
@@ -446,15 +510,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
     window.addEventListener('tdtu_declarations_updated', handleDeclUpdate);
     window.addEventListener('tdtu_declaration_updated', handleDeclUpdate);
     window.addEventListener('tdtu_cv_updated', handleDeclUpdate);
-    window.addEventListener('tdtu_data_updated', handleDeclUpdate);
     window.addEventListener('storage', handleDeclUpdate);
-
-    // Heartbeat Revalidation mỗi 4s và khi tab active
-    const heartbeat = setInterval(handleDeclUpdate, 4000);
-    const handleVis = () => {
-      if (document.visibilityState === 'visible') handleDeclUpdate();
-    };
-    document.addEventListener('visibilitychange', handleVis);
 
     let bc = null;
     try {
@@ -471,10 +527,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       window.removeEventListener('tdtu_declarations_updated', handleDeclUpdate);
       window.removeEventListener('tdtu_declaration_updated', handleDeclUpdate);
       window.removeEventListener('tdtu_cv_updated', handleDeclUpdate);
-      window.removeEventListener('tdtu_data_updated', handleDeclUpdate);
       window.removeEventListener('storage', handleDeclUpdate);
-      clearInterval(heartbeat);
-      document.removeEventListener('visibilitychange', handleVis);
       if (bc) {
         try { bc.close(); } catch {}
       }
@@ -1154,18 +1207,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
             <button
               type="button"
               disabled={serverDeclaration ? !canUpdate : !canCreate}
-              onClick={() => {
-                if (serverDeclaration && !canUpdate) {
-                  alert('Tài khoản của bạn chưa được cấp quyền Cập nhật (Update - Mã 5) hồ sơ khai báo.');
-                  return;
-                }
-                if (!serverDeclaration && !canCreate) {
-                  alert('Tài khoản của bạn chưa được cấp quyền Thêm mới (Create - Mã 3) hồ sơ khai báo.');
-                  return;
-                }
-                setViewMode('form');
-                setCurrentStep(1);
-              }}
+              onClick={() => handleOpenDeclarationForm(false)}
               className={`px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 ${
                 (serverDeclaration ? !canUpdate : !canCreate)
                   ? 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-60'
@@ -1275,14 +1317,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
               <button
                 type="button"
                 disabled={!canCreate}
-                onClick={() => {
-                  if (!canCreate) {
-                    alert('Tài khoản của bạn chưa được cấp quyền Thêm mới (Create - Mã 3) hồ sơ khai báo.');
-                    return;
-                  }
-                  setViewMode('form');
-                  setCurrentStep(1);
-                }}
+                onClick={() => handleOpenDeclarationForm(true)}
                 className={`px-4 py-2 text-white text-xs font-bold rounded-xl shadow-xs transition ${
                   !canCreate
                     ? 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-60'
@@ -1423,14 +1458,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                             <button
                               type="button"
                               disabled={!canUpdate}
-                              onClick={() => {
-                                if (!canUpdate) {
-                                  alert('Tài khoản của bạn chưa được cấp quyền Sửa (Update - Mã 5) hồ sơ khai báo.');
-                                  return;
-                                }
-                                setViewMode('form');
-                                setCurrentStep(1);
-                              }}
+                              onClick={() => handleOpenDeclarationForm(false)}
                               title={canUpdate ? 'Chỉnh sửa hoặc cập nhật nơi thực tập' : 'Chưa có quyền Sửa (Update - Mã 5)'}
                               className={`p-1.5 rounded-lg transition ${
                                 canUpdate
@@ -1547,6 +1575,21 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                         setInternshipStatus('has_company');
                         setPendingCompany('');
                         setDesiredPosition('');
+                        const isTempComp = !companyInfo.name ||
+                          companyInfo.name.toLowerCase().includes('đang chờ') ||
+                          companyInfo.name.toLowerCase().includes('hỗ trợ') ||
+                          companyInfo.name.toLowerCase().includes('khoa cntt') ||
+                          companyInfo.name.toLowerCase().includes('đang tìm') ||
+                          companyInfo.name.toLowerCase().includes('chờ pv');
+                        if (isTempComp) {
+                          setTaxCode('');
+                          setCompanyInfo({ name: '', address: '', representative: '', taxDepartment: '', status: '', updatedAt: '', orgType: '' });
+                          setPosition('');
+                          setDepartment('');
+                          setContactPerson('');
+                          setContactPhone('');
+                          setTaxConfirmed(false);
+                        }
                       }}
                       className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                         internshipStatus === 'has_company'

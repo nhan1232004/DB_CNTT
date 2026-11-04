@@ -248,15 +248,6 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
     window.addEventListener('tdtu_semester_changed', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
-    // Heartbeat Revalidation mỗi 4s và khi tab active
-    const timer = setInterval(handleUpdate, 4000);
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        handleUpdate();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     let bc = null;
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
@@ -266,8 +257,6 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
     } catch {}
 
     return () => {
-      clearInterval(timer);
-      document.removeEventListener('visibilitychange', handleVisibility);
       if (bc) {
         try { bc.close(); } catch {}
       }
