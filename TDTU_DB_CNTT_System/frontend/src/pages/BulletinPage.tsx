@@ -110,12 +110,24 @@ const BulletinPage = ({ currentUser }) => {
         }
 
         const seenIds = new Set();
+        const seenTitles = new Set();
         const merged = [];
+        const deletedNotifs = new Set(window.ApiClient?.getDeletedNotificationIds ? window.ApiClient.getDeletedNotificationIds().map(String) : []);
+        const deletedAncs = new Set(window.ApiClient?.getDeletedAnnouncementIds ? window.ApiClient.getDeletedAnnouncementIds().map(String) : []);
+
         for (const item of [...normSysNotifs, ...lecturerAncs]) {
-          if (item && item.id && !seenIds.has(item.id)) {
-            seenIds.add(item.id);
-            merged.push(item);
+          if (!item || !item.id) continue;
+          const sId = String(item.id);
+          if (deletedNotifs.has(sId) || deletedAncs.has(sId)) continue;
+
+          // Chuẩn hóa tiêu đề để chống trùng lặp giữa thông báo bảng tin & thông báo hệ thống
+          const normTitle = String(item.title || item.subject || '').trim().toLowerCase().replace(/^\[.*?\]\s*/, '');
+          if (seenIds.has(sId) || (normTitle && seenTitles.has(normTitle))) {
+            continue;
           }
+          seenIds.add(sId);
+          if (normTitle) seenTitles.add(normTitle);
+          merged.push(item);
         }
         setAnnouncements(merged);
       }
@@ -124,14 +136,19 @@ const BulletinPage = ({ currentUser }) => {
 
     const handleJds = (e) => { if (e.detail) setPublishedJds(e.detail); else loadData(); };
     const handleQueue = (e) => { if (e.detail) setReviewQueue(e.detail); else loadData(); };
-    const handleAncs = (e) => { if (e.detail) setAnnouncements(e.detail); else loadData(); };
+    const handleAncs = () => { loadData(); };
     const handleStorage = () => { loadData(); };
 
     let bc = null;
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.onmessage = (msg) => {
-        if (!msg.data || msg.data.type === 'announcements_updated' || msg.data.type === 'jd_updated' || msg.data.type === 'notification_sent') {
+        if (!msg.data || 
+            msg.data.type === 'announcements_updated' || 
+            msg.data.type === 'announcement_deleted' ||
+            msg.data.type === 'notification_deleted' ||
+            msg.data.type === 'jd_updated' || 
+            msg.data.type === 'notification_sent') {
           loadData();
         }
       };
@@ -327,19 +344,20 @@ const BulletinPage = ({ currentUser }) => {
   const handleDeleteAnnouncement = async (id) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa thông báo này?')) return;
     try {
-      if (String(id).startsWith('notif_')) {
-        if (window.ApiClient?.deleteNotification) {
-          await window.ApiClient.deleteNotification(id, currentUser);
-        }
-      } else {
-        if (window.ApiClient?.deleteLecturerAnnouncement) {
-          await window.ApiClient.deleteLecturerAnnouncement(id);
-        }
+      // 1. Cập nhật state UI ngay lập tức
+      setAnnouncements(prev => prev.filter(a => String(a.id) !== String(id)));
+
+      // 2. Xóa triệt để ở cả 2 dịch vụ (Lecturer Announcements & System Notifications)
+      if (window.ApiClient?.deleteLecturerAnnouncement) {
+        await window.ApiClient.deleteLecturerAnnouncement(id);
       }
-      setAnnouncements(prev => prev.filter(a => a.id !== id));
-      setNotification({ type: 'success', text: 'Đã xóa thông báo thành công.' });
+      if (window.ApiClient?.deleteNotification) {
+        await window.ApiClient.deleteNotification(id, currentUser);
+      }
+
+      setNotification({ type: 'success', text: 'Đã xóa thông báo vĩnh viễn thành công.' });
     } catch (err) {
-      alert('Lỗi xóa thông báo: ' + err.message);
+      alert('Lỗi xóa thông báo: ' + (err?.message || err));
     }
   };
 

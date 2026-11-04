@@ -376,7 +376,10 @@ class ApiClient {
         if (!snapshot.empty) {
           const notes = [];
           const seenIds = new Set();
-          const deletedSet = new Set(this.getDeletedNotificationIds());
+          const deletedSet = new Set([
+            ...this.getDeletedNotificationIds().map(String),
+            ...this.getDeletedAnnouncementIds().map(String)
+          ]);
           snapshot.forEach(doc => {
             const n = { id: doc.id, ...doc.data() };
             if (n && n.id && !seenIds.has(n.id) && !deletedSet.has(String(n.id))) {
@@ -513,9 +516,17 @@ class ApiClient {
 
       // 1.9 Lắng nghe thông báo từ Giảng viên & Khoa CNTT trong mục JD (tdtu_announcements)
       db.collection('tdtu_announcements').onSnapshot(snapshot => {
+        const deletedSet = new Set([
+          ...this.getDeletedAnnouncementIds().map(String),
+          ...this.getDeletedNotificationIds().map(String)
+        ]);
         if (!snapshot.empty) {
           const notes = [];
-          snapshot.forEach(doc => notes.push({ id: doc.id, ...doc.data() }));
+          snapshot.forEach(doc => {
+            if (doc && doc.id && !deletedSet.has(String(doc.id))) {
+              notes.push({ id: doc.id, ...doc.data() });
+            }
+          });
           notes.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
           try { localStorage.setItem('tdtu_announcements', JSON.stringify(notes)); } catch {}
           window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: notes }));
@@ -696,6 +707,15 @@ class ApiClient {
     }
   }
 
+  static getDeletedAnnouncementIds() {
+    try {
+      const raw = localStorage.getItem('tdtu_deleted_announcements');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
   // Tải danh sách thông báo từ Backend API có lọc phân quyền chặt chẽ
   static async fetchNotifications(currentUser) {
     try {
@@ -712,7 +732,10 @@ class ApiClient {
           try {
             const localSaved = localStorage.getItem(this.notificationKey);
             const localList = localSaved ? JSON.parse(localSaved) : [];
-            const deletedSet = new Set(this.getDeletedNotificationIds());
+            const deletedSet = new Set([
+              ...this.getDeletedNotificationIds().map(String),
+              ...this.getDeletedAnnouncementIds().map(String)
+            ]);
             const mergedMap = new Map();
             [...body.data, ...(Array.isArray(localList) ? localList : [])].forEach(n => {
               if (n && n.id && !deletedSet.has(String(n.id)) && !mergedMap.has(String(n.id))) {
@@ -768,7 +791,10 @@ class ApiClient {
     }
 
     // 2. Lọc bỏ thông báo mẫu ảo cũ nếu còn sót và thông báo đã xóa trong blacklist
-    const deletedSet = new Set(this.getDeletedNotificationIds());
+    const deletedSet = new Set([
+      ...this.getDeletedNotificationIds().map(String),
+      ...this.getDeletedAnnouncementIds().map(String)
+    ]);
     list = list.filter(n => n && n.id !== 'notif_init_01' && n.id !== 'notif_init_02' && !deletedSet.has(String(n.id)));
 
     // Khi gọi nội bộ không truyền currentUser (VD: markNotificationRead), trả về nguyên danh sách để cập nhật
@@ -935,7 +961,7 @@ class ApiClient {
     const sId = String(id || '').trim();
     if (!sId) return this.getNotifications(currentUser);
 
-    // 1. Thêm vào blacklist đã xóa để không bao giờ bị phục hồi lại
+    // 1. Thêm vào blacklist đã xóa để không bao giờ bị phục hồi lại (cả notifications và announcements)
     try {
       const delArr = this.getDeletedNotificationIds();
       if (!delArr.includes(sId)) {
@@ -944,28 +970,81 @@ class ApiClient {
       }
     } catch {}
 
-    // 2. Xóa khỏi localStorage hiện tại
+    try {
+      const delAncs = this.getDeletedAnnouncementIds();
+      if (!delAncs.includes(sId)) {
+        delAncs.push(sId);
+        localStorage.setItem('tdtu_deleted_announcements', JSON.stringify(delAncs));
+      }
+    } catch {}
+
+    // 2. Tìm thông báo trước khi xóa để lấy title/subject (dùng để dọn dẹp các bản sao liên quan)
+    let notifTitle = '';
     try {
       const saved = localStorage.getItem(this.notificationKey);
       const list = saved ? JSON.parse(saved) : [];
+      const item = list.find(n => n && String(n.id) === sId);
+      if (item) {
+        notifTitle = String(item.title || item.subject || '').trim();
+      }
       const updated = list.filter(n => n && String(n.id) !== sId);
       localStorage.setItem(this.notificationKey, JSON.stringify(updated));
     } catch {}
 
-    // 3. Xóa trên Cloud Firestore nếu có
+    // 2.1 Xóa đồng bộ khỏi tdtu_announcements (nếu thông báo này cũng được lưu sang announcements)
+    try {
+      const rawAncs = localStorage.getItem('tdtu_announcements');
+      if (rawAncs) {
+        const ancs = JSON.parse(rawAncs);
+        if (Array.isArray(ancs)) {
+          const normTitle = notifTitle.toLowerCase().replace(/^\[.*?\]\s*/, '').trim();
+          const filteredAncs = ancs.filter(a => {
+            if (!a) return false;
+            if (String(a.id) === sId) return false;
+            if (normTitle && a.title) {
+              const aNorm = String(a.title).toLowerCase().replace(/^\[.*?\]\s*/, '').trim();
+              if (aNorm === normTitle) {
+                try {
+                  const delAncs = this.getDeletedAnnouncementIds();
+                  if (!delAncs.includes(String(a.id))) {
+                    delAncs.push(String(a.id));
+                    localStorage.setItem('tdtu_deleted_announcements', JSON.stringify(delAncs));
+                  }
+                } catch {}
+                return false;
+              }
+            }
+            return true;
+          });
+          localStorage.setItem('tdtu_announcements', JSON.stringify(filteredAncs));
+          window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: filteredAncs }));
+        }
+      }
+    } catch {}
+
+    // 3. Xóa trên Cloud Firestore nếu có (cả tdtu_notifications và tdtu_announcements)
     if (window.FirebaseService?.db) {
       try {
         window.FirebaseService.db.collection('tdtu_notifications').doc(sId).delete().catch(() => {});
+        window.FirebaseService.db.collection('tdtu_announcements').doc(sId).delete().catch(() => {});
       } catch {}
     }
 
-    // 4. Gửi yêu cầu DELETE tới backend (nếu có server SQLite)
+    // 4. Gửi yêu cầu DELETE tới backend (cả /api/notifications và /api/bulletin)
     try {
       const token = this.getToken();
-      fetch(`/api/notifications/${encodeURIComponent(sId)}`, {
-        method: 'DELETE',
-        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-      }).catch(() => {});
+      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      fetch(`/api/notifications/${encodeURIComponent(sId)}`, { method: 'DELETE', headers }).catch(() => {});
+      fetch(`/api/bulletin/${encodeURIComponent(sId)}`, { method: 'DELETE', headers }).catch(() => {});
+    } catch {}
+
+    // 5. Broadcast sự kiện cập nhật
+    window.dispatchEvent(new CustomEvent('tdtu_notifications_updated'));
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'notification_deleted', id: sId });
+      bc.postMessage({ type: 'announcement_deleted', id: sId });
+      bc.close();
     } catch {}
 
     return this.getNotifications(currentUser);
@@ -4870,7 +4949,13 @@ class ApiClient {
       const saved = localStorage.getItem('tdtu_announcements');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          const deletedSet = new Set([
+            ...this.getDeletedAnnouncementIds().map(String),
+            ...this.getDeletedNotificationIds().map(String)
+          ]);
+          return parsed.filter(a => a && a.id && !deletedSet.has(String(a.id)));
+        }
       }
     } catch {}
     return [];
@@ -4878,17 +4963,26 @@ class ApiClient {
 
   static async fetchLecturerAnnouncements() {
     const mergedMap = new Map();
+    const deletedSet = new Set([
+      ...this.getDeletedAnnouncementIds().map(String),
+      ...this.getDeletedNotificationIds().map(String)
+    ]);
+
     const addItem = (raw) => {
       if (!raw || !raw.title) return;
-      const key = raw.id || `title_${String(raw.title).trim().toLowerCase()}`;
+      const id = String(raw.id || ('anc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)));
+      if (deletedSet.has(id)) return; // Không nạp thông báo đã nằm trong danh sách đen bị xóa
+
+      const key = id;
       if (!mergedMap.has(key)) {
         mergedMap.set(key, {
-          id: raw.id || ('anc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+          id: id,
           title: raw.title,
           content: raw.content || '',
           author: raw.author || 'Giảng viên Khoa CNTT',
           role: raw.role || raw.authorRole || 'Giảng viên hướng dẫn',
-          important: Boolean(raw.important || raw.priority === 'URGENT'),
+          important: Boolean(raw.important || raw.priority === 'URGENT' || raw.priority === 'urgent' || raw.priority === 'high'),
+          priority: raw.priority || (raw.important ? 'high' : 'normal'),
           date: raw.date || (raw.createdAt ? new Date(raw.createdAt).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')),
           createdAt: raw.createdAt || new Date().toISOString()
         });
@@ -4900,7 +4994,11 @@ class ApiClient {
       try {
         const snap = await window.FirebaseService.db.collection('tdtu_announcements').get();
         if (!snap.empty) {
-          snap.forEach(doc => addItem({ id: doc.id, ...doc.data() }));
+          snap.forEach(doc => {
+            if (!deletedSet.has(String(doc.id))) {
+              addItem({ id: doc.id, ...doc.data() });
+            }
+          });
         }
       } catch (e) {
         console.warn('[Firestore fetchLecturerAnnouncements note]:', e.message);
@@ -4915,7 +5013,9 @@ class ApiClient {
         const items = json?.data || (Array.isArray(json) ? json : []);
         if (Array.isArray(items)) {
           items.forEach(p => {
-            if (p && p.type === 'announcement') addItem(p);
+            if (p && p.type === 'announcement' && !deletedSet.has(String(p.id))) {
+              addItem(p);
+            }
           });
         }
       }
@@ -4924,7 +5024,9 @@ class ApiClient {
     // 3. Hợp nhất với LocalStorage
     try {
       const localList = this.getLecturerAnnouncements();
-      localList.forEach(a => addItem(a));
+      localList.forEach(a => {
+        if (!deletedSet.has(String(a.id))) addItem(a);
+      });
     } catch {}
 
     const finalList = Array.from(mergedMap.values()).sort((a, b) =>
@@ -4946,6 +5048,14 @@ class ApiClient {
       date: new Date().toLocaleDateString('vi-VN'),
       createdAt: new Date().toISOString()
     };
+
+    // Loại bỏ ID khỏi blacklist đã xóa (nếu có) khi tạo mới
+    try {
+      const delAncs = this.getDeletedAnnouncementIds().filter(delId => delId !== id);
+      localStorage.setItem('tdtu_deleted_announcements', JSON.stringify(delAncs));
+      const delNotifs = this.getDeletedNotificationIds().filter(delId => delId !== id);
+      localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delNotifs));
+    } catch {}
 
     try {
       const list = this.getLecturerAnnouncements().filter(a => a.id !== id);
@@ -4985,7 +5095,7 @@ class ApiClient {
       });
     } catch {}
 
-    // 3. Tự động đẩy thông báo vào "Hộp thư Thông báo Học vụ" (Notification Bell) cho toàn Khoa (Mục 8 & Mục 10)
+    // 3. Tự động đẩy thông báo vào "Hộp thư Thông báo Học vụ" (Notification Bell) cho toàn Khoa
     this.sendEmailNotification({
       to: 'toan-khoa@tdtu.edu.vn',
       recipientName: 'Toàn thể Giảng viên & Sinh viên Khoa CNTT',
@@ -5007,30 +5117,100 @@ class ApiClient {
   }
 
   static async deleteLecturerAnnouncement(id) {
+    const sId = String(id || '').trim();
+    if (!sId) return { success: false };
+
+    // 1. Thêm vào blacklist đã xóa (cả deleted_announcements và deleted_notifications)
     try {
-      const list = this.getLecturerAnnouncements().filter(a => a.id !== id);
-      localStorage.setItem('tdtu_announcements', JSON.stringify(list));
-      window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: list }));
+      const delAncs = this.getDeletedAnnouncementIds();
+      if (!delAncs.includes(sId)) {
+        delAncs.push(sId);
+        localStorage.setItem('tdtu_deleted_announcements', JSON.stringify(delAncs));
+      }
+    } catch {}
+    try {
+      const delNotifs = this.getDeletedNotificationIds();
+      if (!delNotifs.includes(sId)) {
+        delNotifs.push(sId);
+        localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delNotifs));
+      }
     } catch {}
 
+    // 2. Tìm title của announcement cần xóa
+    let ancTitle = '';
+    try {
+      const rawAncs = localStorage.getItem('tdtu_announcements');
+      if (rawAncs) {
+        const ancs = JSON.parse(rawAncs);
+        if (Array.isArray(ancs)) {
+          const item = ancs.find(a => a && String(a.id) === sId);
+          if (item) ancTitle = String(item.title || '').trim();
+          const updated = ancs.filter(a => a && String(a.id) !== sId);
+          localStorage.setItem('tdtu_announcements', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: updated }));
+        }
+      }
+    } catch {}
+
+    // 3. Đồng bộ xóa các notification liên quan (nếu có cùng ID hoặc cùng tiêu đề)
+    try {
+      const savedNotifs = localStorage.getItem(this.notificationKey);
+      if (savedNotifs) {
+        const notifs = JSON.parse(savedNotifs);
+        if (Array.isArray(notifs)) {
+          const normTitle = ancTitle.toLowerCase().replace(/^\[.*?\]\s*/, '').trim();
+          const filteredNotifs = notifs.filter(n => {
+            if (!n) return false;
+            if (String(n.id) === sId) return false;
+            if (normTitle && (n.title || n.subject)) {
+              const nNorm = String(n.title || n.subject).toLowerCase().replace(/^\[.*?\]\s*/, '').trim();
+              if (nNorm === normTitle) {
+                try {
+                  const delNotifs = this.getDeletedNotificationIds();
+                  if (!delNotifs.includes(String(n.id))) {
+                    delNotifs.push(String(n.id));
+                    localStorage.setItem('tdtu_deleted_notifications', JSON.stringify(delNotifs));
+                  }
+                } catch {}
+                return false;
+              }
+            }
+            return true;
+          });
+          localStorage.setItem(this.notificationKey, JSON.stringify(filteredNotifs));
+          window.dispatchEvent(new CustomEvent('tdtu_notifications_updated'));
+        }
+      }
+    } catch {}
+
+    // 4. Xóa khỏi Cloud Firestore (cả tdtu_announcements và tdtu_notifications)
     if (window.FirebaseService?.db) {
       try {
-        await window.FirebaseService.db.collection('tdtu_announcements').doc(id).delete();
-        console.log('[Firestore Sync]: Đã xóa Thông báo Giảng viên trên Firestore:', id);
+        await window.FirebaseService.db.collection('tdtu_announcements').doc(sId).delete().catch(() => {});
+        await window.FirebaseService.db.collection('tdtu_notifications').doc(sId).delete().catch(() => {});
+        console.log('[Firestore Sync]: Đã xóa Thông báo Giảng viên trên Firestore:', sId);
       } catch (err) {
         console.warn('[Firestore Delete Announcement Warning]:', err.message);
       }
     }
 
+    // 5. Gửi request DELETE tới Backend SQLite (cả /api/bulletin và /api/notifications)
     try {
       const token = this.getToken();
-      await fetch(`/api/bulletin/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
-      });
+      const headers = { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+      await fetch(`/api/bulletin/${encodeURIComponent(sId)}`, { method: 'DELETE', headers }).catch(() => {});
+      await fetch(`/api/notifications/${encodeURIComponent(sId)}`, { method: 'DELETE', headers }).catch(() => {});
     } catch {}
 
-    return { success: true, id };
+    // 6. Broadcast sự kiện qua BroadcastChannel
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'announcement_deleted', id: sId });
+      bc.postMessage({ type: 'notification_deleted', id: sId });
+      bc.close();
+    } catch {}
+
+    return { success: true, id: sId };
   }
 
   // ==========================================

@@ -151,9 +151,12 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
     if (!confirm(`Bạn có chắc chắn muốn xóa/thu hồi thông báo: "${notifTitle}"?`)) return;
     try {
       if (window.ApiClient?.deleteNotification) {
-        await window.ApiClient.deleteNotification(id);
+        await window.ApiClient.deleteNotification(id, currentUser);
       }
-      setHistoryList(prev => prev.filter(n => n.id !== id));
+      if (window.ApiClient?.deleteLecturerAnnouncement) {
+        await window.ApiClient.deleteLecturerAnnouncement(id);
+      }
+      setHistoryList(prev => prev.filter(n => String(n.id) !== String(id)));
       if (onNotificationSent) onNotificationSent();
     } catch (err) {
       alert('Lỗi xóa thông báo: ' + err.message);

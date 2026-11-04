@@ -276,6 +276,9 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
           localStorage.setItem('tdtu_notifications', JSON.stringify(remaining));
         } catch {}
       }
+      if (window.ApiClient && window.ApiClient.deleteLecturerAnnouncement) {
+        await window.ApiClient.deleteLecturerAnnouncement(id);
+      }
     } catch (err) {
       console.warn('Error deleting notification:', err);
     }

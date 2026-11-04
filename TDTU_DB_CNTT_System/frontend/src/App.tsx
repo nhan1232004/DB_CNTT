@@ -152,20 +152,13 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
     // Kiểm tra ngay khi Sinh viên đăng nhập vào hệ thống
     const timer = setTimeout(checkLatestAnnouncement, 600);
 
-    // Lắng nghe thông báo thời gian thực khi Giảng viên vừa đăng tin mới
-    const handleRealtimeUpdate = (e) => {
-      if (e?.detail) {
-        if (Array.isArray(e.detail) && e.detail.length > 0) {
-          setActiveAnnouncement(e.detail[0]);
-        } else if (e.detail.title) {
-          setActiveAnnouncement(e.detail);
-        }
-      } else {
-        checkLatestAnnouncement();
-      }
+    // Lắng nghe thông báo thời gian thực khi Giảng viên đăng hoặc xóa tin
+    const handleRealtimeUpdate = () => {
+      checkLatestAnnouncement();
     };
 
     window.addEventListener('tdtu_announcements_updated', handleRealtimeUpdate);
+    window.addEventListener('tdtu_notifications_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_broadcast_notif', handleRealtimeUpdate);
 
     let bc = null;
@@ -174,6 +167,9 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
       bc.onmessage = (msg) => {
         if (msg.data?.type === 'new_announcement' && msg.data?.announcement) {
           setActiveAnnouncement(msg.data.announcement);
+        } else if (msg.data?.type === 'announcement_deleted' || msg.data?.type === 'notification_deleted') {
+          setActiveAnnouncement(prev => (prev && String(prev.id) === String(msg.data.id)) ? null : prev);
+          checkLatestAnnouncement();
         }
       };
     } catch {}
@@ -181,6 +177,7 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
     return () => {
       clearTimeout(timer);
       window.removeEventListener('tdtu_announcements_updated', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_notifications_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_broadcast_notif', handleRealtimeUpdate);
       if (bc) {
         try { bc.close(); } catch {}
