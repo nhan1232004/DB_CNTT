@@ -29,6 +29,69 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
   const [isSemesterOpen, setIsSemesterOpen] = React.useState(false);
   const semesterDropdownRef = React.useRef(null);
 
+  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không
+  const isStudentEnrolledInSemester = React.useCallback((sid, semId) => {
+    if (!sid) return false;
+    const cleanSid = String(sid).trim().toUpperCase();
+    if (cleanSid === '52100999') return false; // Sinh viên ngoài kỳ mẫu không thuộc đợt nào
+
+    // 1. Kiểm tra danh sách sinh viên đã nạp của học kỳ đó trong LocalStorage
+    try {
+      const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > 0) {
+          const match = arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
+          if (match) return true;
+        }
+      }
+    } catch {}
+
+    // 2. Đối với học kỳ chính HK1 2026-2027
+    if (semId === 'hk1_2026_2027') {
+      try {
+        const liveRaw = localStorage.getItem('tdtu_live_students');
+        if (liveRaw) {
+          const liveArr = JSON.parse(liveRaw);
+          if (Array.isArray(liveArr) && liveArr.length > 0) {
+            const match = liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
+            if (match) return true;
+          }
+        }
+      } catch {}
+
+      // Sinh viên hợp lệ trong hệ thống (không bị đánh dấu isEnrolledThisSemester: false)
+      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999') {
+        return true;
+      }
+    }
+
+    return false;
+  }, [currentUser]);
+
+  // Đối với Sinh viên: CHỈ hiển thị các học kỳ mà sinh viên có tên trong danh sách
+  // Đối với Giảng viên / Quản trị viên: Hiển thị toàn bộ danh sách học kỳ
+  const availableSemesters = React.useMemo(() => {
+    if (!isStudent) return semesters;
+    const sid = currentUser?.studentId || currentUser?.mssv;
+    const enrolled = semesters.filter(sem => isStudentEnrolledInSemester(sid, sem.id));
+    if (enrolled.length === 0) {
+      const activeSem = semesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || semesters[0];
+      return activeSem ? [activeSem] : [];
+    }
+    return enrolled;
+  }, [semesters, isStudent, currentUser, isStudentEnrolledInSemester, activeSemester]);
+
+  // Tự động chuyển về học kỳ hợp lệ nếu học kỳ đang chọn không thuộc các kỳ sinh viên có tên
+  React.useEffect(() => {
+    if (isStudent && availableSemesters.length > 0) {
+      const isCurrentInAvailable = availableSemesters.some(s => s.id === activeSemester);
+      if (!isCurrentInAvailable && onSemesterChange) {
+        onSemesterChange(availableSemesters[0].id);
+      }
+    }
+  }, [isStudent, availableSemesters, activeSemester, onSemesterChange]);
+
   React.useEffect(() => {
     const handleOutsideClick = (e) => {
       if (semesterDropdownRef.current && !semesterDropdownRef.current.contains(e.target)) {
@@ -214,7 +277,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
           
           {/* Custom Semester Selector Dropdown (Loại bỏ hoàn toàn thẻ select native, chống 100% lỗi 2 mũi tên) */}
           {(() => {
-            const currentSemesterObj = semesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || semesters[0];
+            const currentSemesterObj = availableSemesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || availableSemesters[0] || semesters[0];
             const currentSemesterLabel = currentSemesterObj ? (currentSemesterObj.name || currentSemesterObj.id) : 'HK1 2026–2027 (Hiện tại)';
             return (
               <div className="relative" ref={semesterDropdownRef}>
@@ -247,7 +310,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                     <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#64748b] border-b border-[#f1f5f9]">
                       Danh sách Học kỳ
                     </div>
-                    {semesters.map(sem => {
+                    {availableSemesters.map(sem => {
                       const isSelected = (activeSemester || 'hk1_2026_2027') === sem.id;
                       const label = `${sem.name || sem.id} ${sem.isActive && !String(sem.name || '').includes('Hiện tại') ? '(Hiện tại)' : ''}`.trim();
                       return (
