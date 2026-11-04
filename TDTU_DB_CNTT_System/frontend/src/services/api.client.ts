@@ -1232,17 +1232,30 @@ class ApiClient {
     const hasTsnn = rawCourses.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || rawCode.includes('TSNN') || rawCode.includes('TẬP SỰ') || rawCode.includes('DỰ ÁN') || s.tsnnEnrolled === 1 || s.tsnnEnrolled === true;
     const isDual = Boolean((hasKtcn && hasTsnn) || s.isDualCourse === 1 || s.isDualCourse === true || rawCode.includes('SONG SONG'));
     const coursesArr = isDual ? ['KTCN', 'TSNN'] : (hasTsnn && !hasKtcn ? ['TSNN'] : ['KTCN']);
+    const rawComp = String(s.company || s.companyName || '').trim();
+    const hasValidCompany = Boolean(
+      rawComp && rawComp !== '—' && rawComp !== '-' && rawComp !== 'null' && rawComp !== 'undefined' &&
+      rawComp.toLowerCase() !== 'chưa có' &&
+      rawComp.toLowerCase() !== 'chưa có doanh nghiệp' &&
+      rawComp.toLowerCase() !== 'chưa khai báo' &&
+      rawComp.toLowerCase() !== 'doanh nghiệp đã khai báo' &&
+      rawComp.toLowerCase() !== 'doanh nghiệp tiếp nhận' &&
+      !rawComp.toLowerCase().includes('đang tìm') &&
+      !rawComp.toLowerCase().includes('hỗ trợ') &&
+      !rawComp.toLowerCase().includes('khoa cntt') &&
+      !rawComp.toLowerCase().includes('chờ')
+    );
+
     const rawStatus = String(s.status || '').trim();
-    const normStatus = (rawStatus === 'has_company' || rawStatus === 'Có doanh nghiệp')
+    const normStatus = hasValidCompany
       ? 'Có doanh nghiệp'
       : ((rawStatus === 'need_support' || rawStatus === 'Cần hỗ trợ' || rawStatus === 'Cần Khoa hỗ trợ' || s.noCompanyOption === 'faculty')
           ? 'Cần Khoa hỗ trợ'
-          : ((rawStatus === 'interviewing' || rawStatus === 'Đang chờ PV/KQPV')
+          : ((rawStatus === 'interviewing' || rawStatus === 'Đang chờ PV/KQPV' || s.noCompanyOption === 'self')
               ? 'Đang chờ PV/KQPV'
               : 'Chưa có doanh nghiệp'));
-    const rawComp = String(s.company || s.companyName || '').trim();
     const normCompany = normStatus === 'Có doanh nghiệp'
-      ? (rawComp && rawComp !== 'Chưa có' && rawComp !== '—' ? rawComp : 'Doanh nghiệp đã khai báo')
+      ? rawComp
       : (normStatus === 'Cần Khoa hỗ trợ' ? 'Khoa CNTT hỗ trợ' : (normStatus === 'Đang chờ PV/KQPV' ? (rawComp || 'Đang chờ PV') : 'Chưa có'));
 
     return {
@@ -1353,20 +1366,25 @@ class ApiClient {
         const certObj = firestoreCerts.get(sid);
         const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
 
-        const compName = decl?.companyName || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
+        const compCandidate = decl?.companyName || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
         const hasRealComp = Boolean(
-          compName && compName !== 'Chưa có' && compName !== '—' &&
-          !compName.toLowerCase().includes('chưa có') &&
-          !compName.toLowerCase().includes('đang tìm') &&
-          !compName.toLowerCase().includes('hỗ trợ') &&
-          !compName.toLowerCase().includes('khoa cntt') &&
-          !compName.toLowerCase().includes('chờ phỏng vấn')
+          compCandidate && compCandidate !== 'Chưa có' && compCandidate !== '—' && compCandidate !== '-' &&
+          compCandidate !== 'null' && compCandidate !== 'undefined' &&
+          compCandidate.toLowerCase() !== 'chưa có' &&
+          compCandidate.toLowerCase() !== 'chưa có doanh nghiệp' &&
+          compCandidate.toLowerCase() !== 'chưa khai báo' &&
+          compCandidate.toLowerCase() !== 'doanh nghiệp đã khai báo' &&
+          compCandidate.toLowerCase() !== 'doanh nghiệp tiếp nhận' &&
+          !compCandidate.toLowerCase().includes('đang tìm') &&
+          !compCandidate.toLowerCase().includes('hỗ trợ') &&
+          !compCandidate.toLowerCase().includes('khoa cntt') &&
+          !compCandidate.toLowerCase().includes('chờ')
         );
 
         const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();
         const rawStatus = String(s.status || '').trim().toLowerCase();
-        const isComp = declStatus === 'has_company' || hasRealComp || rawStatus === 'có doanh nghiệp' || rawStatus === 'has_company';
-        const isWait = !isComp && (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawStatus.includes('chờ pv') || rawStatus.includes('phỏng vấn'));
+        const isComp = hasRealComp;
+        const isWait = !isComp && (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawStatus.includes('chờ pv') || rawStatus.includes('phỏng vấn') || s.noCompanyOption === 'self');
         const isSupp = !isComp && !isWait && (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty');
 
         const wasFacultySupport = Boolean(
@@ -1382,23 +1400,26 @@ class ApiClient {
         const rawContact = decl?.contactPerson || decl?.mentorName || s.contactPerson;
         const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
 
-        if (decl || hasRealComp) {
+        const resolvedStatus = isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa có doanh nghiệp'));
+        const resolvedCompany = isComp ? compCandidate : (isWait ? (decl?.pendingCompany || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : 'Chưa có'));
+
+        if (decl || hasRealComp || isWait || isSupp) {
           return {
             ...s,
-            company: isComp ? (decl?.companyName || compName || 'Doanh nghiệp tiếp nhận') : (isWait ? (decl?.pendingCompany || compName || 'Đang chờ PV') : (isSupp ? 'Khoa CNTT hỗ trợ' : s.company)),
-            companyName: isComp ? (decl?.companyName || compName) : (decl?.companyName || s.companyName || s.company),
-            taxCode: decl?.taxCode || s.taxCode,
-            position: isComp ? (decl?.position || s.position || 'Thực tập sinh') : (isWait ? (decl?.desiredPosition || decl?.position || 'Đang chờ phỏng vấn') : (decl?.desiredPosition || 'Chờ Khoa hỗ trợ')),
+            company: resolvedCompany,
+            companyName: resolvedCompany,
+            taxCode: isComp ? (decl?.taxCode || s.taxCode) : '',
+            position: isComp ? (decl?.position || s.position || 'Thực tập sinh') : (isWait ? (decl?.desiredPosition || decl?.position || 'Đang chờ phỏng vấn') : (isSupp ? 'Chờ Khoa hỗ trợ' : '—')),
             contactPerson: cleanContact,
             mentorName: cleanContact,
             contactPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || s.contactPhone) : '',
             mentorPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || s.mentorPhone) : '',
-            contactEmail: decl?.contactEmail || decl?.mentorEmail || s.contactEmail,
-            mentorEmail: decl?.mentorEmail || decl?.contactEmail || s.mentorEmail,
-            address: decl?.address || s.address,
-            companyAddress: decl?.address || s.companyAddress,
-            representative: decl?.representative || s.representative,
-            status: isComp ? 'Có doanh nghiệp' : (isWait ? 'Đang chờ PV/KQPV' : (isSupp ? 'Cần Khoa hỗ trợ' : s.status)),
+            contactEmail: isComp ? (decl?.contactEmail || decl?.mentorEmail || s.contactEmail) : '',
+            mentorEmail: isComp ? (decl?.mentorEmail || decl?.contactEmail || s.mentorEmail) : '',
+            address: isComp ? (decl?.address || s.address) : '',
+            companyAddress: isComp ? (decl?.address || s.companyAddress) : '',
+            representative: isComp ? (decl?.representative || s.representative) : '',
+            status: resolvedStatus,
             noCompanyOption: isComp ? null : (decl?.noCompanyOption || s.noCompanyOption),
             hasChangedFromSupport: wasFacultySupport ? 1 : (s.hasChangedFromSupport || 0),
             declarationData: decl,
@@ -1411,6 +1432,20 @@ class ApiClient {
         }
         return {
           ...s,
+          company: 'Chưa có',
+          companyName: 'Chưa có',
+          status: 'Chưa có doanh nghiệp',
+          position: '—',
+          taxCode: '',
+          companyAddress: '',
+          address: '',
+          contactPerson: '',
+          mentorName: '',
+          contactPhone: '',
+          mentorPhone: '',
+          contactEmail: '',
+          mentorEmail: '',
+          representative: '',
           cert: certDisplay || s.cert,
           certificateDisplay: certDisplay || s.certificateDisplay,
           certName: certObj?.name || s.certName,

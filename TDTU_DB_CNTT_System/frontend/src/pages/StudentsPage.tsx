@@ -86,8 +86,25 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [crudSaving, setCrudSaving] = React.useState(false);
   const [actionToast, setActionToast] = React.useState(null);
 
-  const isAdmin = Boolean(currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn');
-  const isStaff = Boolean(isAdmin || currentUser?.role === 'lecturer');
+  const isAdmin = Boolean(
+    (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn') &&
+    currentUser?.role !== 'lecturer' &&
+    String(currentUser?.email || '').toLowerCase() !== 'phamvanc@tdtu.edu.vn'
+  );
+  const isLecturer = Boolean(currentUser?.role === 'lecturer' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn');
+  const isStaff = Boolean(isAdmin || isLecturer);
+
+  // Helper kiểm tra tên doanh nghiệp thực sự hợp lệ (không phải chuỗi mặc định / rác)
+  const isRealCompany = (name: any) => {
+    if (!name || typeof name !== 'string') return false;
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === '—' || trimmed === '-' || trimmed === 'null' || trimmed === 'undefined') return false;
+    const lower = trimmed.toLowerCase();
+    if (lower === 'chưa có' || lower === 'chưa có doanh nghiệp' || lower === 'chưa khai báo' || lower === 'doanh nghiệp đã khai báo' || lower === 'doanh nghiệp tiếp nhận' || lower === 'đã khai báo') return false;
+    if (lower.includes('đang tìm') || lower.includes('chờ pv') || lower.includes('phỏng vấn') || lower.includes('chờ phỏng vấn')) return false;
+    if (lower.includes('hỗ trợ') || lower.includes('khoa cntt')) return false;
+    return true;
+  };
 
   // Tải danh sách chứng chỉ và link CV thực tế khi mở Modal
   React.useEffect(() => {
@@ -396,40 +413,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         } catch {}
         const firestoreDecl = declMap.get(sid);
         const fsStudent = firestoreStudentsMap.get(sid);
-        let decl = clientDecl || firestoreDecl || fsStudent?.declarationData || s.declarationData;
+        let decl = clientDecl || firestoreDecl || fsStudent?.declarationData;
 
         const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
 
-        const compName = decl?.companyName || fsStudent?.companyName || (fsStudent?.company !== 'Chưa có' ? fsStudent?.company : '') || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
-        const hasValidCompany = Boolean(
-          compName &&
-          compName !== 'Chưa có' &&
-          compName !== 'Chưa có doanh nghiệp' &&
-          compName !== '—' &&
-          compName !== '-' &&
-          !compName.toLowerCase().includes('chưa có') &&
-          !compName.toLowerCase().includes('đang tìm') &&
-          !compName.toLowerCase().includes('hỗ trợ') &&
-          !compName.toLowerCase().includes('khoa cntt') &&
-          !compName.toLowerCase().includes('chờ phỏng vấn') &&
-          !compName.toLowerCase().includes('đang chờ pv')
-        );
-
-        // ƯU TIÊN SỐ 1: Khai báo mới nhất của sinh viên (decl) luôn có độ ưu tiên cao nhất
-        let resolvedStatus = 'Chưa có doanh nghiệp';
-        let resolvedCompany = 'Chưa có';
+        const companyCandidate = decl?.companyName || (isRealCompany(fsStudent?.companyName) ? fsStudent?.companyName : (isRealCompany(fsStudent?.company) ? fsStudent?.company : '')) || (isRealCompany(s.companyName) ? s.companyName : (isRealCompany(s.company) ? s.company : ''));
+        const hasValidCompany = isRealCompany(companyCandidate);
 
         const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();
         const rawFsStatus = String(fsStudent?.status || s.status || '').trim().toLowerCase();
 
-        // 1. Ưu tiên TUYỆT ĐỐI cho trạng thái Đã có nơi thực tập / Có doanh nghiệp hợp lệ
-        if (declStatus === 'has_company' || hasValidCompany || rawFsStatus === 'có doanh nghiệp' || rawFsStatus === 'has_company' || fsStudent?.companyName || (decl && decl.companyName && hasValidCompany)) {
+        let resolvedStatus = 'Chưa có doanh nghiệp';
+        let resolvedCompany = 'Chưa có';
+
+        // 1. Chỉ xem là "Có doanh nghiệp" nếu:
+        //    - Có tên doanh nghiệp thực sự hợp lệ (hasValidCompany === true)
+        if (hasValidCompany) {
           resolvedStatus = 'Có doanh nghiệp';
-          resolvedCompany = decl?.companyName || compName || 'Doanh nghiệp tiếp nhận';
+          resolvedCompany = companyCandidate;
         } else if (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawFsStatus.includes('chờ pv') || rawFsStatus.includes('phỏng vấn') || rawFsStatus === 'interviewing') {
           resolvedStatus = 'Đang chờ PV/KQPV';
-          resolvedCompany = decl?.pendingCompany || compName || 'Đang chờ PV';
-        } else if (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawFsStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty') {
+          resolvedCompany = decl?.pendingCompany || 'Đang chờ PV';
+        } else if (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawFsStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty' || fsStudent?.noCompanyOption === 'faculty') {
           resolvedStatus = 'Cần Khoa hỗ trợ';
           resolvedCompany = 'Khoa CNTT hỗ trợ';
         } else {
@@ -437,7 +442,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           resolvedCompany = 'Chưa có';
         }
 
-        const isComp = resolvedStatus === 'Có doanh nghiệp' || resolvedStatus === 'has_company';
+        const isComp = resolvedStatus === 'Có doanh nghiệp';
         const hasChangedFromSupport = Boolean(
           isComp && (
             decl?.hasChangedFromSupport ||
@@ -456,25 +461,25 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         const rawContact = decl?.contactPerson || decl?.mentorName || fsStudent?.contactPerson || fsStudent?.mentorName || s.contactPerson;
         const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
 
-        if (decl || fsStudent?.company || fsStudent?.companyName || fsStudent?.declarationData) {
+        if (decl || hasValidCompany || fsStudent?.declarationData) {
           return {
             ...s,
             ...(fsStudent || {}),
             noCompanyOption: resolvedNoCompanyOpt,
             hasChangedFromSupport: hasChangedFromSupport ? 1 : 0,
-            companyName: compName,
+            companyName: resolvedCompany,
             company: resolvedCompany,
-            taxCode: decl?.taxCode || fsStudent?.taxCode || s.taxCode,
-            position: decl?.position || fsStudent?.position || s.position,
-            companyAddress: decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress,
-            address: decl?.address || fsStudent?.address || s.address,
+            taxCode: isComp ? (decl?.taxCode || fsStudent?.taxCode || s.taxCode) : '',
+            position: isComp ? (decl?.position || fsStudent?.position || s.position || 'Thực tập sinh') : (resolvedStatus === 'Cần Khoa hỗ trợ' ? 'Chờ Khoa điều phối' : (resolvedStatus === 'Đang chờ PV/KQPV' ? 'Đang chờ phỏng vấn' : '—')),
+            companyAddress: isComp ? (decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress) : '',
+            address: isComp ? (decl?.address || fsStudent?.address || s.address) : '',
             contactPerson: cleanContact,
             mentorName: cleanContact,
             contactPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.contactPhone || s.contactPhone) : '',
             mentorPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.mentorPhone || s.mentorPhone) : '',
-            contactEmail: decl?.contactEmail || decl?.mentorEmail || fsStudent?.contactEmail || fsStudent?.mentorEmail || s.contactEmail,
-            mentorEmail: decl?.mentorEmail || decl?.contactEmail || fsStudent?.mentorEmail || fsStudent?.contactEmail || s.mentorEmail,
-            representative: decl?.representative || fsStudent?.representative || s.representative,
+            contactEmail: isComp ? (decl?.contactEmail || decl?.mentorEmail || fsStudent?.contactEmail || fsStudent?.mentorEmail || s.contactEmail) : '',
+            mentorEmail: isComp ? (decl?.mentorEmail || decl?.contactEmail || fsStudent?.mentorEmail || fsStudent?.contactEmail || s.mentorEmail) : '',
+            representative: isComp ? (decl?.representative || fsStudent?.representative || s.representative) : '',
             declarationData: decl || fsStudent?.declarationData,
             cvLink: cvLink,
             cert: certDisplay || fsStudent?.cert || s.cert,
@@ -556,17 +561,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
   // Status Badge Renderer - Tối ưu màu sắc trực quan theo phản hồi người dùng
   const renderStatusBadge = (status, noCompanyOption, hasChangedFromSupport, companyName = '') => {
-    const compStr = String(companyName || '').trim();
-    const hasRealComp = Boolean(
-      compStr && compStr !== 'Chưa có' && compStr !== '—' && compStr !== '-' &&
-      !compStr.toLowerCase().includes('chưa có') &&
-      !compStr.toLowerCase().includes('đang tìm') &&
-      !compStr.toLowerCase().includes('hỗ trợ') &&
-      !compStr.toLowerCase().includes('khoa cntt') &&
-      !compStr.toLowerCase().includes('chờ')
-    );
+    const hasRealComp = isRealCompany(companyName);
     const sLower = String(status || '').trim().toLowerCase();
-    const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company' || hasRealComp;
+    // CHỈ công nhận "Đã có nơi" nếu có tên doanh nghiệp thực tế hợp lệ
+    const isComp = hasRealComp || (sLower === 'has_company' && hasRealComp);
     const isSupport = !isComp && (noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
     const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || noCompanyOption === 'self');
 
