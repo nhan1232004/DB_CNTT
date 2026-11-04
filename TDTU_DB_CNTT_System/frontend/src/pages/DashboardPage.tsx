@@ -187,7 +187,7 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
     if (!isStudent) return false;
     if (currentUser?.isEnrolledThisSemester === false) return false;
     const cleanSid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
-    if (cleanSid === '52100999' || cleanSid === '523H0077') return false;
+    if (cleanSid === '52100999') return false;
     if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
     if (Array.isArray(liveStudents) && liveStudents.length > 0) {
       return liveStudents.some(s => String(s.mssv || s.studentId || '').toUpperCase() === cleanSid);

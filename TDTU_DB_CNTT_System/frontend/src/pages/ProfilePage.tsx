@@ -42,7 +42,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
   const isEnrolledStudent = React.useMemo(() => {
     if (currentUser?.isEnrolledThisSemester === false) return false;
     const cleanSid = String(currentUser?.studentId || currentUser?.mssv || studentId).toUpperCase();
-    if (cleanSid === '52100999' || cleanSid === '523H0077') return false;
+    if (cleanSid === '52100999') return false;
     if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
     if (liveStudentInfo) return true;
     return currentUser?.isEnrolledThisSemester !== false;

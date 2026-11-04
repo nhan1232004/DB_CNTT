@@ -69,9 +69,9 @@ const LoginPage = ({ onLoginSuccess }) => {
       } else if (studentId === '522H0002') {
         name = name || 'Trần Hoàng Nam';
         isEnrolledThisSemester = true;
-      } else if (studentId === '52100999' || studentId === '523H0077' || clean.includes('chuadk') || clean.includes('ngoaiky')) {
-        name = name || (studentId === '523H0077' ? 'Sinh viên 523H0077' : 'Nguyễn Văn Ngoài Kỳ');
-        studentId = studentId === '523H0077' ? '523H0077' : '52100999';
+      } else if (studentId === '52100999' || clean.includes('chuadk') || clean.includes('ngoaiky')) {
+        name = name || 'Nguyễn Văn Ngoài Kỳ';
+        studentId = '52100999';
         isEnrolledThisSemester = false;
       } else if (studentId === '51900839') {
         name = name || 'Võ Duy Trí';

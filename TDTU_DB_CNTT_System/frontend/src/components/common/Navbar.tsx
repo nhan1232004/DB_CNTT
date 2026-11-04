@@ -33,7 +33,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
   const isStudentEnrolledInSemester = React.useCallback((sid, semId) => {
     if (!sid) return false;
     const cleanSid = String(sid).trim().toUpperCase();
-    if (cleanSid === '52100999' || cleanSid === '523H0077') return false; // Sinh viên ngoài kỳ mẫu không thuộc đợt nào
+    if (cleanSid === '52100999') return false; // Sinh viên ngoài kỳ mẫu không thuộc đợt nào
 
     // 1. Kiểm tra danh sách sinh viên đã nạp của học kỳ đó trong LocalStorage
     try {
@@ -61,7 +61,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
       } catch {}
 
       // Sinh viên hợp lệ trong hệ thống (không bị đánh dấu isEnrolledThisSemester: false)
-      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999' && cleanSid !== '523H0077') {
+      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999') {
         return true;
       }
     }

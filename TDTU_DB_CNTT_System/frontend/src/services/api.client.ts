@@ -149,23 +149,6 @@ class ApiClient {
         this._cvCache.delete('523H0077');
         this._cvCache.delete('523h0077');
       }
-      [this.liveStudentsKey, 'tdtu_live_students', 'tdtu_imported_students_hk1_2026_2027'].forEach(key => {
-        try {
-          const raw = localStorage.getItem(key);
-          if (raw) {
-            const arr = JSON.parse(raw);
-            if (Array.isArray(arr)) {
-              const filtered = arr.filter((s: any) => {
-                const sid = String(s.mssv || s.studentId || s.id || '').toUpperCase();
-                return sid !== '523H0077' && sid !== '52100999';
-              });
-              if (filtered.length !== arr.length) {
-                localStorage.setItem(key, JSON.stringify(filtered));
-              }
-            }
-          }
-        } catch {}
-      });
 
       if (!localStorage.getItem('tdtu_mock_data_purged_clean_v10')) {
         localStorage.removeItem('tdtu_live_students');
@@ -355,10 +338,9 @@ class ApiClient {
           snapshot.forEach(doc => {
             const data = doc.data();
             const sid = String(data.mssv || data.studentId || doc.id || '').trim();
-            const sName = String(data.name || data.fullName || '').trim();
-            const sidUpper = sid.toUpperCase();
-            // Lọc bỏ bất kỳ dữ liệu test/tạo tự động có tiền tố SV_ hoặc tên giả "Sinh viên 521..." hoặc sinh viên ngoài kỳ (523H0077, 52100999)
-            if (data && sid && !sid.startsWith('SV_') && !sName.startsWith('Sinh viên 5') && sidUpper !== '523H0077' && sidUpper !== '52100999') {
+            const sidLower = sid.toLowerCase();
+            // Lọc bỏ các dòng tiêu đề hoặc bản ghi giả SV_ không hợp lệ
+            if (data && sid && !sid.startsWith('SV_') && !sidLower.startsWith('stt') && !sidLower.startsWith('số lượng') && !sidLower.startsWith('mã số')) {
               list.push({ ...data, id: sid, mssv: sid, studentId: sid });
             }
           });
@@ -437,9 +419,7 @@ class ApiClient {
         }
         db.collection('tdtu_certificates').doc('cert_522H0118_ielts_01').delete().catch(() => {});
         db.collection('tdtu_certificates').doc('cert_522H0118_toeic_02').delete().catch(() => {});
-        // Xóa hoàn toàn 523H0077 khỏi Firestore tdtu_students, tdtu_declarations, tdtu_student_cv, tdtu_certificates
-        db.collection('tdtu_students').doc('523H0077').delete().catch(() => {});
-        db.collection('tdtu_students').doc('523h0077').delete().catch(() => {});
+        // Dọn dẹp chứng chỉ và khai báo rác cũ của tài khoản nếu có
         db.collection('tdtu_declarations').doc('523H0077').delete().catch(() => {});
         db.collection('tdtu_declarations').doc('523h0077').delete().catch(() => {});
         db.collection('tdtu_student_cv').doc('523H0077').delete().catch(() => {});
@@ -455,7 +435,6 @@ class ApiClient {
             const data = doc.data();
             if (doc.id && data) {
               const sid = String(doc.id).trim().toUpperCase();
-              if (sid === '523H0077' || sid === '52100999') return;
               localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
               if (data.cvDriveLink) {
                 ApiClient.setCachedCv(sid, data.cvDriveLink);
@@ -1279,7 +1258,7 @@ class ApiClient {
   }
 
   // Chuẩn hóa 1 bản ghi sinh viên đồng nhất cho cả Backend, Firestore và LocalStorage
-  static _normalizeStudentRecord(s, idx = 0) {
+  static _normalizeStudentRecord(s, idx = 0, targetSemester = 'hk1_2026_2027') {
     const sid = String(s.mssv || s.studentId || s.id || '').trim().toUpperCase();
     const fullName = String(s.name || s.fullName || ((s['Họ lót'] || s.lastName || '') + ' ' + (s['Tên'] || s.firstName || '')).trim() || '').trim();
     const rawGpa4 = s.gpa4 !== undefined && s.gpa4 !== null && s.gpa4 !== '' ? parseFloat(s.gpa4) : (s.gpa !== undefined && s.gpa !== null && s.gpa !== '' ? parseFloat(s.gpa) : NaN);
@@ -1321,7 +1300,7 @@ class ApiClient {
 
     return {
       ...s,
-      semester: s.semester || 'hk1_2026_2027',
+      semester: s.semester || targetSemester || 'hk1_2026_2027',
       companyName: s.companyName || normCompany,
       taxCode: s.taxCode || '',
       position: s.position || '',
@@ -1374,10 +1353,10 @@ class ApiClient {
 
     const isValidStudent = (s) => {
       const sid = String(s?.mssv || s?.studentId || s?.id || '').trim();
-      const sName = String(s?.name || s?.fullName || '').trim();
-      const sidUpper = sid.toUpperCase();
-      if (sidUpper === '523H0077' || sidUpper === '52100999') return false;
-      return Boolean(sid && !sid.startsWith('SV_') && !sid.toLowerCase().startsWith('số lượng') && !sName.startsWith('Sinh viên 5'));
+      if (!sid) return false;
+      const sidLower = sid.toLowerCase();
+      if (sid.startsWith('SV_') || sidLower.startsWith('stt') || sidLower.startsWith('số lượng') || sidLower.startsWith('mã số')) return false;
+      return true;
     };
 
     // Quét toàn bộ declarations & certificates từ Firestore để đồng bộ theo thời gian thực
@@ -1721,9 +1700,9 @@ class ApiClient {
         } else if (studentId === '522H0002') {
           userName = 'Trần Hoàng Nam';
           isEnrolledThisSemester = true;
-        } else if (studentId === '52100999' || studentId === '523H0077' || email.includes('chuadk') || email.includes('ngoaiky')) {
-          userName = studentId === '523H0077' ? 'Sinh viên 523H0077' : 'Nguyễn Văn Ngoài Kỳ';
-          studentId = studentId === '523H0077' ? '523H0077' : '52100999';
+        } else if (studentId === '52100999' || email.includes('chuadk') || email.includes('ngoaiky')) {
+          userName = 'Nguyễn Văn Ngoài Kỳ';
+          studentId = '52100999';
           isEnrolledThisSemester = false;
         } else if (email.includes('51900839')) {
           userName = 'Võ Duy Trí';
@@ -1778,7 +1757,7 @@ class ApiClient {
 
       let studentProfile = null;
       if (role === 'student' && studentId) {
-        if (studentId === '52100999' || studentId === '523H0077') {
+        if (studentId === '52100999') {
           isEnrolledThisSemester = false;
         } else {
           try {
@@ -1877,7 +1856,7 @@ class ApiClient {
     if (endpoint.includes('/api/students')) {
       if (endpoint.includes('/eligibility/')) {
         const sid = endpoint.split('/eligibility/')[1];
-        if (sid === '52100999' || sid === '523H0077') {
+        if (sid === '52100999') {
           return {
             studentId: sid,
             isEligible: false,
@@ -2550,14 +2529,18 @@ class ApiClient {
     try { localStorage.removeItem('tdtu_students_cleared_empty'); } catch {}
 
     const incoming = studentList
-      .map((s, idx) => this._normalizeStudentRecord(s, idx))
-      .filter(s => s.mssv && !s.mssv.startsWith('SV_') && !s.name.startsWith('Sinh viên 5'));
+      .map((s, idx) => ({ ...this._normalizeStudentRecord(s, idx, semester), semester }))
+      .filter(s => {
+        const sid = String(s.mssv || s.studentId || '').trim();
+        const sidLower = sid.toLowerCase();
+        return sid && !sid.startsWith('SV_') && !sidLower.startsWith('stt') && !sidLower.startsWith('số lượng') && !sidLower.startsWith('mã số');
+      });
 
     let finalList = [];
     if (mode === 'replace') {
       await this.clearAllStudents(semester);
       try { localStorage.removeItem('tdtu_students_cleared_empty'); } catch {}
-      finalList = incoming.map((s, idx) => ({ ...s, stt: idx + 1 }));
+      finalList = incoming.map((s, idx) => ({ ...s, stt: idx + 1, semester }));
     } else {
       const existing = await this.getLiveStudents(semester);
       const map = new Map();
@@ -2572,13 +2555,14 @@ class ApiClient {
             ...old,
             ...s,
             courses: mergedCourses,
-            isDualCourse: mergedCourses.length > 1
-          }));
+            isDualCourse: mergedCourses.length > 1,
+            semester
+          }, 0, semester));
         } else {
-          map.set(key, s);
+          map.set(key, { ...s, semester });
         }
       });
-      finalList = Array.from(map.values()).map((s, idx) => ({ ...s, stt: idx + 1 }));
+      finalList = Array.from(map.values()).map((s, idx) => ({ ...s, stt: idx + 1, semester }));
     }
 
     console.log(`[ApiClient.importStudentsExcel]: Đang lưu ${finalList.length} sinh viên (mode=${mode}) cho ${semester}...`);
@@ -2586,7 +2570,9 @@ class ApiClient {
     // 1. Lưu LocalStorage ngay lập tức
     try {
       localStorage.setItem('tdtu_imported_students_' + semester, JSON.stringify(finalList));
-      this.saveLiveStudents(finalList);
+      if (semester === 'hk1_2026_2027') {
+        this.saveLiveStudents(finalList);
+      }
     } catch (lsErr) {
       console.warn('[ApiClient.importStudentsExcel] LocalStorage note:', lsErr.message);
     }

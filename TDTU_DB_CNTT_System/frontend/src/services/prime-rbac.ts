@@ -272,7 +272,7 @@
     }
     if (user.role === 'student') {
       const sid = String(user.studentId || user.mssv || '').toUpperCase();
-      if (user.isEnrolledThisSemester === false || user.isEnrolled === false || sid === '52100999' || sid === '523H0077') {
+      if (user.isEnrolledThisSemester === false || user.isEnrolled === false || sid === '52100999') {
         return 'sv_ngoai_ky';
       }
       return 'sv_trong_ky';

@@ -337,12 +337,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         } catch {}
       }
 
-      // Lọc bỏ các bản ghi ảo / lỗi (SV_0_, Sinh viên 521...)
+      // Lọc bỏ các dòng tiêu đề hoặc bản ghi giả SV_ không hợp lệ
       const cleanList = (list || []).filter((s: any) => {
         const sid = String(s.studentId || s.mssv || '').trim();
-        const sname = String(s.fullName || s.name || '').trim();
-        if (!sid || sid.startsWith('SV_0_') || sid.startsWith('SV_')) return false;
-        if (/^Sinh viên 5\d+/i.test(sname)) return false;
+        const sidLower = sid.toLowerCase();
+        if (!sid || sid.startsWith('SV_0_') || sid.startsWith('SV_') || sidLower.startsWith('stt') || sidLower.startsWith('số lượng') || sidLower.startsWith('mã số')) return false;
         return true;
       });
 

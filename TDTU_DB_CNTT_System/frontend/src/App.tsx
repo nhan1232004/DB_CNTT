@@ -394,7 +394,7 @@ const AppInner = () => {
     let isStudentEnrolledInActiveSem = true;
     if (isStudent) {
       const sid = String(currentUser.studentId || currentUser.mssv || '').toUpperCase();
-      if (sid === '52100999' || sid === '523H0077' || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
+      if (sid === '52100999' || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
         isStudentEnrolledInActiveSem = false;
       } else {
         try {
