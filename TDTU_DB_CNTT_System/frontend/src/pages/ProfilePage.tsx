@@ -39,6 +39,15 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
 
   const remainingDays = getDaysRemaining(deadlines.declarationDeadline);
 
+  const isEnrolledStudent = React.useMemo(() => {
+    if (currentUser?.isEnrolledThisSemester === false) return false;
+    const cleanSid = String(currentUser?.studentId || currentUser?.mssv || studentId).toUpperCase();
+    if (cleanSid === '52100999' || cleanSid === '523H0077') return false;
+    if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
+    if (liveStudentInfo) return true;
+    return currentUser?.isEnrolledThisSemester !== false;
+  }, [currentUser, studentId, liveStudentInfo]);
+
   const isMountedRef = React.useRef(true);
   const lastUpdateRef = React.useRef(0);
 
@@ -176,20 +185,20 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         </div>
       </div>
 
-      {/* Status Alert Banner matching Figma Frame 03 - Chỉ hiện khi ĐÃ CÓ NƠI THỰC TẬP */}
-      {currentUser?.isEnrolledThisSemester !== false && declaration?.internshipStatus === 'has_company' && declaration?.companyName && (
-        <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5]  border-[#A7F3D0]  shadow-xs">
+      {/* Status Alert Banner - Chỉ hiện khi ĐÃ CÓ NƠI THỰC TẬP và là SINH VIÊN TRONG KỲ */}
+      {isEnrolledStudent && declaration?.internshipStatus === 'has_company' && declaration?.companyName && (
+        <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5] border-[#A7F3D0] shadow-xs">
           <div className="flex items-center gap-3.5">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff]  text-[#003087] ">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff] text-[#003087]">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
-              <div className="text-[16px] font-bold text-[#1f2937] ">
+              <div className="text-[16px] font-bold text-[#1f2937]">
                 Đã có nơi thực tập: {declaration.companyName}
               </div>
-              <div className="text-[14px] text-[#4b5563] ">
+              <div className="text-[14px] text-[#4b5563]">
                 {declaration.position || 'Thực tập sinh'}{declaration.department ? (' · ' + declaration.department) : ''}
               </div>
             </div>
@@ -198,154 +207,182 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           <button
             type="button"
             onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-            className="px-4 py-2 bg-white  text-[#1f2937]  border border-[#e5e7eb]  rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
+            className="px-4 py-2 bg-white text-[#1f2937] border border-[#e5e7eb] rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
           >
             Cập nhật trạng thái
           </button>
         </div>
       )}
 
-      {/* 4 Summary Cards Row matching Figma Frame 03 & Student Academic Profile */}
+      {/* 4 Summary Cards Row matching Student Academic Profile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Học kỳ hiện tại */}
-        <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
-          <div className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Học kỳ hiện tại</div>
-          <div className="text-2xl font-black text-[#1f2937]  mt-1">{deadlines.semesterName}</div>
+        <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
+          <div className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Học kỳ hiện tại</div>
+          <div className="text-2xl font-black text-[#1f2937] mt-1">{deadlines.semesterName}</div>
           <div className="mt-3 flex items-center justify-between text-[13.5px]">
-            <span className="text-[#1f2937] ">Hạn nộp: {new Date(deadlines.declarationDeadline).toLocaleDateString('vi-VN')}</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#f8fafc]  text-[#1f2937]  font-bold text-[11px] border border-[#e5e7eb] ">
+            <span className="text-[#1f2937]">Hạn nộp: {new Date(deadlines.declarationDeadline).toLocaleDateString('vi-VN')}</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#f8fafc] text-[#1f2937] font-bold text-[11px] border border-[#e5e7eb]">
               Còn {remainingDays} ngày
             </span>
           </div>
         </div>
 
         {/* Card 2: Môn học đăng ký */}
-        <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
-          <div className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Môn học đăng ký</div>
-          {(() => {
-            const cArr = Array.isArray(liveStudentInfo?.courses) ? liveStudentInfo.courses.map((c: any) => String(c).toUpperCase()) : [];
-            const cCode = String(liveStudentInfo?.courseCode || liveStudentInfo?.course_str || liveStudentInfo?.courseName || currentUser?.courseCode || currentUser?.courseName || '').toUpperCase();
-            const isDual = Boolean(liveStudentInfo?.isDualCourse || currentUser?.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG'));
-            const isTsnnOnly = !isDual && (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || cCode.includes('DỰ ÁN') || liveStudentInfo?.tsnnEnrolled === 1);
-            const displayCode = isDual ? 'KTCN & TSNN' : (isTsnnOnly ? 'TSNN' : 'KTCN');
-            const displaySubjId = isDual ? '504074 & 504075' : (isTsnnOnly ? '504075' : '504074');
-            const displayName = isDual ? 'Kiến tập CN & Tập sự NN (Song song)' : (isTsnnOnly ? 'Tập sự Nghề nghiệp' : 'Kiến tập Công nghiệp');
-            return (
-              <>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="px-2 py-0.5 rounded-md bg-[#ebf3ff]  text-[#003087]  font-bold text-xs">
-                    {displayCode}
-                  </span>
-                  <span className="text-xs text-[#1f2937]">Mã môn: {displaySubjId}</span>
-                </div>
-                <div className="text-[16px] font-bold text-[#1f2937] mt-2">
-                  {displayName}
-                </div>
-              </>
-            );
-          })()}
+        <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
+          <div className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Môn học đăng ký</div>
+          {isEnrolledStudent && (liveStudentInfo || currentUser?.courses?.length) ? (
+            (() => {
+              const cArr = Array.isArray(liveStudentInfo?.courses) ? liveStudentInfo.courses.map((c: any) => String(c).toUpperCase()) : (Array.isArray(currentUser?.courses) ? currentUser.courses.map((c: any) => String(c).toUpperCase()) : []);
+              const cCode = String(liveStudentInfo?.courseCode || liveStudentInfo?.course_str || liveStudentInfo?.courseName || currentUser?.courseCode || currentUser?.courseName || '').toUpperCase();
+              const isDual = Boolean(liveStudentInfo?.isDualCourse || currentUser?.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG'));
+              const isTsnnOnly = !isDual && (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ') || c.includes('DỰ ÁN')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || cCode.includes('DỰ ÁN') || liveStudentInfo?.tsnnEnrolled === 1);
+              const displayCode = isDual ? 'KTCN & TSNN' : (isTsnnOnly ? 'TSNN' : 'KTCN');
+              const displaySubjId = isDual ? '504074 & 504075' : (isTsnnOnly ? '504075' : '504074');
+              const displayName = isDual ? 'Kiến tập CN & Tập sự NN (Song song)' : (isTsnnOnly ? 'Tập sự Nghề nghiệp' : 'Kiến tập Công nghiệp');
+              return (
+                <>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 rounded-md bg-[#ebf3ff] text-[#003087] font-bold text-xs">
+                      {displayCode}
+                    </span>
+                    <span className="text-xs text-[#1f2937]">Mã môn: {displaySubjId}</span>
+                  </div>
+                  <div className="text-[16px] font-bold text-[#1f2937] mt-2">
+                    {displayName}
+                  </div>
+                </>
+              );
+            })()
+          ) : (
+            <div className="mt-2">
+              <div className="text-[15px] font-bold text-gray-500">Chưa đăng ký môn học trong kỳ</div>
+              <div className="text-xs text-gray-400 mt-1">Không có học phần thực tập</div>
+            </div>
+          )}
         </div>
 
         {/* Card 3: Tình trạng hồ sơ */}
-        <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
+        <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Tình trạng hồ sơ</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#ebf3ff]  text-[#003087]  font-bold text-[11px] border border-[#bfdbfe]">
-              Đã tiếp nhận
+            <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Tình trạng hồ sơ</span>
+            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
+              !isEnrolledStudent 
+                ? 'bg-gray-100 text-gray-600 border-gray-200' 
+                : (declaration?.companyName ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-[#ebf3ff] text-[#003087] border-[#bfdbfe]')
+            }`}>
+              {!isEnrolledStudent ? 'Chưa mở hồ sơ' : (declaration?.companyName ? 'Đã có nơi TT' : 'Đang tìm kiếm')}
             </span>
           </div>
-          <div className="text-xs text-[#1f2937]  mt-2">
-            Khoa đã xác nhận và đồng bộ hồ sơ
+          <div className="text-xs text-[#1f2937] mt-2">
+            {!isEnrolledStudent 
+              ? 'Sinh viên chưa thuộc đợt thực tập kỳ này' 
+              : (declaration?.companyName ? `Đã khai báo tại ${declaration.companyName}` : 'Khoa đang tiếp nhận thông tin khai báo')}
           </div>
-          <button
-            type="button"
-            onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-            className="text-xs font-bold text-[#003087]  hover:underline mt-3 inline-flex items-center gap-1 cursor-pointer"
-          >
-            <span>Xem hồ sơ</span>
-            <span>→</span>
-          </button>
+          {isEnrolledStudent && (
+            <button
+              type="button"
+              onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
+              className="text-xs font-bold text-[#003087] hover:underline mt-3 inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>Xem hồ sơ</span>
+              <span>→</span>
+            </button>
+          )}
         </div>
 
         {/* Card 4: Hồ sơ học tập & Điểm tích lũy (GPA Hệ 10 & Xếp loại học lực) */}
-        <div className="bg-white  p-5 rounded-xl border border-[#e5e7eb]  shadow-xs">
+        <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider ">Hồ sơ học tập (GPA)</span>
-            <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#ebf3ff]  text-[#003087]  border border-[#bfdbfe] ">
-              {liveStudentInfo?.academicRank || currentUser?.academicRank || 'Đang cập nhật'}
+            <span className="text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wider">Hồ sơ học tập (GPA)</span>
+            <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+              {liveStudentInfo?.academicRank || currentUser?.academicRank || '—'}
             </span>
           </div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[#003087] font-mono">
-              {liveStudentInfo?.gpa10 || currentUser?.gpa10 || (liveStudentInfo?.gpa4 ? (Number(liveStudentInfo.gpa4) * 2.5).toFixed(2) : '—')}
+              {liveStudentInfo?.gpa10 ?? currentUser?.gpa10 ?? (liveStudentInfo?.gpa4 ? (Number(liveStudentInfo.gpa4) * 2.5).toFixed(2) : (currentUser?.gpa ? Number(currentUser.gpa).toFixed(2) : '—'))}
             </span>
             <span className="text-xs text-[#1f2937] font-semibold">/ 10.0 (Hệ 10)</span>
           </div>
           <div className="text-[13px] text-[#4b5563] mt-2">
-            Lớp: <strong className="text-[#1f2937] ">{liveStudentInfo?.class || liveStudentInfo?.className || currentUser?.class || currentUser?.className || "—"}</strong> · {liveStudentInfo?.major || currentUser?.major || 'Kỹ thuật phần mềm'}
+            Lớp: <strong className="text-[#1f2937]">{liveStudentInfo?.class || liveStudentInfo?.className || currentUser?.class || currentUser?.className || '—'}</strong>
+            {((liveStudentInfo?.major || currentUser?.major) && (liveStudentInfo?.major !== '—' && currentUser?.major !== '—')) ? ` · ${liveStudentInfo?.major || currentUser?.major}` : ''}
           </div>
         </div>
 
       </div>
 
-      {/* Stepper Card: Tiến trình hồ sơ matching Figma Frame 03 */}
-      <div className="bg-white p-6 rounded-xl border border-[#e5e7eb] shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-[#1f2937] text-[17px]">Tiến trình hồ sơ</h3>
-          <span className="text-[14px] font-bold text-[#003087]">Hoàn thành 4/4 bước</span>
+      {/* Stepper Card: Tiến trình hồ sơ (Chỉ hiển thị khi là sinh viên trong kỳ) */}
+      {isEnrolledStudent && (
+        <div className="bg-white p-6 rounded-xl border border-[#e5e7eb] shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[#1f2937] text-[17px]">Tiến trình hồ sơ</h3>
+            <span className="text-[14px] font-bold text-[#003087]">
+              {declaration?.internshipStatus === 'has_company' ? 'Hoàn thành 3/4 bước' : 'Đang xử lý 2/4 bước'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-bold text-[#1f2937] text-sm">Xác thực Email</div>
+                <div className="text-xs text-[#4b5563]">Google SSO TDTU</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <div className="font-bold text-[#1f2937] text-sm">Khai báo Nơi TT</div>
+                <div className="text-xs text-[#4b5563]">Tra cứu MST tự động</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full ${declaration?.internshipStatus === 'has_company' ? 'bg-[#003087] text-white border-[#003087]' : 'bg-gray-100 text-gray-500 border-gray-300'} flex items-center justify-center font-bold text-sm shrink-0 border shadow-xs`}>
+                {declaration?.internshipStatus === 'has_company' ? (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span>3</span>
+                )}
+              </div>
+              <div>
+                <div className="font-bold text-[#1f2937] text-sm">Cập nhật Trạng thái</div>
+                <div className="text-xs text-[#4b5563]">{declaration?.internshipStatus === 'has_company' ? 'Có doanh nghiệp' : 'Đang cập nhật'}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full ${certs.length > 0 ? 'bg-[#003087] text-white border-[#003087]' : 'bg-gray-100 text-gray-500 border-gray-300'} flex items-center justify-center font-bold text-sm shrink-0 border shadow-xs`}>
+                {certs.length > 0 ? (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <span>4</span>
+                )}
+              </div>
+              <div>
+                <div className="font-bold text-[#1f2937] text-sm">Chứng chỉ ngoại ngữ</div>
+                <div className="text-xs text-[#4b5563]">{certs.length > 0 ? 'Đã cập nhật' : 'Chưa nộp'}</div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-bold text-[#1f2937] text-sm">Xác thực Email</div>
-              <div className="text-xs text-[#4b5563]">Google SSO TDTU</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-bold text-[#1f2937] text-sm">Khai báo Nơi TT</div>
-              <div className="text-xs text-[#4b5563]">Tra cứu MST tự động</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-bold text-[#1f2937] text-sm">Cập nhật Trạng thái</div>
-              <div className="text-xs text-[#4b5563]">Có doanh nghiệp</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#003087] text-white flex items-center justify-center font-bold text-sm shrink-0 border border-[#003087] shadow-xs">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div>
-              <div className="font-bold text-[#1f2937] text-sm">Chứng chỉ ngoại ngữ</div>
-              <div className="text-xs text-[#4b5563]">Đã cập nhật</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* ================================================================= */}
       {/* PHẦN 1: CẬP NHẬT LINK CV (GOOGLE DRIVE)                           */}

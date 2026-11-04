@@ -271,7 +271,8 @@
       return 'giang_vien';
     }
     if (user.role === 'student') {
-      if (user.isEnrolledThisSemester === false || user.isEnrolled === false || user.mssv === '52100999') {
+      const sid = String(user.studentId || user.mssv || '').toUpperCase();
+      if (user.isEnrolledThisSemester === false || user.isEnrolled === false || sid === '52100999' || sid === '523H0077') {
         return 'sv_ngoai_ky';
       }
       return 'sv_trong_ky';

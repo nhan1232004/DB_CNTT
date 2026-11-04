@@ -9,6 +9,10 @@ const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onN
   if (!currentUser || currentUser.role !== 'student') return null;
 
   const studentId = (currentUser.studentId || currentUser.mssv || '522H0045').toUpperCase();
+  // Đối với sinh viên ngoài kỳ / không có trong danh sách đăng ký: Ẩn hoàn toàn banner điều kiện thực tập
+  if (currentUser.isEnrolledThisSemester === false || studentId === '52100999' || studentId === '523H0077') {
+    return null;
+  }
   const enrolledCourses = (() => {
     if (studentRecord) {
       const cArr = Array.isArray(studentRecord.courses) ? studentRecord.courses.map((c: any) => String(c).toUpperCase()) : [];

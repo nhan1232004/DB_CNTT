@@ -394,16 +394,16 @@ const AppInner = () => {
     let isStudentEnrolledInActiveSem = true;
     if (isStudent) {
       const sid = String(currentUser.studentId || currentUser.mssv || '').toUpperCase();
-      if (sid === '52100999') {
+      if (sid === '52100999' || sid === '523H0077' || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
         isStudentEnrolledInActiveSem = false;
-      } else if (activeSemester !== 'hk1_2026_2027') {
+      } else {
         try {
-          const raw = localStorage.getItem(`tdtu_imported_students_${activeSemester}`);
+          const raw = localStorage.getItem(`tdtu_imported_students_${activeSemester}`) || (activeSemester === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
           if (raw) {
             const arr = JSON.parse(raw);
-            isStudentEnrolledInActiveSem = Array.isArray(arr) && arr.some(s => String(s.studentId || s.mssv).toUpperCase() === sid);
-          } else {
-            isStudentEnrolledInActiveSem = false;
+            if (Array.isArray(arr) && arr.length > 0) {
+              isStudentEnrolledInActiveSem = arr.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
+            }
           }
         } catch {
           isStudentEnrolledInActiveSem = false;

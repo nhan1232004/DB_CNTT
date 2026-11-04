@@ -11,6 +11,24 @@ const BulletinPage = ({ currentUser }) => {
   const isLecturer = currentUser?.role === 'lecturer';
   const isPartner = currentUser?.role === 'partner';
 
+  const isEnrolledStudent = React.useMemo(() => {
+    if (!isStudent) return false;
+    if (currentUser?.isEnrolledThisSemester === false) return false;
+    const cleanSid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
+    if (cleanSid === '52100999' || cleanSid === '523H0077') return false;
+    if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
+    try {
+      const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > 0) {
+          return arr.some((s: any) => String(s.mssv || s.studentId).toUpperCase() === cleanSid);
+        }
+      }
+    } catch {}
+    return true;
+  }, [isStudent, currentUser]);
+
   // Sub-tab cho Giảng viên: 'review' | 'manage'
   const [lecturerSubTab, setLecturerSubTab] = React.useState('review');
 
@@ -139,6 +157,10 @@ const BulletinPage = ({ currentUser }) => {
   }, [currentUser]);
 
   const handleSelectAsInternship = async (jd) => {
+    if (!isEnrolledStudent) {
+      alert('Bạn chưa có tên trong danh sách đăng ký học phần thực tập học kỳ này nên không thể chọn doanh nghiệp.');
+      return;
+    }
     try {
       const studentId = currentUser?.studentId || '522H0045';
       const existing = JSON.parse(localStorage.getItem('tdtu_decl_' + studentId) || '{}');
@@ -642,23 +664,34 @@ const BulletinPage = ({ currentUser }) => {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    {isEnrolledStudent ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedJdModal(jd)}
+                          className="px-4 py-2.5 rounded-lg border border-[#003087] text-[#003087] hover:bg-[#ebf3ff] text-[13px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        >
+                          <span>Chi tiết</span>
+                          <span>→</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAsInternship(jd)}
+                          className="px-4 py-2.5 rounded-lg bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold transition flex items-center justify-center cursor-pointer whitespace-nowrap"
+                        >
+                          Chọn làm nơi thực tập
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => setSelectedJdModal(jd)}
-                        className="px-4 py-2.5 rounded-lg border border-[#003087] text-[#003087] hover:bg-[#ebf3ff] text-[13px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                        className="w-full px-4 py-2.5 rounded-lg border border-[#003087] text-[#003087] hover:bg-[#ebf3ff] text-[13.5px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
                       >
-                        <span>Chi tiết</span>
+                        <span>Xem chi tiết JD</span>
                         <span>→</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSelectAsInternship(jd)}
-                        className="px-4 py-2.5 rounded-lg bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold transition flex items-center justify-center cursor-pointer whitespace-nowrap"
-                      >
-                        Chọn làm nơi thực tập
-                      </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -978,7 +1011,7 @@ const BulletinPage = ({ currentUser }) => {
                 Đóng
               </button>
 
-              {isStudent && (
+              {isStudent && isEnrolledStudent && (
                 <button
                   type="button"
                   onClick={() => handleSelectAsInternship(selectedJdModal)}
@@ -986,6 +1019,11 @@ const BulletinPage = ({ currentUser }) => {
                 >
                   Chọn làm nơi thực tập
                 </button>
+              )}
+              {isStudent && !isEnrolledStudent && (
+                <span className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-[13.5px] font-semibold border border-gray-200">
+                  Chỉ xem tin (Sinh viên ngoài kỳ)
+                </span>
               )}
             </div>
           </div>

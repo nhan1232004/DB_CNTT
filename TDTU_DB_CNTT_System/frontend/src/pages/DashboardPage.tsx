@@ -183,6 +183,18 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
   const isStudent = currentUser?.role === 'student';
   const studentId = (currentUser?.studentId || currentUser?.mssv || '522H0045').toUpperCase();
 
+  const isEnrolledStudent = React.useMemo(() => {
+    if (!isStudent) return false;
+    if (currentUser?.isEnrolledThisSemester === false) return false;
+    const cleanSid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
+    if (cleanSid === '52100999' || cleanSid === '523H0077') return false;
+    if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
+    if (Array.isArray(liveStudents) && liveStudents.length > 0) {
+      return liveStudents.some(s => String(s.mssv || s.studentId || '').toUpperCase() === cleanSid);
+    }
+    return true;
+  }, [isStudent, currentUser, liveStudents]);
+
   const saveChartConfig = (nextConfig) => {
     setChartConfig(nextConfig);
     try {
@@ -694,8 +706,8 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         </div>
       </div>
 
-      {/* 2. DÀNH CHO SINH VIÊN: BANNER ĐIỀU KIỆN & TÌNH TRẠNG THỰC TẬP (ITEM 1 - TÁCH 2 TRƯỜNG HỢP LOẠI TRỪ NHAU) */}
-      {isStudent && window.StudentEligibilityBanner && (
+      {/* 2. DÀNH CHO SINH VIÊN TRONG KỲ: BANNER ĐIỀU KIỆN & TÌNH TRẠNG THỰC TẬP */}
+      {isStudent && isEnrolledStudent && window.StudentEligibilityBanner && (
         <window.StudentEligibilityBanner
           currentUser={currentUser}
           declaration={declaration}

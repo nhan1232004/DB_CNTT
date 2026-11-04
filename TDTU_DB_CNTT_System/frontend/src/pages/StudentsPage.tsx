@@ -933,7 +933,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       studentId: sid,
       fullName: sv.fullName || sv.name || '',
       className: sv.className || sv.class || '',
-      major: sv.major || 'Kỹ thuật phần mềm',
+      major: sv.major || '',
       birthDate: sv.birthDate || '',
       birthPlace: sv.birthPlace || '',
       gender: sv.gender || 'Nam',
@@ -969,9 +969,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         mssv: sid,
         fullName: name,
         name: name,
-        className: crudForm.className || '22H50201',
-        class: crudForm.className || '22H50201',
-        major: crudForm.major || 'Kỹ thuật phần mềm',
+        className: crudForm.className || '',
+        class: crudForm.className || '',
+        major: crudForm.major || '',
         birthDate: crudForm.birthDate || '',
         birthPlace: crudForm.birthPlace || '',
         gender: crudForm.gender || 'Nam',
@@ -1352,7 +1352,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                                 </span>
                               )}
                             </div>
-                            <div className="text-[13px] text-[#4b5563] font-medium">{sv.className || sv.class || sv.major || 'KTPM22A'}</div>
+                            <div className="text-[13px] text-[#4b5563] font-medium">{sv.className || sv.class || sv.major || '—'}</div>
                           </div>
                         </div>
                       </td>
@@ -1592,7 +1592,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                     {selectedStudent.fullName || selectedStudent.name}
                   </div>
                   <div className="text-[14px] md:text-[15px] text-[#4b5563] font-semibold mt-1">
-                    <span className="font-mono text-[#003087] font-bold text-[16px]">{selectedStudent.studentId || selectedStudent.mssv}</span> · Lớp {selectedStudent.className || selectedStudent.class || '220H01'} · Khoa CNTT
+                    <span className="font-mono text-[#003087] font-bold text-[16px]">{selectedStudent.studentId || selectedStudent.mssv}</span>{selectedStudent.className || selectedStudent.class ? ` · Lớp ${selectedStudent.className || selectedStudent.class}` : ''} · Khoa CNTT
                   </div>
                 </div>
               </div>
@@ -1687,19 +1687,19 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                     <div>
                       <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Ngành đào tạo:</div>
                       <div className="text-[16px] md:text-[17px] font-semibold text-[#1f2937] leading-relaxed">
-                        {selectedStudent.major || 'Kỹ thuật phần mềm'}
+                        {selectedStudent.major || '—'}
                       </div>
                     </div>
                     <div>
                       <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Lớp sinh hoạt:</div>
                       <div className="text-[16px] md:text-[17px] font-semibold font-mono text-[#1f2937]">
-                        {selectedStudent.className || selectedStudent.class || '220H01'}
+                        {selectedStudent.className || selectedStudent.class || '—'}
                       </div>
                     </div>
                     <div>
                       <div className="text-[13px] md:text-[13.5px] font-bold text-[#4b5563] uppercase tracking-wide mb-1">Ngày sinh / Nơi sinh:</div>
                       <div className="text-[16px] md:text-[17px] font-semibold text-[#1f2937]">
-                        {selectedStudent.birthDate || '18/11/2004'} · {selectedStudent.birthPlace || 'TP. Hồ Chí Minh'}
+                        {(selectedStudent.birthDate || selectedStudent.birthPlace) ? `${selectedStudent.birthDate || '—'} · ${selectedStudent.birthPlace || '—'}` : '—'}
                       </div>
                     </div>
                     <div>

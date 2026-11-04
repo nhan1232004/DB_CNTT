@@ -131,6 +131,42 @@ class ApiClient {
 
   static _purgeOldTestStudents() {
     try {
+      // Dọn dẹp triệt để dữ liệu rác của 523H0077
+      const purgeKeys = [
+        'tdtu_decl_523H0077', 'tdtu_decl_523h0077',
+        'tdtu_certs_523H0077', 'tdtu_certs_523h0077',
+        'tdtu_cv_523H0077', 'tdtu_cv_523h0077',
+        'tdtu_internship_history_523H0077', 'tdtu_internship_history_523h0077'
+      ];
+      purgeKeys.forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+      if (this._certsCache) {
+        this._certsCache.delete('523H0077');
+        this._certsCache.delete('523h0077');
+      }
+      if (this._cvCache) {
+        this._cvCache.delete('523H0077');
+        this._cvCache.delete('523h0077');
+      }
+      [this.liveStudentsKey, 'tdtu_live_students', 'tdtu_imported_students_hk1_2026_2027'].forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              const filtered = arr.filter((s: any) => {
+                const sid = String(s.mssv || s.studentId || s.id || '').toUpperCase();
+                return sid !== '523H0077' && sid !== '52100999';
+              });
+              if (filtered.length !== arr.length) {
+                localStorage.setItem(key, JSON.stringify(filtered));
+              }
+            }
+          }
+        } catch {}
+      });
+
       if (!localStorage.getItem('tdtu_mock_data_purged_clean_v10')) {
         localStorage.removeItem('tdtu_live_students');
         localStorage.removeItem('tdtu_live_students_v2');
@@ -320,8 +356,9 @@ class ApiClient {
             const data = doc.data();
             const sid = String(data.mssv || data.studentId || doc.id || '').trim();
             const sName = String(data.name || data.fullName || '').trim();
-            // Lọc bỏ bất kỳ dữ liệu test/tạo tự động có tiền tố SV_ hoặc tên giả "Sinh viên 521..."
-            if (data && sid && !sid.startsWith('SV_') && !sName.startsWith('Sinh viên 5')) {
+            const sidUpper = sid.toUpperCase();
+            // Lọc bỏ bất kỳ dữ liệu test/tạo tự động có tiền tố SV_ hoặc tên giả "Sinh viên 521..." hoặc sinh viên ngoài kỳ (523H0077, 52100999)
+            if (data && sid && !sid.startsWith('SV_') && !sName.startsWith('Sinh viên 5') && sidUpper !== '523H0077' && sidUpper !== '52100999') {
               list.push({ ...data, id: sid, mssv: sid, studentId: sid });
             }
           });
@@ -376,16 +413,39 @@ class ApiClient {
         }
       }, err => {});
 
-      // Dọn dẹp triệt để dữ liệu gắn cứng cũ của sinh viên 522H0118
+      // Dọn dẹp triệt để dữ liệu gắn cứng cũ của sinh viên 522H0118 và sinh viên không đăng ký 523H0077
       try {
         localStorage.removeItem('tdtu_certs_522H0118');
         localStorage.removeItem('tdtu_certs_522h0118');
+        localStorage.removeItem('tdtu_decl_523H0077');
+        localStorage.removeItem('tdtu_decl_523h0077');
+        localStorage.removeItem('tdtu_certs_523H0077');
+        localStorage.removeItem('tdtu_certs_523h0077');
+        localStorage.removeItem('tdtu_cv_523H0077');
+        localStorage.removeItem('tdtu_cv_523h0077');
+        localStorage.removeItem('tdtu_internship_history_523H0077');
+        localStorage.removeItem('tdtu_internship_history_523h0077');
         if (this._certsCache) {
           this._certsCache.delete('522H0118');
           this._certsCache.delete('522h0118');
+          this._certsCache.delete('523H0077');
+          this._certsCache.delete('523h0077');
+        }
+        if (this._cvCache) {
+          this._cvCache.delete('523H0077');
+          this._cvCache.delete('523h0077');
         }
         db.collection('tdtu_certificates').doc('cert_522H0118_ielts_01').delete().catch(() => {});
         db.collection('tdtu_certificates').doc('cert_522H0118_toeic_02').delete().catch(() => {});
+        // Xóa hoàn toàn 523H0077 khỏi Firestore tdtu_students, tdtu_declarations, tdtu_student_cv, tdtu_certificates
+        db.collection('tdtu_students').doc('523H0077').delete().catch(() => {});
+        db.collection('tdtu_students').doc('523h0077').delete().catch(() => {});
+        db.collection('tdtu_declarations').doc('523H0077').delete().catch(() => {});
+        db.collection('tdtu_declarations').doc('523h0077').delete().catch(() => {});
+        db.collection('tdtu_student_cv').doc('523H0077').delete().catch(() => {});
+        db.collection('tdtu_student_cv').doc('523h0077').delete().catch(() => {});
+        db.collection('tdtu_certificates').doc('cert_523H0077').delete().catch(() => {});
+        db.collection('tdtu_certificates').doc('cert_523h0077').delete().catch(() => {});
       } catch {}
 
       // 1.5 Lắng nghe hồ sơ khai báo doanh nghiệp & CV thời gian thực (tdtu_declarations)
@@ -395,6 +455,7 @@ class ApiClient {
             const data = doc.data();
             if (doc.id && data) {
               const sid = String(doc.id).trim().toUpperCase();
+              if (sid === '523H0077' || sid === '52100999') return;
               localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
               if (data.cvDriveLink) {
                 ApiClient.setCachedCv(sid, data.cvDriveLink);
@@ -1279,14 +1340,14 @@ class ApiClient {
       studentId: sid,
       name: fullName,
       fullName: fullName,
-      class: String(s.class || s.className || '22050101').trim(),
-      className: String(s.className || s.class || '22050101').trim(),
-      major: String(s.major || 'Khoa học máy tính').trim(),
-      year: s.year || 'Năm 4',
+      class: String(s.class || s.className || '').trim(),
+      className: String(s.className || s.class || '').trim(),
+      major: String(s.major || '').trim(),
+      year: s.year || '',
       birthDate: s.birthDate || '',
       birthPlace: s.birthPlace || '',
-      gender: s.gender || 'Nam',
-      phone: String(s.phone || '0910000000').trim(),
+      gender: s.gender || '',
+      phone: String(s.phone || '').trim(),
       gpa: gpa4Val,
       gpa4: gpa4Val,
       gpa10: gpa10Val,
@@ -1314,6 +1375,8 @@ class ApiClient {
     const isValidStudent = (s) => {
       const sid = String(s?.mssv || s?.studentId || s?.id || '').trim();
       const sName = String(s?.name || s?.fullName || '').trim();
+      const sidUpper = sid.toUpperCase();
+      if (sidUpper === '523H0077' || sidUpper === '52100999') return false;
       return Boolean(sid && !sid.startsWith('SV_') && !sid.toLowerCase().startsWith('số lượng') && !sName.startsWith('Sinh viên 5'));
     };
 
@@ -1658,9 +1721,9 @@ class ApiClient {
         } else if (studentId === '522H0002') {
           userName = 'Trần Hoàng Nam';
           isEnrolledThisSemester = true;
-        } else if (studentId === '52100999' || email.includes('chuadk') || email.includes('ngoaiky')) {
-          userName = 'Nguyễn Văn Ngoài Kỳ';
-          studentId = '52100999';
+        } else if (studentId === '52100999' || studentId === '523H0077' || email.includes('chuadk') || email.includes('ngoaiky')) {
+          userName = studentId === '523H0077' ? 'Sinh viên 523H0077' : 'Nguyễn Văn Ngoài Kỳ';
+          studentId = studentId === '523H0077' ? '523H0077' : '52100999';
           isEnrolledThisSemester = false;
         } else if (email.includes('51900839')) {
           userName = 'Võ Duy Trí';
@@ -1715,17 +1778,21 @@ class ApiClient {
 
       let studentProfile = null;
       if (role === 'student' && studentId) {
-        try {
-          const allStudents = await this.getLiveStudents('hk1_2026_2027');
-          studentProfile = allStudents.find(s => String(s.mssv || s.studentId || '').toUpperCase() === studentId.toUpperCase());
-          if (studentProfile) {
-            userName = studentProfile.name || studentProfile.fullName || userName;
-            isEnrolledThisSemester = true;
-          } else {
-            // Không có tên trong danh sách đăng ký thực tập kỳ hiện tại
-            isEnrolledThisSemester = false;
-          }
-        } catch {}
+        if (studentId === '52100999' || studentId === '523H0077') {
+          isEnrolledThisSemester = false;
+        } else {
+          try {
+            const allStudents = await this.getLiveStudents('hk1_2026_2027');
+            studentProfile = allStudents.find(s => String(s.mssv || s.studentId || '').toUpperCase() === studentId.toUpperCase());
+            if (studentProfile) {
+              userName = studentProfile.name || studentProfile.fullName || userName;
+              isEnrolledThisSemester = true;
+            } else {
+              // Không có tên trong danh sách đăng ký thực tập kỳ hiện tại
+              isEnrolledThisSemester = false;
+            }
+          } catch {}
+        }
       }
 
       const user = {
@@ -1742,13 +1809,14 @@ class ApiClient {
         academicRank: studentProfile?.academicRank || (studentProfile?.gpa10 ? (studentProfile.gpa10 >= 9 ? 'Xuất sắc' : (studentProfile.gpa10 >= 8 ? 'Giỏi' : 'Khá')) : '—'),
         birthDate: studentProfile?.birthDate || '',
         birthPlace: studentProfile?.birthPlace || '',
-        gender: studentProfile?.gender || 'Nam',
-        class: studentProfile?.class || '19050402',
-        major: studentProfile?.major || 'Khoa học máy tính',
-        courses: studentProfile?.courses || ['KTCN'],
-        courseCode: studentProfile?.courseCode || 'KTCN',
+        gender: studentProfile?.gender || '',
+        class: studentProfile?.class || studentProfile?.className || '',
+        className: studentProfile?.className || studentProfile?.class || '',
+        major: studentProfile?.major || '',
+        courses: studentProfile ? (studentProfile.courses || ['KTCN']) : [],
+        courseCode: studentProfile?.courseCode || '',
         isDualCourse: Boolean(studentProfile?.isDualCourse),
-        courseName: studentProfile?.courseName || 'Kiến tập Công nghiệp',
+        courseName: studentProfile?.courseName || '',
         avatarUrl: body.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
       };
 
@@ -1809,7 +1877,7 @@ class ApiClient {
     if (endpoint.includes('/api/students')) {
       if (endpoint.includes('/eligibility/')) {
         const sid = endpoint.split('/eligibility/')[1];
-        if (sid === '52100999') {
+        if (sid === '52100999' || sid === '523H0077') {
           return {
             studentId: sid,
             isEligible: false,
@@ -2136,7 +2204,8 @@ class ApiClient {
       '522h0002@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '522H0002', 'Tdtu@2026'],
 
       // 4. Nhóm Sinh viên Ngoài kỳ / Chưa đủ điều kiện (Out-of-Semester Student)
-      '52100999@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '52100999', 'Tdtu@2026']
+      '52100999@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '52100999', 'Tdtu@2026'],
+      '523h0077@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '523H0077', 'Tdtu@2026']
     };
 
     if (credentialMap[clean]) {
