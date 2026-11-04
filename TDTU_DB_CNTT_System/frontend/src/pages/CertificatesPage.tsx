@@ -137,19 +137,11 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
 
-  // Đồng bộ prop activeSemester từ App/Navbar xuống component
-  React.useEffect(() => {
-    if (activeSemester && activeSemester !== currentSemester) {
-      setCurrentSemester(activeSemester);
-      loadData(activeSemester);
-    }
-  }, [activeSemester, currentSemester, loadData]);
-
-  // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế theo học kỳ đã chọn
-  const loadData = React.useCallback(async (targetSemester = currentSemester) => {
+  // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế theo học kỳ đã chọn (khai báo trước các useEffect)
+  const loadData = React.useCallback(async (targetSemester) => {
     try {
       setLoading(true);
-      const sem = targetSemester || 'hk1_2026_2027';
+      const sem = targetSemester || currentSemester || 'hk1_2026_2027';
       if (window.ApiClient?.getLiveStudents) {
         const students = await window.ApiClient.getLiveStudents(sem);
         setTotalEnrolledStudents(Array.isArray(students) ? students.length : 0);
@@ -166,6 +158,14 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       setLoading(false);
     }
   }, [currentSemester]);
+
+  // Đồng bộ prop activeSemester từ App/Navbar xuống component
+  React.useEffect(() => {
+    if (activeSemester && activeSemester !== currentSemester) {
+      setCurrentSemester(activeSemester);
+      loadData(activeSemester);
+    }
+  }, [activeSemester, currentSemester, loadData]);
 
   React.useEffect(() => {
     loadData(currentSemester);
