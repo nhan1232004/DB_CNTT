@@ -63,34 +63,38 @@ const calculateCefrLevel = (certKey, rawScore) => {
   return '';
 };
 
-// Chuẩn hóa ngày yyyy-mm-dd cho ô input type="date"
+// Chuẩn hóa ngày yyyy-mm-dd cho ô input type="date" (an toàn tuyệt đối với mọi kiểu dữ liệu)
 const normalizeDateForInput = (dStr) => {
   if (!dStr) return new Date().toISOString().split('T')[0];
-  if (dStr.includes('/')) {
-    const parts = dStr.split('/');
+  const s = String(dStr).trim();
+  if (s.includes('/')) {
+    const parts = s.split('/');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
     }
   }
-  return dStr;
+  return s;
 };
 
-// Chuẩn hóa ngày hiển thị dd-mm-yyyy chuẩn hệ thống
+// Chuẩn hóa ngày hiển thị dd-mm-yyyy chuẩn hệ thống (an toàn tuyệt đối với mọi kiểu dữ liệu)
 const formatDateForDisplay = (dStr) => {
   if (!dStr) return '—';
-  if (dStr.includes('/')) {
-    const parts = dStr.split('/');
+  const s = String(dStr).trim();
+  if (!s || s === 'undefined' || s === 'null') return '—';
+  if (s.includes('/')) {
+    const parts = s.split('/');
     if (parts.length === 3) {
       return `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[2]}`;
     }
   }
-  if (dStr.includes('-')) {
-    const parts = dStr.split('-');
+  if (s.includes('-')) {
+    const parts = s.split('-');
     if (parts.length === 3 && parts[0].length === 4) {
       return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
     }
+    return s;
   }
-  return dStr;
+  return s;
 };
 
 // Helper tính dải số trang (Smart window pagination)
@@ -232,24 +236,26 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
     };
   }, [currentSemester, loadData]);
 
-  // Lọc dữ liệu theo tìm kiếm và bộ lọc
-  const filteredCerts = certs.filter(c => {
+  // Lọc dữ liệu theo tìm kiếm và bộ lọc (an toàn tuyệt đối trước mọi dạng dữ liệu)
+  const filteredCerts = (certs || []).filter(c => {
+    if (!c || typeof c !== 'object') return false;
     // 1. Tìm kiếm MSSV hoặc Họ tên
     const q = searchTerm.trim().toLowerCase();
-    const matchSearch = !q ||
-      (c.studentId && c.studentId.toLowerCase().includes(q)) ||
-      (c.studentName && c.studentName.toLowerCase().includes(q)) ||
-      (c.className && c.className.toLowerCase().includes(q));
+    const sId = String(c.studentId || c.mssv || '').toLowerCase();
+    const sName = String(c.studentName || c.fullname || '').toLowerCase();
+    const sClass = String(c.className || c.class || '').toLowerCase();
+    const matchSearch = !q || sId.includes(q) || sName.includes(q) || sClass.includes(q);
 
     // 2. Lọc theo Loại chứng chỉ
-    const matchCert = filterCert === 'ALL' ||
-      (c.name && c.name.toLowerCase().includes(filterCert.toLowerCase()));
+    const cName = String(c.name || c.certName || '').toLowerCase();
+    const matchCert = filterCert === 'ALL' || cName.includes(filterCert.toLowerCase());
 
     // 3. Lọc theo Cấp độ CEFR
-    const matchCefr = filterCefr === 'ALL' || (c.level === filterCefr);
+    const cLevel = String(c.level || '').toUpperCase();
+    const matchCefr = filterCefr === 'ALL' || (cLevel === filterCefr);
 
     // 4. Lọc theo Chuẩn đầu ra tốt nghiệp (B1+)
-    const isPass = ['B1', 'B2', 'C1', 'C2'].includes(c.level);
+    const isPass = ['B1', 'B2', 'C1', 'C2'].includes(cLevel);
     const matchGrad = filterGraduation === 'ALL' ||
       (filterGraduation === 'PASS' && isPass) ||
       (filterGraduation === 'NOT_PASS' && !isPass);
@@ -270,12 +276,13 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const paginatedCerts = filteredCerts.slice(startIndex, startIndex + pageSize);
 
   // Tính toán số liệu thống kê nhanh (KPIs) phản ánh chính xác học kỳ đang chọn
-  const totalCount = certs.length;
-  const passedCount = certs.filter(c => ['B1', 'B2', 'C1', 'C2'].includes(c.level)).length;
+  const validCerts = (certs || []).filter(c => c && typeof c === 'object');
+  const totalCount = validCerts.length;
+  const passedCount = validCerts.filter(c => ['B1', 'B2', 'C1', 'C2'].includes(String(c.level || '').toUpperCase())).length;
   const passedRate = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
   
   // Tập hợp các MSSV duy nhất đã nộp chứng chỉ tiếng Anh trong học kỳ này
-  const studentIdsWithCert = new Set(certs.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
+  const studentIdsWithCert = new Set(validCerts.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
   const certSubmittedStudentCount = studentIdsWithCert.size;
   
   // Tổng sinh viên thực tế toàn khoa theo học kỳ (tránh bị fallback về 0 khiến thẻ báo 0 SV)
@@ -294,11 +301,11 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const unsubmittedCount = Math.max(0, totalEffectiveStudents - certSubmittedStudentCount);
 
   // Thống kê phân bố chứng chỉ
-  const toeicCount = certs.filter(c => (c.name || '').toUpperCase().includes('TOEIC')).length;
-  const ieltsCount = certs.filter(c => (c.name || '').toUpperCase().includes('IELTS')).length;
-  const aptisCount = certs.filter(c => (c.name || '').toUpperCase().includes('APTIS')).length;
-  const toeflCount = certs.filter(c => (c.name || '').toUpperCase().includes('TOEFL')).length;
-  const cambridgeCount = certs.filter(c => (c.name || '').toUpperCase().includes('CAMBRIDGE')).length;
+  const toeicCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('TOEIC')).length;
+  const ieltsCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('IELTS')).length;
+  const aptisCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('APTIS')).length;
+  const toeflCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('TOEFL')).length;
+  const cambridgeCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('CAMBRIDGE')).length;
 
   const semesterLabels = {
     'hk1_2026_2027': 'Học kỳ 1 / 2026–2027 (Hiện tại)',
@@ -546,14 +553,17 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
               </thead>
               <tbody className="divide-y divide-slate-100  font-medium">
                 {paginatedCerts.map((cert, index) => {
+                  if (!cert) return null;
                   const driveUrl = cert.driveLink || cert.proofData || '';
-                  const hasDrive = driveUrl && (driveUrl.startsWith('http://') || driveUrl.startsWith('https://'));
-                  const isPass = ['B1', 'B2', 'C1', 'C2'].includes(cert.level);
+                  const hasDrive = driveUrl && (String(driveUrl).startsWith('http://') || String(driveUrl).startsWith('https://'));
+                  const certLevel = String(cert.level || 'B1').toUpperCase();
+                  const isPass = ['B1', 'B2', 'C1', 'C2'].includes(certLevel);
 
                   // Màu badge theo chứng chỉ
+                  const certNameUpper = String(cert.name || '').toUpperCase();
                   const certConfig = ENGLISH_CERTIFICATES.find(c => 
-                    (cert.name || '').toUpperCase().includes(c.key) || 
-                    c.name.toUpperCase() === (cert.name || '').toUpperCase()
+                    (c.key && certNameUpper.includes(c.key)) || 
+                    (c.name && c.name.toUpperCase() === certNameUpper)
                   );
                   const certColorClass = certConfig ? certConfig.color : 'bg-[#f8fafc] text-[#1f2937] border-[#e5e7eb]  ';
 
@@ -1304,12 +1314,14 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
               </thead>
               <tbody className="divide-y divide-slate-100  font-medium">
                 {paginatedCerts.map((c, index) => {
+                  if (!c) return null;
                   const driveUrl = c.driveLink || c.proofData || '';
-                  const hasDrive = driveUrl && (driveUrl.startsWith('http://') || driveUrl.startsWith('https://'));
+                  const hasDrive = driveUrl && (String(driveUrl).startsWith('http://') || String(driveUrl).startsWith('https://'));
 
+                  const certNameUpper = String(c.name || '').toUpperCase();
                   const certConfig = ENGLISH_CERTIFICATES.find(ec => 
-                    (c.name || '').toUpperCase().includes(ec.key) || 
-                    ec.name.toUpperCase() === (c.name || '').toUpperCase()
+                    (ec.key && certNameUpper.includes(ec.key)) || 
+                    (ec.name && ec.name.toUpperCase() === certNameUpper)
                   );
                   const certColorClass = certConfig ? certConfig.color : 'bg-[#f8fafc] text-[#1f2937] border-[#e5e7eb]  ';
 

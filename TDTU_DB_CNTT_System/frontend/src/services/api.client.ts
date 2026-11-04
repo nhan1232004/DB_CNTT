@@ -5041,33 +5041,316 @@ class ApiClient {
     return { success: true, jdId };
   }
 
-  static async applyToJd(studentId, jdId, payload = {}) {
-    const appId = `${studentId}_${jdId}`;
+  // ==========================================
+  // REAL-TIME FIRESTORE & LOCAL STORAGE: QUẢN LÝ ĐƠN ỨNG TUYỂN (tdtu_applications)
+  // ==========================================
+  static getApplications() {
+    try {
+      const raw = localStorage.getItem('tdtu_applications');
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) return list;
+      }
+    } catch {}
+    return [];
+  }
+
+  static async fetchApplications() {
+    let list = this.getApplications();
+    if (window.FirebaseService?.db) {
+      try {
+        const snap = await window.FirebaseService.db.collection('tdtu_applications').get();
+        if (snap && !snap.empty) {
+          const map = new Map();
+          list.forEach(a => { if (a && a.id) map.set(String(a.id), a); });
+          snap.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id || data.id;
+            map.set(String(id), { id, ...data });
+          });
+          list = Array.from(map.values()).sort((a, b) =>
+            String(b.appliedAt || '').localeCompare(String(a.appliedAt || ''))
+          );
+          try {
+            localStorage.setItem('tdtu_applications', JSON.stringify(list));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn('[fetchApplications]: Firestore read warning:', err.message);
+      }
+    }
+    return list;
+  }
+
+  static async submitJdApplication(data) {
+    const studentId = String(data.studentId || '').trim().toUpperCase();
+    const jdId = String(data.jdId || '').trim();
+    const appId = `app_${studentId}_${jdId}_${Date.now()}`;
+    const nowIso = new Date().toISOString();
+    const timeStr = new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+
     const application = {
       id: appId,
       studentId,
+      studentName: data.studentName || 'Sinh viên Khoa CNTT',
+      studentEmail: data.studentEmail || `${studentId.toLowerCase()}@student.tdtu.edu.vn`,
+      classId: data.classId || '',
+      major: data.major || '',
       jdId,
-      company: payload.companyName || '',
-      position: payload.position || '',
-      appliedAt: new Date().toISOString(),
-      status: 'submitted'
+      company: data.companyName || data.company || '',
+      position: data.position || '',
+      taxCode: data.taxCode || '',
+      address: data.address || '',
+      contactPerson: data.contactPerson || '',
+      contactEmail: data.contactEmail || '',
+      cvLink: data.cvLink || '',
+      coverLetter: data.coverLetter || '',
+      status: 'pending', // 'pending' (Chờ Doanh nghiệp xét duyệt) | 'accepted' (Đã tiếp nhận) | 'rejected' (Từ chối)
+      appliedAt: nowIso,
+      appliedAtText: timeStr
     };
 
+    // 1. Lưu vào danh sách đơn ứng tuyển cục bộ
+    try {
+      const currentList = this.getApplications();
+      const updatedList = [application, ...currentList.filter(a => !(a.studentId === studentId && a.jdId === jdId))];
+      localStorage.setItem('tdtu_applications', JSON.stringify(updatedList));
+    } catch {}
+
+    // 2. Cập nhật hồ sơ khai báo của sinh viên sang trạng thái "Đang tìm / Chờ phỏng vấn / Đang chờ DN tiếp nhận"
+    try {
+      const currentDecl = this.getStudentDeclaration(studentId) || {};
+      const pendingDecl = {
+        ...currentDecl,
+        studentId,
+        studentName: application.studentName,
+        internshipStatus: 'interviewing',
+        noCompanyOption: 'self',
+        companyName: application.company,
+        pendingCompany: application.company,
+        position: application.position,
+        desiredPosition: application.position,
+        cvDriveLink: application.cvLink,
+        isConfirmed: true,
+        updatedAt: nowIso
+      };
+      localStorage.setItem('tdtu_decl_' + studentId, JSON.stringify(pendingDecl));
+      localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
+      if (this.declareInternship) {
+        this.declareInternship(pendingDecl).catch(() => {});
+      }
+    } catch {}
+
+    // 3. Đồng bộ lên Firestore
     if (window.FirebaseService?.db) {
       try {
         const batch = window.FirebaseService.db.batch();
         batch.set(window.FirebaseService.db.collection('tdtu_applications').doc(appId), application);
-        const jdRef = window.FirebaseService.db.collection('tdtu_jds').doc(jdId);
-        batch.update(jdRef, {
-          selectCount: window.firebase ? window.firebase.firestore.FieldValue.increment(1) : 1
-        });
+        if (jdId) {
+          const jdRef = window.FirebaseService.db.collection('tdtu_jds').doc(jdId);
+          batch.update(jdRef, {
+            selectCount: window.firebase ? window.firebase.firestore.FieldValue.increment(1) : 1
+          });
+        }
         await batch.commit();
-        console.log('[Firestore Sync]: Đã lưu đơn ứng tuyển JD:', appId);
       } catch (err) {
-        console.warn('[Firestore Apply JD Warning]:', err.message);
+        console.warn('[Firestore Submit Application Warning]:', err.message);
       }
     }
+
+    // 4. Gửi thông báo đến Giảng viên Admin & Doanh nghiệp về đơn ứng tuyển mới
+    try {
+      const notifItem = {
+        id: `notif_app_${studentId}_${Date.now()}`,
+        title: `Đơn ứng tuyển mới: ${studentId} - ${application.studentName}`,
+        subject: `Ứng tuyển: ${application.position} tại ${application.company}`,
+        content: `Sinh viên ${application.studentName} (${studentId}) vừa nộp đơn ứng tuyển vị trí ${application.position} tại ${application.company}. Đang chờ Doanh nghiệp xét duyệt tiếp nhận.`,
+        type: 'student_declaration_update',
+        priority: 'high',
+        targetAudience: 'all_lecturers',
+        targetAudienceLabel: 'Ứng tuyển DN',
+        targetStudentId: studentId,
+        senderRole: 'student',
+        senderName: application.studentName,
+        read: false,
+        createdAt: nowIso,
+        timestamp: timeStr,
+        time: timeStr,
+        metadata: {
+          isStudentDeclaration: true,
+          studentId,
+          studentName: application.studentName,
+          classId: application.classId,
+          major: application.major,
+          internshipStatus: 'interviewing',
+          statusLabel: 'Chờ DN xét duyệt',
+          companyName: application.company,
+          pendingCompany: application.company,
+          position: application.position,
+          cvDriveLink: application.cvLink,
+          supportNote: `Cover letter: ${application.coverLetter}`,
+          submittedAt: timeStr
+        }
+      };
+      if (this.createNotification) {
+        this.createNotification(notifItem).catch(() => {});
+      }
+    } catch {}
+
+    // 5. Phát sự kiện toàn cục để các tab cập nhật
+    window.dispatchEvent(new CustomEvent('tdtu_application_submitted', { detail: application }));
+    window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId } }));
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'application_submitted', data: application });
+      bc.close();
+    } catch {}
+
     return application;
+  }
+
+  static async approveJdApplication(appId) {
+    const list = this.getApplications();
+    const target = list.find(a => a.id === appId);
+    if (!target) return null;
+
+    target.status = 'accepted';
+    target.approvedAt = new Date().toISOString();
+    try {
+      localStorage.setItem('tdtu_applications', JSON.stringify(list));
+    } catch {}
+
+    // Cập nhật Firestore
+    if (window.FirebaseService?.db) {
+      try {
+        await window.FirebaseService.db.collection('tdtu_applications').doc(appId).update({
+          status: 'accepted',
+          approvedAt: target.approvedAt
+        });
+      } catch (err) {
+        console.warn('[approveJdApplication]: Firestore warning:', err.message);
+      }
+    }
+
+    // CHÍNH THỨC CẬP NHẬT TRẠNG THÁI BÊN SINH VIÊN THÀNH "ĐÃ CÓ NƠI THỰC TẬP"
+    const sid = String(target.studentId).toUpperCase();
+    try {
+      const curDecl = this.getStudentDeclaration(sid) || {};
+      const approvedDecl = {
+        ...curDecl,
+        studentId: sid,
+        studentName: target.studentName || curDecl.studentName,
+        internshipStatus: 'has_company',
+        noCompanyOption: null,
+        companyName: target.company,
+        position: target.position || 'Thực tập sinh',
+        taxCode: target.taxCode || curDecl.taxCode || '',
+        address: target.address || curDecl.address || '',
+        contactPerson: target.contactPerson || curDecl.contactPerson || '',
+        contactEmail: target.contactEmail || curDecl.contactEmail || '',
+        cvDriveLink: target.cvLink || curDecl.cvDriveLink || '',
+        isConfirmed: true,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(approvedDecl));
+      localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
+      if (this.declareInternship) {
+        await this.declareInternship(approvedDecl);
+      }
+    } catch {}
+
+    // Gửi thông báo chúc mừng tới riêng sinh viên
+    try {
+      const notifItem = {
+        id: `notif_accepted_${sid}_${Date.now()}`,
+        title: `Chúc mừng! Doanh nghiệp đã tiếp nhận thực tập`,
+        subject: `Tiếp nhận thực tập: ${target.company}`,
+        content: `Chúc mừng bạn! Doanh nghiệp [${target.company}] đã chính thức phê duyệt đơn ứng tuyển của bạn vào vị trí [${target.position}]. Hồ sơ thực tập của bạn đã được cập nhật thành ĐÃ CÓ NƠI THỰC TẬP.`,
+        type: 'announcement',
+        priority: 'high',
+        targetAudience: 'specific_student',
+        targetAudienceLabel: 'Cá nhân',
+        targetStudentId: sid,
+        senderRole: 'admin',
+        senderName: `${target.company} (Đối tác Khoa CNTT)`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+      };
+      if (this.createNotification) {
+        await this.createNotification(notifItem);
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('tdtu_application_approved', { detail: target }));
+    window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId: sid } }));
+    window.dispatchEvent(new CustomEvent('tdtu_notifications_updated'));
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'application_approved', data: target });
+      bc.close();
+    } catch {}
+
+    return target;
+  }
+
+  static async rejectJdApplication(appId, reason = '') {
+    const list = this.getApplications();
+    const target = list.find(a => a.id === appId);
+    if (!target) return null;
+
+    target.status = 'rejected';
+    target.rejectedAt = new Date().toISOString();
+    target.rejectReason = reason;
+    try {
+      localStorage.setItem('tdtu_applications', JSON.stringify(list));
+    } catch {}
+
+    if (window.FirebaseService?.db) {
+      try {
+        await window.FirebaseService.db.collection('tdtu_applications').doc(appId).update({
+          status: 'rejected',
+          rejectedAt: target.rejectedAt,
+          rejectReason: reason
+        });
+      } catch {}
+    }
+
+    const sid = String(target.studentId).toUpperCase();
+    try {
+      const notifItem = {
+        id: `notif_rejected_${sid}_${Date.now()}`,
+        title: `Kết quả ứng tuyển: ${target.company}`,
+        subject: `Thông báo kết quả ứng tuyển vị trí ${target.position}`,
+        content: `Doanh nghiệp [${target.company}] phản hồi chưa thể tiếp nhận hồ sơ của bạn cho đợt thực tập này${reason ? ': ' + reason : ''}. Bạn có thể tiếp tục ứng tuyển các tin tuyển dụng khác trên Bảng tin.`,
+        type: 'announcement',
+        priority: 'normal',
+        targetAudience: 'specific_student',
+        targetAudienceLabel: 'Cá nhân',
+        targetStudentId: sid,
+        senderRole: 'admin',
+        senderName: `${target.company} (Đối tác Khoa CNTT)`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+      };
+      if (this.createNotification) {
+        await this.createNotification(notifItem);
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('tdtu_application_rejected', { detail: target }));
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'application_rejected', data: target });
+      bc.close();
+    } catch {}
+
+    return target;
+  }
+
+  static async applyToJd(studentId, jdId, payload = {}) {
+    return this.submitJdApplication({ studentId, jdId, ...payload });
   }
 
   // ==========================================

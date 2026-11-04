@@ -194,17 +194,18 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
 
       {/* Status Alert Banner - Hiển thị tương ứng theo đúng tình trạng khai báo của sinh viên trong kỳ */}
       {isEnrolledStudent && declaration && (() => {
-        const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
-        const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase();
-        const compNameLower = String(declaration?.companyName || '').trim().toLowerCase();
+        const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase().normalize('NFC');
+        const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase().normalize('NFC');
+        const compNameLower = String(declaration?.companyName || '').trim().toLowerCase().normalize('NFC');
 
         const isWait = declStatus === 'interviewing' ||
+                       declStatus === 'seeking' ||
                        noCompOpt === 'self' ||
-                       compNameLower.includes('chờ phỏng vấn') ||
                        compNameLower.includes('phỏng vấn') ||
-                       compNameLower.includes('đang tìm') ||
                        compNameLower.includes('chờ pv') ||
+                       compNameLower.includes('chờ') ||
                        compNameLower.includes('tuyển dụng') ||
+                       compNameLower.includes('đang tìm') ||
                        compNameLower.includes('ứng tuyển');
 
         const isSupp = !isWait && (
@@ -219,34 +220,31 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                              compNameLower.includes('đang tìm') ||
                              compNameLower.includes('phỏng vấn') ||
                              compNameLower.includes('chờ pv') ||
+                             compNameLower.includes('chờ') ||
                              compNameLower.includes('tuyển dụng') ||
                              compNameLower.includes('ứng tuyển') ||
                              compNameLower === 'chưa có' ||
                              compNameLower === '—' ||
                              compNameLower === '-';
 
-        const hasRealComp = Boolean(
-          declaration?.companyName &&
-          !isPlaceholder
+        const isComp = !isWait && !isSupp && !isPlaceholder && (
+          declStatus === 'has_company' ||
+          Boolean(declaration?.companyName && !isPlaceholder && declStatus !== 'not_declared')
         );
 
-        const isComp = !isWait && !isSupp && !isPlaceholder && (declStatus === 'has_company' || hasRealComp);
-
-        if (isComp && declaration.companyName) {
+        if (isWait) {
           return (
-            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5] border-[#A7F3D0] shadow-xs">
+            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#FFFBEB] border-[#FDE68A] shadow-xs">
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff] text-[#003087]">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                  </svg>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#FEF3C7] text-[#D97706] font-bold text-sm">
+                  ⏳
                 </div>
                 <div>
-                  <div className="text-[16px] font-bold text-[#1f2937]">
-                    Đã có nơi thực tập: {declaration.companyName}
+                  <div className="text-[16px] font-bold text-[#B45309]">
+                    Tình trạng thực tập: Đang tìm kiếm / Chờ kết quả phỏng vấn
                   </div>
                   <div className="text-[14px] text-[#4b5563]">
-                    {declaration.position || 'Thực tập sinh'}{declaration.department ? (' · ' + declaration.department) : ''}
+                    {declaration.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : (declaration.companyName && !isPlaceholder ? `Đang ứng tuyển: ${declaration.companyName}` : 'Tự liên hệ nơi thực tập')} · Vị trí: <strong>{declaration.desiredPosition || declaration.position || 'Thực tập sinh'}</strong>
                   </div>
                 </div>
               </div>
@@ -254,9 +252,9 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
               <button
                 type="button"
                 onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-                className="px-4 py-2 bg-white text-[#1f2937] border border-[#e5e7eb] rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
+                className="px-4 py-2 bg-white text-[#B45309] border border-[#FDE68A] rounded-xl text-[14px] font-bold hover:bg-[#FFFBEB] shadow-xs transition shrink-0 cursor-pointer"
               >
-                Cập nhật trạng thái
+                Cập nhật kết quả
               </button>
             </div>
           );
@@ -290,19 +288,21 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           );
         }
 
-        if (isWait) {
+        if (isComp && declaration.companyName) {
           return (
-            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#FFFBEB] border-[#FDE68A] shadow-xs">
+            <div className="border rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#ECFDF5] border-[#A7F3D0] shadow-xs">
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#FEF3C7] text-[#D97706] font-bold text-sm">
-                  ⏳
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#ebf3ff] text-[#003087]">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
                 <div>
-                  <div className="text-[16px] font-bold text-[#B45309]">
-                    Tình trạng thực tập: Đang tìm kiếm / Chờ kết quả phỏng vấn
+                  <div className="text-[16px] font-bold text-[#1f2937]">
+                    Đã có nơi thực tập: {declaration.companyName}
                   </div>
                   <div className="text-[14px] text-[#4b5563]">
-                    {declaration.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : 'Tự liên hệ nơi thực tập'} · Vị trí: <strong>{declaration.desiredPosition || 'Thực tập sinh'}</strong>
+                    {declaration.position || 'Thực tập sinh'}{declaration.department ? (' · ' + declaration.department) : ''}
                   </div>
                 </div>
               </div>
@@ -310,9 +310,9 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
               <button
                 type="button"
                 onClick={() => { if (onNavigateTab) onNavigateTab('declaration'); }}
-                className="px-4 py-2 bg-white text-[#B45309] border border-[#FDE68A] rounded-xl text-[14px] font-bold hover:bg-[#FFFBEB] shadow-xs transition shrink-0 cursor-pointer"
+                className="px-4 py-2 bg-white text-[#1f2937] border border-[#e5e7eb] rounded-xl text-[14px] font-bold hover:bg-[#f8fafc] shadow-xs transition shrink-0 cursor-pointer"
               >
-                Cập nhật kết quả
+                Cập nhật trạng thái
               </button>
             </div>
           );
@@ -373,17 +373,18 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         {/* Card 3: Tình trạng hồ sơ (Đồng bộ chính xác 100% với trạng thái đã khai báo) */}
         <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
           {(() => {
-            const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase();
-            const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase();
-            const compNameLower = String(declaration?.companyName || '').trim().toLowerCase();
+            const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase().normalize('NFC');
+            const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase().normalize('NFC');
+            const compNameLower = String(declaration?.companyName || '').trim().toLowerCase().normalize('NFC');
 
             const isWait = declStatus === 'interviewing' ||
+                           declStatus === 'seeking' ||
                            noCompOpt === 'self' ||
-                           compNameLower.includes('chờ phỏng vấn') ||
                            compNameLower.includes('phỏng vấn') ||
-                           compNameLower.includes('đang tìm') ||
                            compNameLower.includes('chờ pv') ||
+                           compNameLower.includes('chờ') ||
                            compNameLower.includes('tuyển dụng') ||
+                           compNameLower.includes('đang tìm') ||
                            compNameLower.includes('ứng tuyển');
 
             const isSupp = !isWait && (
@@ -398,36 +399,37 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                                  compNameLower.includes('đang tìm') ||
                                  compNameLower.includes('phỏng vấn') ||
                                  compNameLower.includes('chờ pv') ||
+                                 compNameLower.includes('chờ') ||
                                  compNameLower.includes('tuyển dụng') ||
                                  compNameLower.includes('ứng tuyển') ||
                                  compNameLower === 'chưa có' ||
                                  compNameLower === '—' ||
                                  compNameLower === '-';
 
-            const hasRealComp = Boolean(
-              declaration?.companyName &&
-              !isPlaceholder
+            const isComp = !isWait && !isSupp && !isPlaceholder && (
+              declStatus === 'has_company' ||
+              Boolean(declaration?.companyName && !isPlaceholder && declStatus !== 'not_declared')
             );
-
-            const isComp = !isWait && !isSupp && !isPlaceholder && (declStatus === 'has_company' || hasRealComp);
 
             let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
             let badgeLabel = 'Chưa mở hồ sơ';
             let descText = 'Sinh viên chưa thuộc đợt thực tập kỳ này';
 
             if (isEnrolledStudent) {
-              if (isComp) {
-                badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                badgeLabel = 'Đã có nơi TT';
-                descText = `Đã tiếp nhận tại ${declaration.companyName}`;
-              } else if (isWait) {
+              if (isWait) {
                 badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
                 badgeLabel = 'Đang tìm / Chờ phỏng vấn';
-                descText = declaration?.pendingCompany ? `Đang ứng tuyển: ${declaration.pendingCompany}` : 'Tự liên hệ & đang chờ kết quả phỏng vấn';
+                descText = (declaration?.pendingCompany && !compNameLower.includes('đang chờ'))
+                  ? `Đang ứng tuyển: ${declaration.pendingCompany}`
+                  : (declaration?.companyName && !isPlaceholder ? `Đang ứng tuyển: ${declaration.companyName}` : 'Tự liên hệ & đang chờ kết quả phỏng vấn');
               } else if (isSupp) {
                 badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
                 badgeLabel = 'Cần Khoa hỗ trợ';
                 descText = 'Khoa CNTT tiếp nhận hỗ trợ phân bổ doanh nghiệp';
+              } else if (isComp) {
+                badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                badgeLabel = 'Đã có nơi TT';
+                descText = `Đã tiếp nhận tại ${declaration.companyName}`;
               } else {
                 badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
                 badgeLabel = 'Chưa khai báo';

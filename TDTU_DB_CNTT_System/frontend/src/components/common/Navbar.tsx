@@ -235,9 +235,15 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
   };
 
   const handleMarkSingleRead = (id) => {
-    if (window.ApiClient && window.ApiClient.markNotificationRead) {
-      const updated = window.ApiClient.markNotificationRead(id);
-      setNotifications([...updated]);
+    try {
+      setNotifications(prev => prev.map(n => String(n.id) === String(id) ? { ...n, read: true } : n));
+      if (window.ApiClient && window.ApiClient.markNotificationRead) {
+        Promise.resolve(window.ApiClient.markNotificationRead(id)).then(res => {
+          if (Array.isArray(res)) setNotifications(res);
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Error marking notification as read:', e);
     }
   };
 
@@ -458,8 +464,8 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
                   <div
                     key={item.id}
                     onClick={() => {
-                      handleMarkSingleRead(item.id);
                       setSelectedNotifDetail(item);
+                      handleMarkSingleRead(item.id);
                     }}
                     className={`p-3.5 rounded-xl border text-[12px] cursor-pointer transition relative group ${
                       item.read
@@ -534,8 +540,8 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMarkSingleRead(item.id);
                           setSelectedNotifDetail(item);
+                          handleMarkSingleRead(item.id);
                         }}
                         className="px-2.5 py-1 bg-[#003087]/10 hover:bg-[#003087] text-[#003087] hover:text-white rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
                         title="Nhấn để mở xem chi tiết đầy đủ thông báo"

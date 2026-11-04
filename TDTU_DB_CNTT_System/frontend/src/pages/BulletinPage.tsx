@@ -42,6 +42,22 @@ const BulletinPage = ({ currentUser }) => {
   const [selectedJdModal, setSelectedJdModal] = React.useState(null);
   const [notification, setNotification] = React.useState(null);
 
+  // Modal Ứng tuyển JD cho Sinh viên (Form popup xác nhận CV & Cover letter)
+  const [applyingJd, setApplyingJd] = React.useState(null);
+  const [applyForm, setApplyForm] = React.useState({
+    cvOption: 'existing',
+    newCvLink: '',
+    saveCvToProfile: true,
+    coverLetter: ''
+  });
+  const [studentSavedCv, setStudentSavedCv] = React.useState('');
+  const [submittingApply, setSubmittingApply] = React.useState(false);
+
+  // Danh sách đơn ứng tuyển (Applications)
+  const [applications, setApplications] = React.useState([]);
+  const [appStatusFilter, setAppStatusFilter] = React.useState('all');
+  const [viewingAppDetail, setViewingAppDetail] = React.useState(null);
+
   // Email Parser & Create Modal State
   const [isEmailModalOpen, setIsEmailModalOpen] = React.useState(false);
   const [rawEmailText, setRawEmailText] = React.useState('');
@@ -130,6 +146,16 @@ const BulletinPage = ({ currentUser }) => {
           merged.push(item);
         }
         setAnnouncements(merged);
+
+        // Tải danh sách đơn ứng tuyển
+        if (window.ApiClient?.fetchApplications) {
+          try {
+            const apps = await window.ApiClient.fetchApplications();
+            if (Array.isArray(apps)) setApplications(apps);
+          } catch {}
+        } else if (window.ApiClient?.getApplications) {
+          setApplications(window.ApiClient.getApplications());
+        }
       }
     };
     loadData();
@@ -138,6 +164,11 @@ const BulletinPage = ({ currentUser }) => {
     const handleQueue = (e) => { if (e.detail) setReviewQueue(e.detail); else loadData(); };
     const handleAncs = () => { loadData(); };
     const handleStorage = () => { loadData(); };
+    const handleApps = () => {
+      if (window.ApiClient?.getApplications) {
+        setApplications(window.ApiClient.getApplications());
+      }
+    };
 
     let bc = null;
     try {
@@ -148,7 +179,10 @@ const BulletinPage = ({ currentUser }) => {
             msg.data.type === 'announcement_deleted' ||
             msg.data.type === 'notification_deleted' ||
             msg.data.type === 'jd_updated' || 
-            msg.data.type === 'notification_sent') {
+            msg.data.type === 'notification_sent' ||
+            msg.data.type === 'application_submitted' ||
+            msg.data.type === 'application_approved' ||
+            msg.data.type === 'application_rejected') {
           loadData();
         }
       };
@@ -160,6 +194,9 @@ const BulletinPage = ({ currentUser }) => {
     window.addEventListener('tdtu_notification_sent', loadData);
     window.addEventListener('tdtu_notification_received', loadData);
     window.addEventListener('tdtu_notifications_updated', loadData);
+    window.addEventListener('tdtu_application_submitted', handleApps);
+    window.addEventListener('tdtu_application_approved', handleApps);
+    window.addEventListener('tdtu_application_rejected', handleApps);
     window.addEventListener('storage', handleStorage);
     window.addEventListener('focus', handleStorage);
     return () => {
@@ -169,53 +206,155 @@ const BulletinPage = ({ currentUser }) => {
       window.removeEventListener('tdtu_notification_sent', loadData);
       window.removeEventListener('tdtu_notification_received', loadData);
       window.removeEventListener('tdtu_notifications_updated', loadData);
+      window.removeEventListener('tdtu_application_submitted', handleApps);
+      window.removeEventListener('tdtu_application_approved', handleApps);
+      window.removeEventListener('tdtu_application_rejected', handleApps);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('focus', handleStorage);
       if (bc) { try { bc.close(); } catch {} }
     };
   }, [currentUser]);
 
-  const handleSelectAsInternship = async (jd) => {
+  // Mở Popup Form xác nhận Ứng tuyển vị trí thực tập
+  const handleOpenApplyModal = (jd) => {
     if (!isEnrolledStudent) {
-      alert('Bạn chưa có tên trong danh sách đăng ký học phần thực tập học kỳ này nên không thể chọn doanh nghiệp.');
+      alert('Bạn chưa có tên trong danh sách đăng ký học phần thực tập học kỳ này nên không thể nộp hồ sơ ứng tuyển.');
       return;
     }
-    try {
-      const studentId = currentUser?.studentId || '522H0045';
-      const existing = JSON.parse(localStorage.getItem('tdtu_decl_' + studentId) || '{}');
-      const updated = {
-        ...existing,
-        studentId,
-        internshipStatus: 'has_company',
-        companyName: jd.company,
-        taxCode: jd.taxCode,
-        address: jd.address,
-        position: jd.position,
-        contactPerson: jd.contact?.split('·')[0]?.trim() || '',
-        contactEmail: jd.contact?.split('·')[1]?.trim() || jd.sourceEmail || '',
-        isConfirmed: true
-      };
-      localStorage.setItem('tdtu_decl_' + studentId, JSON.stringify(updated));
+    const studentId = String(currentUser?.studentId || '522H0045').toUpperCase();
+    let savedCv = '';
+    if (window.ApiClient?.getCachedCv) {
+      savedCv = window.ApiClient.getCachedCv(studentId);
+    }
+    if (!savedCv && window.ApiClient?.getStudentCvLink) {
+      savedCv = window.ApiClient.getStudentCvLink(studentId);
+    }
+    setStudentSavedCv(savedCv || '');
+    setApplyForm({
+      cvOption: savedCv ? 'existing' : 'new',
+      newCvLink: '',
+      saveCvToProfile: true,
+      coverLetter: `Kính gửi Ban Tuyển dụng ${jd.company},\n\nEm tên là ${currentUser?.fullName || currentUser?.name || 'Nguyễn Hữu Nhân'}, sinh viên khoa Công nghệ Thông tin - Trường Đại học Tôn Đức Thắng (MSSV: ${studentId}).\n\nEm rất quan tâm và mong muốn được ứng tuyển vào vị trí "${jd.position}" trong đợt thực tập tốt nghiệp này. Với nền tảng kiến thức đã tích lũy và tinh thần trách nhiệm cao, em tin rằng mình sẽ hoàn thành tốt các nhiệm vụ được giao và đóng góp tích cực cho Quý công ty.\n\nKính mong Quý công ty xem xét hồ sơ và tạo cơ hội để em được tham gia phỏng vấn tiếp nhận thực tập.\n\nEm xin chân thành cảm ơn!`
+    });
+    setApplyingJd(jd);
+    setSelectedJdModal(null);
+  };
 
-      if (window.ApiClient?.applyToJd) {
-        await window.ApiClient.applyToJd(studentId, jd.id, {
-          companyName: jd.company,
-          taxCode: jd.taxCode,
-          position: jd.position
-        });
+  // Nộp Hồ sơ Ứng tuyển Thực tập tới Doanh nghiệp
+  const handleSubmitApplication = async (e) => {
+    if (e) e.preventDefault();
+    if (!applyingJd) return;
+
+    const studentId = String(currentUser?.studentId || '522H0045').toUpperCase();
+    const effectiveCv = applyForm.cvOption === 'existing' ? studentSavedCv : applyForm.newCvLink.trim();
+
+    if (!effectiveCv) {
+      alert('Vui lòng cung cấp đường link Google Drive chia sẻ CV của bạn để nộp hồ sơ ứng tuyển.');
+      return;
+    }
+
+    if (!effectiveCv.startsWith('http://') && !effectiveCv.startsWith('https://')) {
+      alert('Đường link CV không hợp lệ. Vui lòng nhập link bắt đầu bằng https://');
+      return;
+    }
+
+    setSubmittingApply(true);
+    try {
+      if (applyForm.cvOption === 'new' && applyForm.saveCvToProfile && window.ApiClient?.saveStudentCvLink) {
+        window.ApiClient.saveStudentCvLink(studentId, effectiveCv);
       }
-      if (window.ApiClient?.declareInternship) {
-        await window.ApiClient.declareInternship(updated);
+
+      let studentClass = currentUser?.classId || currentUser?.className || '';
+      let studentMajor = currentUser?.major || '';
+      if (!studentClass || !studentMajor) {
+        try {
+          const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
+          if (raw) {
+            const arr = JSON.parse(raw);
+            const found = arr.find((s) => String(s.mssv || s.studentId).toUpperCase() === studentId);
+            if (found) {
+              if (!studentClass) studentClass = found.class || found.className || '';
+              if (!studentMajor) studentMajor = found.major || '';
+            }
+          }
+        } catch {}
+      }
+
+      if (window.ApiClient?.submitJdApplication) {
+        await window.ApiClient.submitJdApplication({
+          studentId,
+          studentName: currentUser?.fullName || currentUser?.name || 'Nguyễn Hữu Nhân',
+          studentEmail: currentUser?.email || `${studentId.toLowerCase()}@student.tdtu.edu.vn`,
+          classId: studentClass,
+          major: studentMajor,
+          jdId: applyingJd.id,
+          companyName: applyingJd.company,
+          position: applyingJd.position,
+          taxCode: applyingJd.taxCode || '',
+          address: applyingJd.address || '',
+          contactPerson: applyingJd.contact?.split('·')[0]?.trim() || '',
+          contactEmail: applyingJd.contact?.split('·')[1]?.trim() || applyingJd.sourceEmail || '',
+          cvLink: effectiveCv,
+          coverLetter: applyForm.coverLetter.trim()
+        });
       }
 
       setNotification({
         type: 'success',
-        text: `Đã chọn [${jd.company}] làm đơn vị thực tập và tự động cập nhật vào Hồ sơ khai báo của bạn!`
+        text: `Đã gửi hồ sơ ứng tuyển tới [${applyingJd.company}] thành công! Yêu cầu đang được chuyển đến Doanh nghiệp để xét duyệt tiếp nhận.`
       });
-      setSelectedJdModal(null);
-    } catch (e) {
-      alert('Lỗi lưu đăng ký: ' + e.message);
+      setApplyingJd(null);
+
+      if (window.ApiClient?.fetchApplications) {
+        const fresh = await window.ApiClient.fetchApplications();
+        setApplications(fresh);
+      }
+    } catch (err) {
+      alert('Lỗi gửi hồ sơ ứng tuyển: ' + err.message);
+    } finally {
+      setSubmittingApply(false);
     }
+  };
+
+  // Phê duyệt tiếp nhận thực tập (Doanh nghiệp hoặc Giảng viên/Admin đại diện duyệt)
+  const handleApproveApplication = async (app) => {
+    if (!window.confirm(`Xác nhận phê duyệt tiếp nhận sinh viên ${app.studentName} (${app.studentId}) vào vị trí thực tập tại ${app.company}?`)) return;
+    try {
+      if (window.ApiClient?.approveJdApplication) {
+        await window.ApiClient.approveJdApplication(app.id);
+        setNotification({
+          type: 'success',
+          text: `Đã phê duyệt tiếp nhận thành công! Hệ thống đã cập nhật trạng thái "Đã có nơi TT" cho sinh viên ${app.studentName}.`
+        });
+        const fresh = window.ApiClient.getApplications ? window.ApiClient.getApplications() : [];
+        setApplications(fresh);
+      }
+    } catch (err) {
+      alert('Lỗi phê duyệt: ' + err.message);
+    }
+  };
+
+  // Từ chối đơn ứng tuyển
+  const handleRejectApplication = async (app) => {
+    const reason = prompt(`Nhập lý do từ chối hồ sơ của sinh viên ${app.studentName} (tùy chọn):`, 'Chưa phù hợp với yêu cầu đợt tuyển này');
+    if (reason === null) return;
+    try {
+      if (window.ApiClient?.rejectJdApplication) {
+        await window.ApiClient.rejectJdApplication(app.id, reason);
+        setNotification({
+          type: 'success',
+          text: `Đã gửi kết quả từ chối hồ sơ tới sinh viên ${app.studentName}.`
+        });
+        const fresh = window.ApiClient.getApplications ? window.ApiClient.getApplications() : [];
+        setApplications(fresh);
+      }
+    } catch (err) {
+      alert('Lỗi từ chối: ' + err.message);
+    }
+  };
+
+  const handleSelectAsInternship = (jd) => {
+    handleOpenApplyModal(jd);
   };
 
   const handleApproveReview = async (item: any) => {
@@ -537,6 +676,64 @@ const BulletinPage = ({ currentUser }) => {
       {/* 3. STUDENT VIEW: BẢNG TIN JD */}
       {isStudent && (
         <div className="space-y-6">
+          {/* Lịch sử đơn ứng tuyển của Sinh viên */}
+          {(() => {
+            const sid = String(currentUser?.studentId || '522H0045').toUpperCase();
+            const myApps = applications.filter(a => String(a.studentId).toUpperCase() === sid);
+            if (myApps.length === 0) return null;
+            return (
+              <div className="bg-white border border-[#e5e7eb] rounded-2xl p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-[#e5e7eb] pb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-[15.5px] font-bold text-[#1f2937]">Đơn ứng tuyển thực tập của bạn</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ebf3ff] text-[#003087]">
+                      {myApps.length} đơn
+                    </span>
+                  </div>
+                  <span className="text-xs text-[#4b5563]">
+                    Trạng thái hồ sơ chính thức cập nhật "Đã có nơi TT" sau khi Doanh nghiệp phê duyệt
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {myApps.map(app => {
+                    const isAccepted = app.status === 'accepted';
+                    const isRejected = app.status === 'rejected';
+                    return (
+                      <div key={app.id} className={`p-4 rounded-xl border space-y-2.5 ${
+                        isAccepted ? 'bg-emerald-50/70 border-emerald-300' : (isRejected ? 'bg-rose-50/70 border-rose-200' : 'bg-[#f8fafc] border-[#cbd5e1]')
+                      }`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="font-bold text-[14px] text-[#1f2937]">{app.position}</div>
+                            <div className="text-xs font-semibold text-[#003087]">{app.company}</div>
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 ${
+                            isAccepted
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : isRejected
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          }`}>
+                            {isAccepted ? '✓ Đã tiếp nhận' : (isRejected ? '✕ Chưa tiếp nhận' : '⏳ Chờ DN xét duyệt')}
+                          </span>
+                        </div>
+                        <div className="text-[11.5px] text-[#4b5563] flex items-center justify-between pt-1 border-t border-slate-200">
+                          <span>Nộp: {app.appliedAtText || (app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : '—')}</span>
+                          {app.cvLink && (
+                            <a href={app.cvLink} target="_blank" rel="noopener noreferrer" className="text-[#003087] font-bold hover:underline inline-flex items-center gap-0.5">
+                              <span>Xem CV</span>
+                              <span>↗</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Filter Bar */}
           <div className="bg-white border border-[#e5e7eb] rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             <div className="relative flex-1">
@@ -696,10 +893,10 @@ const BulletinPage = ({ currentUser }) => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleSelectAsInternship(jd)}
+                          onClick={() => handleOpenApplyModal(jd)}
                           className="px-4 py-2.5 rounded-lg bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold transition flex items-center justify-center cursor-pointer whitespace-nowrap"
                         >
-                          Chọn làm nơi thực tập
+                          Ứng tuyển ngay
                         </button>
                       </div>
                     ) : (
@@ -751,6 +948,21 @@ const BulletinPage = ({ currentUser }) => {
               <span>Quản lý JD đã đăng</span>
               <span className="px-2 py-0.5 rounded-full bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] text-[12.5px] font-bold">
                 {publishedJds.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setLecturerSubTab('applications')}
+              className={`pb-3 px-2 border-b-2 transition flex items-center gap-2 cursor-pointer ${
+                lecturerSubTab === 'applications'
+                  ? 'border-[#003087] text-[#003087]'
+                  : 'border-transparent text-[#1f2937] hover:text-[#003087]'
+              }`}
+            >
+              <span>Hồ sơ SV ứng tuyển</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[12.5px] font-bold">
+                {applications.filter(a => a.status === 'pending').length}
               </span>
             </button>
           </div>
@@ -941,6 +1153,160 @@ const BulletinPage = ({ currentUser }) => {
               </div>
             </div>
           )}
+
+          {/* SubTab 3: Quản lý & Phê duyệt Đơn ứng tuyển của Sinh viên */}
+          {lecturerSubTab === 'applications' && (
+            <div className="space-y-4">
+              <div className="bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl p-4 text-[14px] text-[#1f2937] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="font-bold text-[#003087] mb-0.5">
+                    Quy trình xét duyệt tiếp nhận thực tập
+                  </div>
+                  <p className="text-[13px] text-[#4b5563]">
+                    Khi sinh viên nộp đơn ứng tuyển, trạng thái của SV là "Đang tìm / Chờ phỏng vấn". Khi Doanh nghiệp hoặc Giảng viên đại diện nhấn <strong>[✓ Tiếp nhận]</strong>, trạng thái hồ sơ của sinh viên sẽ chính thức chuyển sang <strong>"Đã có nơi TT"</strong> theo thời gian thực.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold text-[#4b5563]">Bộ lọc:</span>
+                  <select
+                    value={appStatusFilter}
+                    onChange={(e) => setAppStatusFilter(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-[#cbd5e1] rounded-lg text-xs font-bold text-[#003087] outline-none cursor-pointer"
+                  >
+                    <option value="all">Tất cả ({applications.length})</option>
+                    <option value="pending">Chờ xét duyệt ({applications.filter(a => a.status === 'pending').length})</option>
+                    <option value="accepted">Đã tiếp nhận ({applications.filter(a => a.status === 'accepted').length})</option>
+                    <option value="rejected">Từ chối ({applications.filter(a => a.status === 'rejected').length})</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e5e7eb] rounded-xl overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-[#1f2937]">
+                    <thead className="bg-[#f8fafc] text-xs font-bold uppercase text-[#1f2937] border-b border-[#e5e7eb]">
+                      <tr>
+                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                        <th className="py-3.5 px-4">Sinh viên</th>
+                        <th className="py-3.5 px-4">Vị trí & Doanh nghiệp</th>
+                        <th className="py-3.5 px-4 text-center">Hồ sơ CV</th>
+                        <th className="py-3.5 px-4">Thư ngỏ (Cover letter)</th>
+                        <th className="py-3.5 px-4">Thời gian nộp</th>
+                        <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                        <th className="py-3.5 px-4 text-center">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {applications
+                        .filter(a => appStatusFilter === 'all' || a.status === appStatusFilter)
+                        .length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center text-slate-400">
+                            Không có đơn ứng tuyển nào phù hợp với bộ lọc hiện tại.
+                          </td>
+                        </tr>
+                      ) : (
+                        applications
+                          .filter(a => appStatusFilter === 'all' || a.status === appStatusFilter)
+                          .map((app, idx) => {
+                            const isPending = app.status === 'pending';
+                            const isAccepted = app.status === 'accepted';
+                            const isRejected = app.status === 'rejected';
+
+                            return (
+                              <tr key={app.id || idx} className="hover:bg-slate-50 transition">
+                                <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                                  {idx + 1}
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <div className="font-bold text-[#1f2937] text-[13px]">{app.studentName}</div>
+                                  <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px] text-[#4b5563]">
+                                    <span className="font-mono font-bold text-[#003087]">{app.studentId}</span>
+                                    {app.classId && <span>· Lớp {app.classId}</span>}
+                                  </div>
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <div className="font-bold text-[#003087]">{app.position}</div>
+                                  <div className="text-[11.5px] text-[#4b5563]">{app.company}</div>
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  {app.cvLink ? (
+                                    <a
+                                      href={app.cvLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2.5 py-1 bg-[#003087] hover:bg-[#002266] text-white rounded-md text-[11px] font-bold inline-flex items-center gap-1 shadow-2xs"
+                                    >
+                                      <span>Mở CV</span>
+                                      <span>↗</span>
+                                    </a>
+                                  ) : (
+                                    <span className="text-slate-400 text-[11px]">Không có</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 max-w-xs">
+                                  {app.coverLetter ? (
+                                    <p className="text-[11.5px] text-[#4b5563] line-clamp-2 italic" title={app.coverLetter}>
+                                      "{app.coverLetter}"
+                                    </p>
+                                  ) : (
+                                    <span className="text-slate-400 text-[11px]">Không có</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 text-[11px] text-[#4b5563] whitespace-nowrap">
+                                  {app.appliedAtText || (app.appliedAt ? new Date(app.appliedAt).toLocaleString('vi-VN') : '—')}
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border inline-block ${
+                                    isAccepted
+                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                      : isRejected
+                                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                        : 'bg-amber-100 text-amber-800 border-amber-300'
+                                  }`}>
+                                    {isAccepted ? '✓ Đã tiếp nhận' : (isRejected ? '✕ Đã từ chối' : '⏳ Chờ duyệt')}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  {isPending ? (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApproveApplication(app)}
+                                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold transition shadow-2xs cursor-pointer whitespace-nowrap"
+                                        title="Phê duyệt tiếp nhận thực tập cho sinh viên"
+                                      >
+                                        ✓ Tiếp nhận
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRejectApplication(app)}
+                                        className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-[11px] font-bold transition cursor-pointer whitespace-nowrap"
+                                        title="Từ chối hồ sơ ứng tuyển này"
+                                      >
+                                        ✕ Từ chối
+                                      </button>
+                                    </div>
+                                  ) : isAccepted ? (
+                                    <span className="text-emerald-700 font-bold text-[11px]">
+                                      Đã duyệt nơi TT
+                                    </span>
+                                  ) : (
+                                    <span className="text-rose-600 text-[11px]" title={app.rejectReason}>
+                                      Đã phản hồi
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1034,10 +1400,10 @@ const BulletinPage = ({ currentUser }) => {
               {isStudent && isEnrolledStudent && (
                 <button
                   type="button"
-                  onClick={() => handleSelectAsInternship(selectedJdModal)}
+                  onClick={() => handleOpenApplyModal(selectedJdModal)}
                   className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[14.5px] font-bold shadow-xs cursor-pointer"
                 >
-                  Chọn làm nơi thực tập
+                  Ứng tuyển ngay
                 </button>
               )}
               {isStudent && !isEnrolledStudent && (
@@ -1200,6 +1566,178 @@ const BulletinPage = ({ currentUser }) => {
           </div>
         </div>
       )}
+
+      {/* 7. MODAL: Apply Modal - Chọn CV & Viết Cover Letter nộp Doanh nghiệp */}
+      {applyingJd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-[#e5e7eb] shadow-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-[#e5e7eb] pb-4">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                  Đơn ứng tuyển thực tập doanh nghiệp
+                </span>
+                <h3 className="text-[17px] font-bold text-[#1f2937] mt-1.5">
+                  Ứng tuyển: {applyingJd.position}
+                </h3>
+                <div className="text-xs font-semibold text-[#003087] mt-0.5">
+                  Doanh nghiệp tiếp nhận: <strong>{applyingJd.company}</strong> · Khu vực: {applyingJd.location}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApplyingJd(null)}
+                className="text-[#4b5563] hover:text-[#dc2626] font-bold text-lg p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitApplication} className="space-y-4 text-xs">
+              {/* Box 1: Chọn nguồn CV */}
+              <div className="bg-[#f8fafc] border border-[#cbd5e1] rounded-xl p-4 space-y-3">
+                <label className="block text-[13px] font-bold text-[#1f2937] uppercase">
+                  1. Chọn hồ sơ CV nộp cho Doanh nghiệp *
+                </label>
+
+                {/* Option A: Sử dụng CV đã lưu trong hồ sơ */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                  applyForm.cvOption === 'existing'
+                    ? 'bg-[#ebf3ff]/60 border-[#003087]'
+                    : 'bg-white border-[#e2e8f0] hover:bg-slate-50'
+                } ${!studentSavedCv ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  <input
+                    type="radio"
+                    name="cvOption"
+                    value="existing"
+                    disabled={!studentSavedCv}
+                    checked={applyForm.cvOption === 'existing'}
+                    onChange={() => setApplyForm({ ...applyForm, cvOption: 'existing' })}
+                    className="accent-[#003087] mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-bold text-[#1f2937] text-[13px]">
+                      Sử dụng CV hiện tại đã lưu trong hồ sơ cá nhân
+                    </div>
+                    {studentSavedCv ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono text-[11.5px] text-[#003087] truncate max-w-sm">
+                          {studentSavedCv}
+                        </span>
+                        <a
+                          href={studentSavedCv}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#003087] font-bold hover:underline shrink-0 text-[11px]"
+                        >
+                          Xem thử CV ↗
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-amber-600 mt-0.5">
+                        (Bạn chưa lưu link CV trong hồ sơ. Vui lòng chọn gắn link CV mới bên dưới)
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                {/* Option B: Gắn link CV Google Drive mới */}
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                  applyForm.cvOption === 'new'
+                    ? 'bg-[#ebf3ff]/60 border-[#003087]'
+                    : 'bg-white border-[#e2e8f0] hover:bg-slate-50'
+                }`}>
+                  <input
+                    type="radio"
+                    name="cvOption"
+                    value="new"
+                    checked={applyForm.cvOption === 'new'}
+                    onChange={() => setApplyForm({ ...applyForm, cvOption: 'new' })}
+                    className="accent-[#003087] mt-1"
+                  />
+                  <div className="flex-1 space-y-2">
+                    <div className="font-bold text-[#1f2937] text-[13px]">
+                      Gắn đường link Google Drive của CV mới
+                    </div>
+                    {applyForm.cvOption === 'new' && (
+                      <div className="space-y-2 pt-1">
+                        <input
+                          type="url"
+                          value={applyForm.newCvLink}
+                          onChange={(e) => setApplyForm({ ...applyForm, newCvLink: e.target.value })}
+                          placeholder="https://drive.google.com/file/d/..."
+                          className="w-full px-3 py-2 bg-white border border-[#cbd5e1] rounded-lg font-mono text-xs text-[#1f2937] outline-none focus:ring-2 focus:ring-[#003087]"
+                          required={applyForm.cvOption === 'new'}
+                        />
+                        <label className="flex items-center gap-2 text-[11.5px] text-[#4b5563] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={applyForm.saveCvToProfile}
+                            onChange={(e) => setApplyForm({ ...applyForm, saveCvToProfile: e.target.checked })}
+                            className="accent-[#003087]"
+                          />
+                          <span>Đồng thời lưu làm CV mặc định cho hồ sơ cá nhân của tôi</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+
+              {/* Box 2: Cover Letter */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[13px] font-bold text-[#1f2937] uppercase">
+                    2. Thư ngỏ / Lời nhắn gửi tới Nhà tuyển dụng (Cover Letter)
+                  </label>
+                  <span className="text-[11px] text-[#4b5563]">Có thể chỉnh sửa</span>
+                </div>
+                <textarea
+                  rows={6}
+                  value={applyForm.coverLetter}
+                  onChange={(e) => setApplyForm({ ...applyForm, coverLetter: e.target.value })}
+                  placeholder="Kính gửi Ban Tuyển dụng..."
+                  className="w-full p-3 bg-white border border-[#cbd5e1] rounded-xl text-xs text-[#1f2937] font-normal leading-relaxed outline-none focus:ring-2 focus:ring-[#003087]"
+                />
+              </div>
+
+              {/* Thông tin giải thích luồng trạng thái */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[12px] text-amber-900 leading-relaxed flex items-start gap-2.5">
+                <span className="text-base leading-none">📌</span>
+                <div>
+                  <strong>Quy trình phân luồng trạng thái:</strong> Sau khi nộp, yêu cầu được chuyển tới Doanh nghiệp tiếp nhận. Trạng thái của bạn sẽ hiển thị <strong>"Đang tìm / Chờ phỏng vấn"</strong>. Khi Doanh nghiệp hoặc Giảng viên phê duyệt tiếp nhận, hồ sơ của bạn mới chính thức cập nhật thành <strong>"Đã có nơi TT"</strong>.
+                </div>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#e5e7eb]">
+                <button
+                  type="button"
+                  onClick={() => setApplyingJd(null)}
+                  className="px-5 py-2.5 border border-[#cbd5e1] text-[#1f2937] hover:bg-slate-50 rounded-xl font-bold text-xs transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingApply}
+                  className="px-6 py-2.5 bg-[#003087] hover:bg-[#002266] text-white rounded-xl font-bold text-xs transition shadow-xs disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
+                >
+                  {submittingApply ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Đang nộp hồ sơ...</span>
+                    </>
+                  ) : (
+                    <span>Xác nhận gửi hồ sơ ứng tuyển</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal Phát thông báo Học vụ / Phân quyền cho Giảng viên & Admin */}
       {window.AdminNotificationModal && (
         <window.AdminNotificationModal
