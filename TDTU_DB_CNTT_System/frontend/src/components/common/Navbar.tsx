@@ -423,8 +423,14 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
 
       {/* Notification Drawer Modal */}
       {showDrawer && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition">
-          <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-[#e5e7eb]">
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition"
+          onClick={() => setShowDrawer(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-[#e5e7eb] animate-slideLeft"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-[#e5e7eb] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -522,12 +528,21 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
                       {item.content || item.body}
                     </div>
 
-                    <div className="text-[10.5px] font-medium text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1.5">
-                      <span>Người gửi: {item.senderName || 'Khoa CNTT'}</span>
-                      <span className="text-[11px] font-bold text-[#003087] group-hover:underline inline-flex items-center gap-0.5">
+                    <div className="text-[10.5px] font-medium text-slate-500 flex items-center justify-between border-t border-slate-100 pt-1.5 mt-1">
+                      <span>Người gửi: <strong>{item.senderName || 'Khoa CNTT'}</strong></span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkSingleRead(item.id);
+                          setSelectedNotifDetail(item);
+                        }}
+                        className="px-2.5 py-1 bg-[#003087]/10 hover:bg-[#003087] text-[#003087] hover:text-white rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                        title="Nhấn để mở xem chi tiết đầy đủ thông báo"
+                      >
                         <span>Chi tiết</span>
                         <span>→</span>
-                      </span>
+                      </button>
                     </div>
                   </div>
                 ))
@@ -573,12 +588,20 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
           </div>
         </div>
       )}
-      {/* Form Popup Modal: Xem chi tiết Thông báo & Khai báo Thực tập */}
+
+      {/* Form Popup Modal: Xem chi tiết Thông báo & Khai báo Thực tập (Hiển thị nổi bật 100% trên toàn bộ giao diện) */}
       {selectedNotifDetail && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full border border-[#cbd5e1] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn"
+          style={{ zIndex: 99999 }}
+          onClick={() => setSelectedNotifDetail(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full border border-[#cbd5e1] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
-            <div className="px-5 py-4 border-b border-[#e2e8f0] flex items-center justify-between bg-white">
+            <div className="px-5 py-4 border-b border-[#e2e8f0] flex items-center justify-between bg-white shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#ebf3ff] text-[#003087] flex items-center justify-center font-bold text-sm shrink-0">
                   <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -595,6 +618,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
                 type="button"
                 onClick={() => setSelectedNotifDetail(null)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-[#64748b] hover:text-[#dc2626] font-bold text-sm transition cursor-pointer"
+                title="Đóng cửa sổ chi tiết"
               >
                 ✕
               </button>
@@ -602,165 +626,244 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
 
             {/* Modal Body */}
             <div className="p-5 overflow-y-auto space-y-4 text-[13px] text-[#1f2937]">
-              {/* Nếu là thông báo cập nhật hồ sơ sinh viên */}
-              {(selectedNotifDetail.type === 'student_declaration_update' || selectedNotifDetail.metadata?.isStudentDeclaration) ? (() => {
-                const meta = selectedNotifDetail.metadata || {};
-                const isComp = meta.internshipStatus === 'has_company';
-                const isWait = meta.internshipStatus === 'interviewing';
-                const isSupp = meta.internshipStatus === 'need_support';
+              {(() => {
+                let meta = selectedNotifDetail.metadata || {};
+                if (typeof meta === 'string') {
+                  try { meta = JSON.parse(meta); } catch {}
+                }
+                if (!meta || typeof meta !== 'object') meta = {};
 
-                return (
-                  <div className="space-y-4">
-                    {/* Banner Trạng thái */}
-                    <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
-                      isComp
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        : isWait
-                          ? 'bg-amber-50 border-amber-200 text-amber-900'
-                          : 'bg-rose-50 border-rose-200 text-rose-900'
-                    }`}>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${isComp ? 'bg-emerald-500' : isWait ? 'bg-amber-500' : 'bg-rose-500'}`}></span>
-                        <span className="font-bold text-[13.5px]">
-                          {meta.statusLabel || (isComp ? 'Đã có nơi thực tập' : isWait ? 'Đang tìm / Chờ PV' : 'Cần Khoa hỗ trợ')}
+                const sid = String(meta.studentId || selectedNotifDetail.targetStudentId || (selectedNotifDetail.content?.match(/522[a-zA-Z0-9]{5}/i)?.[0]) || '').trim().toUpperCase();
+                let localDecl = null;
+                if (sid && window.ApiClient?.getStudentDeclaration) {
+                  try { localDecl = window.ApiClient.getStudentDeclaration(sid); } catch {}
+                }
+
+                const isStudentUpdate = selectedNotifDetail.type === 'student_declaration_update' ||
+                                        selectedNotifDetail.type === 'declaration' ||
+                                        Boolean(meta.isStudentDeclaration) ||
+                                        Boolean(sid);
+
+                if (isStudentUpdate) {
+                  const studentName = meta.studentName || selectedNotifDetail.senderName || localDecl?.studentName || 'Sinh viên Khoa CNTT';
+                  const studentId = sid || '—';
+                  const classId = meta.classId || localDecl?.classId || localDecl?.className || '';
+                  const major = meta.major || localDecl?.major || '';
+
+                  const statusStr = String(meta.internshipStatus || localDecl?.internshipStatus || '').toLowerCase();
+                  const compNameLower = String(meta.companyName || localDecl?.companyName || '').toLowerCase();
+
+                  const isWait = statusStr === 'interviewing' ||
+                                 meta.noCompanyOption === 'self' ||
+                                 localDecl?.noCompanyOption === 'self' ||
+                                 compNameLower.includes('chờ phỏng vấn') ||
+                                 compNameLower.includes('phỏng vấn') ||
+                                 compNameLower.includes('đang tìm') ||
+                                 compNameLower.includes('chờ pv') ||
+                                 compNameLower.includes('tuyển dụng') ||
+                                 compNameLower.includes('ứng tuyển');
+
+                  const isSupp = !isWait && (
+                    statusStr === 'need_support' ||
+                    meta.noCompanyOption === 'faculty' ||
+                    localDecl?.noCompanyOption === 'faculty' ||
+                    compNameLower.includes('hỗ trợ') ||
+                    compNameLower.includes('khoa cntt')
+                  );
+
+                  const isPlaceholder = compNameLower.includes('hỗ trợ') ||
+                                       compNameLower.includes('khoa cntt') ||
+                                       compNameLower.includes('đang tìm') ||
+                                       compNameLower.includes('phỏng vấn') ||
+                                       compNameLower.includes('chờ pv') ||
+                                       compNameLower.includes('tuyển dụng') ||
+                                       compNameLower.includes('chưa có') ||
+                                       compNameLower === '—' ||
+                                       compNameLower === '-';
+
+                  const isComp = !isWait && !isSupp && !isPlaceholder && (statusStr === 'has_company' || Boolean(meta.companyName && meta.companyName.trim()));
+
+                  const statusLabel = isComp ? 'Đã có nơi thực tập' : (isWait ? 'Đang tìm / Chờ phỏng vấn' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Đang cập nhật'));
+                  const companyName = isComp
+                    ? (meta.companyName || localDecl?.companyName || 'Doanh nghiệp đã khai báo')
+                    : (isSupp ? 'Khoa CNTT hỗ trợ điều phối doanh nghiệp' : (meta.pendingCompany || localDecl?.pendingCompany || 'Tự liên hệ & đang chờ kết quả phỏng vấn'));
+
+                  const position = meta.position || meta.desiredPosition || localDecl?.position || localDecl?.desiredPosition || (isSupp ? 'Chờ Khoa phân bổ' : 'Thực tập sinh');
+                  const taxCode = meta.taxCode || localDecl?.taxCode || '';
+                  const address = meta.address || localDecl?.address || '';
+                  const contactPerson = meta.contactPerson || localDecl?.contactPerson || '';
+                  const contactPhone = meta.contactPhone || localDecl?.contactPhone || '';
+                  const supportReason = meta.supportReason || localDecl?.supportReason || '';
+                  const desiredLocation = meta.desiredLocation || localDecl?.desiredLocation || '';
+                  const supportNote = meta.supportNote || localDecl?.supportNote || '';
+                  const cvDriveLink = meta.cvDriveLink || localDecl?.cvDriveLink || '';
+                  const submittedAt = meta.submittedAt || selectedNotifDetail.time || selectedNotifDetail.timestamp || selectedNotifDetail.createdAt || new Date().toLocaleString('vi-VN');
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Banner Trạng thái */}
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                        isComp
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                          : isWait
+                            ? 'bg-amber-50 border-amber-200 text-amber-900'
+                            : 'bg-rose-50 border-rose-200 text-rose-900'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full ${isComp ? 'bg-emerald-500' : isWait ? 'bg-amber-500' : 'bg-rose-500'}`}></span>
+                          <span className="font-bold text-[13.5px]">
+                            {statusLabel}
+                          </span>
+                        </div>
+                        <span className="text-[11.5px] font-semibold text-slate-500">
+                          {submittedAt}
                         </span>
                       </div>
-                      <span className="text-[11.5px] font-semibold text-slate-500">
-                        {meta.submittedAt || selectedNotifDetail.time || selectedNotifDetail.timestamp}
+
+                      {/* Thông tin Sinh viên */}
+                      <div className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] space-y-2">
+                        <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">Thông tin sinh viên</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12.5px]">
+                          <div>
+                            <span className="text-slate-500 font-medium">Họ và tên: </span>
+                            <span className="font-bold text-[#1f2937]">{studentName}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 font-medium">MSSV: </span>
+                            <span className="font-mono font-bold text-[#003087]">{studentId}</span>
+                          </div>
+                          {classId && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Lớp: </span>
+                              <span className="font-semibold text-[#1f2937]">{classId}</span>
+                            </div>
+                          )}
+                          {major && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Ngành: </span>
+                              <span className="font-semibold text-[#1f2937]">{major}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Chi tiết Khai báo doanh nghiệp / Nguyện vọng */}
+                      <div className="p-4 bg-white rounded-xl border border-[#e2e8f0] space-y-2.5">
+                        <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">
+                          {isSupp ? 'Nội dung yêu cầu Khoa hỗ trợ' : (isWait ? 'Tiến độ ứng tuyển / Phỏng vấn' : 'Thông tin Doanh nghiệp tiếp nhận')}
+                        </div>
+
+                        <div className="space-y-1.5 text-[12.5px]">
+                          {companyName && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Đơn vị / Nơi thực tập: </span>
+                              <span className="font-bold text-[#003087]">{companyName}</span>
+                            </div>
+                          )}
+
+                          {position && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Vị trí: </span>
+                              <span className="font-semibold text-[#1f2937]">{position}</span>
+                            </div>
+                          )}
+
+                          {taxCode && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Mã số thuế (MST): </span>
+                              <span className="font-mono font-semibold text-[#1f2937]">{taxCode}</span>
+                            </div>
+                          )}
+
+                          {address && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Địa chỉ: </span>
+                              <span className="text-[#1f2937]">{address}</span>
+                            </div>
+                          )}
+
+                          {(contactPerson || contactPhone) && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Người hướng dẫn / Liên hệ: </span>
+                              <span className="font-semibold text-[#1f2937]">
+                                {contactPerson}{contactPhone ? ` (${contactPhone})` : ''}
+                              </span>
+                            </div>
+                          )}
+
+                          {supportReason && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Lý do hỗ trợ: </span>
+                              <span className="text-[#1f2937]">{supportReason}</span>
+                            </div>
+                          )}
+
+                          {desiredLocation && (
+                            <div>
+                              <span className="text-slate-500 font-medium">Khu vực mong muốn: </span>
+                              <span className="text-[#1f2937]">{desiredLocation}</span>
+                            </div>
+                          )}
+
+                          {supportNote && (
+                            <div className="p-2.5 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] text-xs">
+                              <span className="font-bold text-slate-600 block mb-0.5">Ghi chú bổ sung:</span>
+                              <span className="text-[#1f2937]">{supportNote}</span>
+                            </div>
+                          )}
+
+                          {cvDriveLink && (
+                            <div className="pt-2">
+                              <a
+                                href={cvDriveLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3.5 py-1.5 bg-[#ebf3ff] text-[#003087] hover:bg-[#dbeafe] rounded-lg font-bold text-xs inline-flex items-center gap-1.5 border border-[#bfdbfe] transition cursor-pointer"
+                              >
+                                <span>Mở xem CV trên Drive</span>
+                                <span>↗</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                /* Thông báo thông thường (Học vụ / Bảng tin) */
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                        {selectedNotifDetail.targetAudienceLabel || ((selectedNotifDetail.isPrivate || selectedNotifDetail.targetAudience === 'specific_student') ? 'Cá nhân' : 'Toàn trường')}
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {selectedNotifDetail.timestamp || selectedNotifDetail.time || selectedNotifDetail.createdAt || ''}
                       </span>
                     </div>
 
-                    {/* Thông tin Sinh viên */}
-                    <div className="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0] space-y-2">
-                      <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">Thông tin sinh viên</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12.5px]">
-                        <div>
-                          <span className="text-slate-500 font-medium">Họ và tên: </span>
-                          <span className="font-bold text-[#1f2937]">{meta.studentName || selectedNotifDetail.senderName || '—'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 font-medium">MSSV: </span>
-                          <span className="font-mono font-bold text-[#003087]">{meta.studentId || selectedNotifDetail.targetStudentId || '—'}</span>
-                        </div>
-                        {meta.classId && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Lớp: </span>
-                            <span className="font-semibold text-[#1f2937]">{meta.classId}</span>
-                          </div>
-                        )}
-                        {meta.major && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Ngành: </span>
-                            <span className="font-semibold text-[#1f2937]">{meta.major}</span>
-                          </div>
-                        )}
-                      </div>
+                    <h4 className="text-base font-bold text-[#003087]">
+                      {selectedNotifDetail.title || selectedNotifDetail.subject || 'Thông báo học vụ'}
+                    </h4>
+
+                    <div className="text-[13px] text-[#1f2937] leading-relaxed whitespace-pre-wrap text-justify bg-[#f8fafc] p-4 rounded-xl border border-[#e2e8f0]">
+                      {selectedNotifDetail.content || selectedNotifDetail.body}
                     </div>
 
-                    {/* Chi tiết Khai báo doanh nghiệp / Nguyện vọng */}
-                    <div className="p-4 bg-white rounded-xl border border-[#e2e8f0] space-y-2.5">
-                      <div className="text-[11px] font-bold text-[#64748b] uppercase tracking-wider">
-                        {isSupp ? 'Nội dung yêu cầu Khoa hỗ trợ' : (isWait ? 'Tiến độ ứng tuyển / Phỏng vấn' : 'Thông tin Doanh nghiệp tiếp nhận')}
-                      </div>
-
-                      <div className="space-y-1.5 text-[12.5px]">
-                        {meta.companyName && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Đơn vị: </span>
-                            <span className="font-bold text-[#003087]">{meta.companyName}</span>
-                          </div>
-                        )}
-
-                        {(meta.position || meta.desiredPosition) && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Vị trí: </span>
-                            <span className="font-semibold text-[#1f2937]">{meta.position || meta.desiredPosition}</span>
-                          </div>
-                        )}
-
-                        {meta.taxCode && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Mã số thuế (MST): </span>
-                            <span className="font-mono font-semibold text-[#1f2937]">{meta.taxCode}</span>
-                          </div>
-                        )}
-
-                        {meta.address && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Địa chỉ: </span>
-                            <span className="text-[#1f2937]">{meta.address}</span>
-                          </div>
-                        )}
-
-                        {(meta.contactPerson || meta.contactPhone) && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Người hướng dẫn: </span>
-                            <span className="font-semibold text-[#1f2937]">
-                              {meta.contactPerson}{meta.contactPhone ? ` (${meta.contactPhone})` : ''}
-                            </span>
-                          </div>
-                        )}
-
-                        {meta.supportReason && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Lý do hỗ trợ: </span>
-                            <span className="text-[#1f2937]">{meta.supportReason}</span>
-                          </div>
-                        )}
-
-                        {meta.desiredLocation && (
-                          <div>
-                            <span className="text-slate-500 font-medium">Khu vực mong muốn: </span>
-                            <span className="text-[#1f2937]">{meta.desiredLocation}</span>
-                          </div>
-                        )}
-
-                        {meta.supportNote && (
-                          <div className="p-2.5 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] text-xs">
-                            <span className="font-bold text-slate-600 block mb-0.5">Ghi chú bổ sung:</span>
-                            <span className="text-[#1f2937]">{meta.supportNote}</span>
-                          </div>
-                        )}
-
-                        {meta.cvDriveLink && (
-                          <div className="pt-2">
-                            <a
-                              href={meta.cvDriveLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3.5 py-1.5 bg-[#ebf3ff] text-[#003087] hover:bg-[#dbeafe] rounded-lg font-bold text-xs inline-flex items-center gap-1.5 border border-[#bfdbfe] transition cursor-pointer"
-                            >
-                              <span>Mở xem CV trên Drive</span>
-                              <span>↗</span>
-                            </a>
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-xs text-slate-500 pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Người phát hành: <strong>{selectedNotifDetail.senderName || 'Khoa CNTT'}</strong></span>
+                      {selectedNotifDetail.priority && (
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                          selectedNotifDetail.priority === 'urgent' ? 'bg-rose-100 text-rose-800' : selectedNotifDetail.priority === 'high' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          Mức độ: {selectedNotifDetail.priority === 'urgent' ? 'Khẩn cấp' : selectedNotifDetail.priority === 'high' ? 'Quan trọng' : 'Tiêu chuẩn'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
-              })() : (
-                /* Thông báo thông thường */
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
-                      {selectedNotifDetail.targetAudienceLabel || 'Thông báo học vụ'}
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      {selectedNotifDetail.timestamp || selectedNotifDetail.time || selectedNotifDetail.createdAt}
-                    </span>
-                  </div>
-                  <h4 className="text-base font-bold text-[#003087]">
-                    {selectedNotifDetail.title || selectedNotifDetail.subject}
-                  </h4>
-                  <div className="text-[13px] text-[#1f2937] leading-relaxed whitespace-pre-wrap text-justify bg-[#f8fafc] p-4 rounded-xl border border-[#e2e8f0]">
-                    {selectedNotifDetail.content || selectedNotifDetail.body}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Người phát hành: <strong>{selectedNotifDetail.senderName || 'Khoa CNTT'}</strong>
-                  </div>
-                </div>
-              )}
+              })()}
             </div>
 
             {/* Modal Footer */}
