@@ -60,10 +60,10 @@ const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onN
           </div>
           <button
             type="button"
-            onClick={() => onNavigateTab && onNavigateTab('handbook')}
+            onClick={() => onNavigateTab && onNavigateTab('bulletin')}
             className="px-5 py-2.5 min-w-[160px] bg-[#003087] hover:bg-[#002266] text-white font-bold text-[12.5px] rounded-lg shadow-xs transition cursor-pointer shrink-0 whitespace-nowrap"
           >
-            Xem Cẩm nang thực tập
+            Xem Bảng tin tuyển dụng
           </button>
         </div>
       </div>
@@ -117,9 +117,8 @@ const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onN
             {declaration.department && <span className="text-[#1f2937] text-[11.5px] block truncate mt-1">{declaration.department}</span>}
           </div>
           <div className="bg-[#f8fafc] rounded-xl p-4 border border-[#e5e7eb]">
-            <span className="text-[#1f2937] text-[11px] block font-bold uppercase tracking-wider">Cán bộ hướng dẫn</span>
+            <span className="text-[#1f2937] text-[11px] block font-bold uppercase tracking-wider">Người hướng dẫn</span>
             <strong className="text-[#003087] text-[14px] block truncate mt-1">{declaration.contactPerson || 'Đang cập nhật'}</strong>
-            {declaration.contactPhone && <span className="text-[#1f2937] text-[11.5px] font-mono block mt-1">SĐT: {declaration.contactPhone}</span>}
           </div>
           <div className="bg-[#f8fafc] rounded-xl p-4 border border-[#e5e7eb]">
             <span className="text-[#1f2937] text-[11px] block font-bold uppercase tracking-wider">Học phần đăng ký</span>

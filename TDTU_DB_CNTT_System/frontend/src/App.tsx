@@ -389,8 +389,30 @@ const AppInner = () => {
       return;
     }
 
-    // Sinh viên không có trong danh sách kỳ hiện tại: chỉ vào được dashboard, profile và bulletin
-    if (currentUser.role === 'student' && (currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
+    // Kiểm tra sinh viên có tên trong danh sách kỳ đang chọn không
+    const isStudent = currentUser.role === 'student';
+    let isStudentEnrolledInActiveSem = true;
+    if (isStudent) {
+      const sid = String(currentUser.studentId || currentUser.mssv || '').toUpperCase();
+      if (sid === '52100999') {
+        isStudentEnrolledInActiveSem = false;
+      } else if (activeSemester !== 'hk1_2026_2027') {
+        try {
+          const raw = localStorage.getItem(`tdtu_imported_students_${activeSemester}`);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            isStudentEnrolledInActiveSem = Array.isArray(arr) && arr.some(s => String(s.studentId || s.mssv).toUpperCase() === sid);
+          } else {
+            isStudentEnrolledInActiveSem = false;
+          }
+        } catch {
+          isStudentEnrolledInActiveSem = false;
+        }
+      }
+    }
+
+    // Sinh viên không có trong danh sách kỳ đang chọn: chỉ xem được dashboard, profile và bulletin
+    if (isStudent && (!isStudentEnrolledInActiveSem || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
       if (!['dashboard', 'profile', 'bulletin'].includes(activeTab)) {
         setActiveTab('dashboard');
         return;
@@ -480,6 +502,7 @@ const AppInner = () => {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onLogout={handleLogout}
+        activeSemester={activeSemester}
       />
 
       {/* 2. KHU VỰC NỘI DUNG CHÍNH (HEADER + SCROLLABLE BODY) */}
@@ -558,10 +581,6 @@ const AppInner = () => {
 
               {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
                 <window.AccountsPage currentUser={currentUser} />
-              )}
-
-              {activeTab === 'handbook' && (
-                <window.HandbookPage currentUser={currentUser} />
               )}
             </TabErrorBoundary>
           </div>

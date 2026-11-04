@@ -48,8 +48,24 @@ const BulletinPage = ({ currentUser }) => {
   React.useEffect(() => {
     const loadData = async () => {
       if (window.ApiClient) {
-        setPublishedJds(window.ApiClient.getPublishedJds());
+        const localJds = window.ApiClient.getPublishedJds();
+        setPublishedJds(localJds);
         setReviewQueue(window.ApiClient.getJdReviewQueue());
+
+        // Đồng bộ dữ liệu JD thực tế từ Firestore nếu có
+        if ((window as any).FirebaseService?.db) {
+          try {
+            const snap = await (window as any).FirebaseService.db.collection('tdtu_jds').get();
+            if (snap && !snap.empty) {
+              const remoteJds: any[] = [];
+              snap.forEach((doc: any) => remoteJds.push({ id: doc.id, ...doc.data() }));
+              if (remoteJds.length > 0) {
+                setPublishedJds(remoteJds);
+                try { localStorage.setItem('tdtu_published_jds', JSON.stringify(remoteJds)); } catch {}
+              }
+            }
+          } catch {}
+        }
 
         // Hợp nhất thông báo học vụ hệ thống (tdtu_notifications) và thông báo giảng viên
         const sysNotifs = (window.ApiClient.getNotifications ? window.ApiClient.getNotifications(currentUser) : []) || [];

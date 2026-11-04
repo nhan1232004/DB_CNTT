@@ -4,7 +4,7 @@
 // 3. Phông chữ: Body 11px-13px, Tiêu đề & Nhãn in đậm (font-bold)
 // 4. Bố cục: Chuẩn SaaS Enterprise, độ rộng cân đối (320px), viền đệm cân xứng hai bên
 
-const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
+const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemester = 'hk1_2026_2027' }) => {
   const isStudent = currentUser?.role === 'student';
   const isPartner = currentUser?.role === 'partner';
   const cleanEmail = String(currentUser?.email || '').toLowerCase();
@@ -164,30 +164,38 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout }) => {
     }
   ];
 
-  const guideFeatures = [
-    {
-      id: 'handbook',
-      featureKey: 'handbook',
-      label: 'Cẩm nang thực tập',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      )
-    }
-  ];
+  const guideFeatures = [];
 
   const filterItem = (item) => {
     if (item.id === 'accounts') return isAdmin || roleKey === 'thay_phuc';
     if (isFacultyStaff && (item.id === 'declaration' || item.id === 'profile')) return false;
     if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(item.id)) return false;
-    if (item.id === 'handbook' && isLecturer) return false;
-    if (item.id === 'handbook') return true;
-    if (isPartner) return ['dashboard', 'profile', 'bulletin', 'handbook'].includes(item.id);
+    if (item.id === 'handbook') return false;
+    if (isPartner) return ['dashboard', 'profile', 'bulletin'].includes(item.id);
 
-    // Sinh viên không có trong danh sách kỳ thực tập hiện tại: CHỈ THẤY ĐÚNG 3 MỤC: Bảng điều khiển, Hồ sơ cá nhân & Bảng tin
-    if (isStudent && (currentUser?.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
-      return ['dashboard', 'profile', 'bulletin'].includes(item.id);
+    // Sinh viên không có trong danh sách kỳ thực tập đang chọn: CHỈ THẤY ĐÚNG 3 MỤC: Bảng điều khiển, Hồ sơ cá nhân & Bảng tin
+    if (isStudent) {
+      let isEnrolled = currentUser?.isEnrolledThisSemester !== false && roleKey !== 'sv_ngoai_ky';
+      const sem = activeSemester || 'hk1_2026_2027';
+      const sid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
+      if (sid === '52100999') {
+        isEnrolled = false;
+      } else if (sem !== 'hk1_2026_2027') {
+        try {
+          const raw = localStorage.getItem(`tdtu_imported_students_${sem}`);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            isEnrolled = Array.isArray(arr) && arr.some(s => String(s.studentId || s.mssv).toUpperCase() === sid);
+          } else {
+            isEnrolled = false;
+          }
+        } catch {
+          isEnrolled = false;
+        }
+      }
+      if (!isEnrolled) {
+        return ['dashboard', 'profile', 'bulletin'].includes(item.id);
+      }
     }
 
     if (window.PrimeRbac?.checkUserPermission) {

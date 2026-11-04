@@ -328,45 +328,14 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                 </svg>
                 <span className="font-bold text-[15px] text-[#003087]">Hộp thư Thông báo Học vụ</span>
               </div>
-              <div className="flex items-center gap-2">
-                {notifications.length > 0 && (
-                  <>
-                    {unreadCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleMarkAllRead}
-                        className="text-[11.5px] text-[#003087] hover:underline font-bold cursor-pointer"
-                        title="Đánh dấu tất cả thông báo là đã đọc"
-                      >
-                        Đã đọc tất cả
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleClearRead}
-                      className="text-[11.5px] text-[#dc2626] hover:underline font-bold cursor-pointer"
-                      title="Dọn dẹp và xóa các thông báo đã đọc khỏi danh sách"
-                    >
-                      Dọn đã đọc
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearAll}
-                      className="text-[11.5px] text-[#6b7280] hover:text-[#dc2626] hover:underline font-bold cursor-pointer"
-                      title="Xóa toàn bộ thông báo trong hộp thư"
-                    >
-                      Xóa tất cả
-                    </button>
-                  </>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowDrawer(false)}
-                  className="p-1 rounded-lg text-[#1f2937] hover:text-[#dc2626] font-bold text-sm cursor-pointer ml-1"
-                >
-                  ✕
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowDrawer(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-[#1f2937] hover:text-[#dc2626] font-bold text-sm cursor-pointer transition"
+                title="Đóng hộp thư"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3">
@@ -449,6 +418,43 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
                 ))
               )}
             </div>
+
+            {/* Thanh công cụ thao tác chuyển xuống dưới cùng */}
+            {notifications.length > 0 && (
+              <div className="p-3 bg-[#f8fafc] border-t border-[#e5e7eb] flex items-center justify-between gap-2 shrink-0">
+                <span className="text-[12px] font-semibold text-[#6b7280]">
+                  {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Đã đọc tất cả'}
+                </span>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="px-3 py-1.5 rounded-lg bg-[#ebf3ff] text-[#003087] hover:bg-[#dbeafe] text-xs font-bold transition cursor-pointer"
+                      title="Đánh dấu tất cả thông báo là đã đọc"
+                    >
+                      Đã đọc tất cả
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleClearRead}
+                    className="px-2.5 py-1.5 rounded-lg border border-[#e5e7eb] hover:bg-slate-100 text-[#4b5563] text-xs font-semibold transition cursor-pointer"
+                    title="Dọn dẹp các thông báo đã đọc"
+                  >
+                    Dọn đã đọc
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#fef2f2] text-[#dc2626] hover:bg-[#fee2e2] text-xs font-bold transition cursor-pointer"
+                    title="Xóa toàn bộ thông báo trong hộp thư"
+                  >
+                    Xóa thông báo
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -265,6 +265,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     enriched.cvLink = cv;
 
     setSelectedStudent(enriched);
+    setStudents(prev => prev.map(item => (String(item.studentId || item.mssv || '').trim().toUpperCase() === sid) ? { ...item, ...enriched } : item));
     setDetailTab('personal');
     setInternalNote(enriched.lecturerNote || '');
 
@@ -380,17 +381,15 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           ? studentCertsList.map((c: any) => `${c.name || 'CC'} ${c.score || ''}`.trim()).join(' · ')
           : (certObj ? `${certObj.name || 'CC'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert));
 
-        let decl = s.declarationData || declMap.get(sid);
-        if (!decl) {
-          try {
-            const raw = localStorage.getItem('tdtu_decl_' + sid);
-            if (raw) decl = JSON.parse(raw);
-          } catch {}
-        }
+        // ƯU TIÊN SỐ 1: Khai báo mới nhất từ localStorage hoặc Cloud Firestore
+        let clientDecl = null;
+        try {
+          const raw = localStorage.getItem('tdtu_decl_' + sid);
+          if (raw) clientDecl = JSON.parse(raw);
+        } catch {}
+        const firestoreDecl = declMap.get(sid);
         const fsStudent = firestoreStudentsMap.get(sid);
-        if (!decl && fsStudent?.declarationData) {
-          decl = fsStudent.declarationData;
-        }
+        let decl = clientDecl || firestoreDecl || fsStudent?.declarationData || s.declarationData;
 
         const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
 
@@ -1376,19 +1375,56 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       </td>
 
                       <td className="py-3.5 px-3 text-[#1f2937]">
-                        <div className="font-bold text-[14.5px] text-[#003087] truncate">
-                          {sv.companyName || (sv.noCompanyOption === 'faculty' ? 'Khoa CNTT hỗ trợ' : (sv.status === 'has_company' ? 'Doanh nghiệp tiếp nhận' : '—'))}
-                        </div>
-                        {sv.position && sv.position !== 'Chưa cập nhật' && (
-                          <div className="text-[13px] text-[#4b5563] truncate">
-                            Vị trí: {sv.position}
-                          </div>
-                        )}
-                        {sv.contactPerson && (
-                          <div className="text-[13px] text-[#003087] font-semibold mt-0.5 truncate">
-                            Mentor: {sv.contactPerson} {sv.contactPhone ? `(${sv.contactPhone})` : ''}
-                          </div>
-                        )}
+                        {(() => {
+                          const sLower = String(sv.status || '').trim().toLowerCase();
+                          const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company';
+                          const isSupport = !isComp && (sv.noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
+                          const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || sv.noCompanyOption === 'self');
+
+                          if (isSupport) {
+                            return (
+                              <>
+                                <div className="font-bold text-[14.5px] text-[#003087] truncate">
+                                  Khoa CNTT hỗ trợ điều phối
+                                </div>
+                                <div className="text-[13px] text-[#4b5563] truncate">
+                                  Vị trí: {sv.desiredPosition || 'Chờ Khoa điều phối'}
+                                </div>
+                              </>
+                            );
+                          }
+
+                          if (isWait) {
+                            return (
+                              <>
+                                <div className="font-bold text-[14.5px] text-[#003087] truncate">
+                                  {sv.pendingCompany || 'Đang tìm kiếm / Chờ PV'}
+                                </div>
+                                <div className="text-[13px] text-[#4b5563] truncate">
+                                  Vị trí: {sv.desiredPosition || sv.position || 'Đang chờ phỏng vấn'}
+                                </div>
+                              </>
+                            );
+                          }
+
+                          return (
+                            <>
+                              <div className="font-bold text-[14.5px] text-[#003087] truncate">
+                                {sv.companyName || sv.company || 'Doanh nghiệp tiếp nhận'}
+                              </div>
+                              {sv.position && sv.position !== 'Chưa cập nhật' && (
+                                <div className="text-[13px] text-[#4b5563] truncate">
+                                  Vị trí: {sv.position}
+                                </div>
+                              )}
+                              {sv.contactPerson && (
+                                <div className="text-[13px] text-[#003087] font-semibold mt-0.5 truncate">
+                                  Người hướng dẫn: {sv.contactPerson}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </td>
 
                       <td className="py-3.5 px-3 text-[#4b5563] text-[13.5px] font-mono text-center whitespace-nowrap">
@@ -1767,59 +1803,140 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
               {detailTab === 'company' && (
                 <div className="space-y-6 animate-fadeIn">
-                  <div className="bg-[#f8fafc] p-7 rounded-2xl border-2 border-[#cbd5e1] space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
-                      <div>
-                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Tên công ty tiếp nhận:</div>
-                        <div className="text-[18px] md:text-[20px] font-extrabold text-[#003087] leading-snug">
-                          {selectedStudent.companyName || selectedStudent.company || selectedStudent.assignedCompany || selectedStudent.declarationData?.companyName || 'Chưa khai báo'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Mã số thuế (MST):</div>
-                        <div className="text-[17px] font-mono font-bold text-[#1f2937]">
-                          {selectedStudent.taxCode || selectedStudent.companyTaxCode || selectedStudent.declarationData?.taxCode || '—'}
-                        </div>
-                      </div>
-                    </div>
+                  {(() => {
+                    const sLower = String(selectedStudent.status || '').trim().toLowerCase();
+                    const isComp = sLower === 'đã có nơi' || sLower === 'có doanh nghiệp' || sLower === 'has_company';
+                    const isSupport = !isComp && (selectedStudent.noCompanyOption === 'faculty' || sLower.includes('hỗ trợ') || sLower === 'need_support');
+                    const isWait = !isComp && !isSupport && (sLower.includes('chờ pv') || sLower.includes('phỏng vấn') || sLower === 'interviewing' || selectedStudent.noCompanyOption === 'self');
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
-                      <div>
-                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí thực tập:</div>
-                        <div className="text-[17px] font-bold text-[#1f2937]">
-                          {selectedStudent.position || selectedStudent.declarationData?.position || '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Địa chỉ trụ sở doanh nghiệp:</div>
-                        <div className="text-[15.5px] font-semibold text-[#1f2937] leading-relaxed">
-                          {selectedStudent.companyAddress || selectedStudent.address || selectedStudent.declarationData?.address || selectedStudent.declarationData?.companyAddress || '—'}
-                        </div>
-                      </div>
-                    </div>
+                    if (isSupport) {
+                      return (
+                        <div className="bg-[#fef2f2] p-7 rounded-2xl border-2 border-[#fecaca] space-y-5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#fecaca]">
+                            <div>
+                              <div className="text-[13px] font-bold text-[#dc2626] uppercase tracking-wide mb-1.5">Trạng thái điều phối:</div>
+                              <div className="text-[18px] md:text-[20px] font-extrabold text-[#dc2626] leading-snug">
+                                Khoa CNTT hỗ trợ kết nối doanh nghiệp
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí mong muốn:</div>
+                              <div className="text-[17px] font-bold text-[#1f2937]">
+                                {selectedStudent.desiredPosition || selectedStudent.position || 'Chờ Khoa điều phối'}
+                              </div>
+                            </div>
+                          </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Cán bộ hướng dẫn (Mentor):</div>
-                        <div className="text-[17px] font-extrabold text-[#003087]">
-                          {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || selectedStudent.declarationData?.contactPerson || 'Chưa cập nhật'}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Người hướng dẫn:</div>
+                              <div className="text-[17px] font-extrabold text-[#003087]">
+                                Trợ lý Doanh nghiệp Khoa CNTT
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Ghi chú nguyện vọng:</div>
+                              <div className="text-[15px] font-medium text-[#1f2937]">
+                                {selectedStudent.supportNote || selectedStudent.declarationData?.supportNote || 'Sinh viên đề nghị Khoa hỗ trợ tìm kiếm doanh nghiệp tiếp nhận thực tập.'}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">SĐT cán bộ hướng dẫn:</div>
-                        <div className="text-[16px] font-mono font-bold text-[#1f2937]">
-                          {selectedStudent.contactPhone || selectedStudent.mentorPhone || selectedStudent.declarationData?.contactPhone || '—'}
-                          {(selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail}` : ''}
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    }
 
-                    {(selectedStudent.representative || selectedStudent.declarationData?.representative) && (
-                      <div className="pt-3 border-t border-[#e5e7eb] text-[13.5px] text-[#4b5563]">
-                        Đại diện pháp luật: <strong className="text-[#1f2937]">{selectedStudent.representative || selectedStudent.declarationData?.representative}</strong>
+                    if (isWait) {
+                      return (
+                        <div className="bg-[#fffbeb] p-7 rounded-2xl border-2 border-[#fde68a] space-y-5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#fde68a]">
+                            <div>
+                              <div className="text-[13px] font-bold text-[#b45309] uppercase tracking-wide mb-1.5">Trạng thái ứng tuyển:</div>
+                              <div className="text-[18px] md:text-[20px] font-extrabold text-[#b45309] leading-snug">
+                                {selectedStudent.pendingCompany || 'Đang tìm kiếm / Chờ phỏng vấn'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí đang phỏng vấn:</div>
+                              <div className="text-[17px] font-bold text-[#1f2937]">
+                                {selectedStudent.desiredPosition || selectedStudent.position || 'Đang chờ kết quả phỏng vấn'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Người hướng dẫn:</div>
+                              <div className="text-[16px] font-bold text-[#64748b]">
+                                Chưa có (Đang chờ kết quả phỏng vấn)
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Cam kết của sinh viên:</div>
+                              <div className="text-[15px] font-medium text-[#1f2937]">
+                                Tự liên hệ ứng tuyển, cam kết cập nhật lại thông tin ngay khi nhận được thư tiếp nhận từ doanh nghiệp.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="bg-[#f8fafc] p-7 rounded-2xl border-2 border-[#cbd5e1] space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
+                          <div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Tên công ty tiếp nhận:</div>
+                            <div className="text-[18px] md:text-[20px] font-extrabold text-[#003087] leading-snug">
+                              {selectedStudent.companyName || selectedStudent.company || selectedStudent.assignedCompany || selectedStudent.declarationData?.companyName || 'Chưa khai báo'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Mã số thuế (MST):</div>
+                            <div className="text-[17px] font-mono font-bold text-[#1f2937]">
+                              {selectedStudent.taxCode || selectedStudent.companyTaxCode || selectedStudent.declarationData?.taxCode || '—'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4 border-b border-[#e5e7eb]">
+                          <div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Vị trí thực tập:</div>
+                            <div className="text-[17px] font-bold text-[#1f2937]">
+                              {selectedStudent.position || selectedStudent.declarationData?.position || '—'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Địa chỉ trụ sở doanh nghiệp:</div>
+                            <div className="text-[15.5px] font-semibold text-[#1f2937] leading-relaxed">
+                              {selectedStudent.companyAddress || selectedStudent.address || selectedStudent.declarationData?.address || selectedStudent.declarationData?.companyAddress || '—'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <div className="text-[13px] font-bold text-[#003087] uppercase tracking-wide mb-1.5">Người hướng dẫn:</div>
+                            <div className="text-[17px] font-extrabold text-[#003087]">
+                              {selectedStudent.contactPerson || selectedStudent.mentorName || selectedStudent.mentor || selectedStudent.declarationData?.contactPerson || 'Chưa cập nhật'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">SĐT người hướng dẫn:</div>
+                            <div className="text-[16px] font-mono font-bold text-[#1f2937]">
+                              {selectedStudent.contactPhone || selectedStudent.mentorPhone || selectedStudent.declarationData?.contactPhone || '—'}
+                              {(selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail) ? ` · ${selectedStudent.contactEmail || selectedStudent.mentorEmail || selectedStudent.declarationData?.contactEmail}` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        {(selectedStudent.representative || selectedStudent.declarationData?.representative) && (
+                          <div className="pt-3 border-t border-[#e5e7eb] text-[13.5px] text-[#4b5563]">
+                            Đại diện pháp luật: <strong className="text-[#1f2937]">{selectedStudent.representative || selectedStudent.declarationData?.representative}</strong>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
 
                   <div>
                     <label className="block text-[14px] font-bold text-[#1f2937] mb-2 uppercase tracking-wide">

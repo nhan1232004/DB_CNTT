@@ -1528,13 +1528,13 @@
     "statusType": "seeking",
     "company": "",
     "companyName": "",
-    "cert": "IELTS 6.5 · TOEIC 650",
-    "certStatus": "Đã nộp",
+    "cert": "",
+    "certStatus": "Chưa nộp",
     "updated": "02/11/2026",
     "semester": "hk1_2026_2027",
-    "certificateDisplay": "IELTS 6.5 · TOEIC 650",
-    "certName": "IELTS",
-    "certScore": "6.5"
+    "certificateDisplay": "",
+    "certName": "",
+    "certScore": ""
   },
   {
     "stt": 40,

@@ -34,13 +34,6 @@ class ApiClient {
       }
     } catch {}
 
-    if (sid === '522H0118') {
-      const builtins = (this.BUILTIN_STUDENT_CERTS || []).filter((c: any) => c.studentId === '522H0118');
-      if (builtins.length > 0) {
-        this.setCachedCerts(sid, builtins);
-        return builtins;
-      }
-    }
     return [];
   }
 
@@ -375,11 +368,25 @@ class ApiClient {
           notes.sort((a, b) => String(b.createdAt || b.timestamp || '').localeCompare(String(a.createdAt || a.timestamp || '')));
           localStorage.setItem(this.notificationKey, JSON.stringify(notes.slice(0, 50)));
           window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: notes }));
+          window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: notes }));
         } else {
           localStorage.setItem(this.notificationKey, JSON.stringify([]));
           window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: [] }));
+          window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: [] }));
         }
       }, err => {});
+
+      // Dọn dẹp triệt để dữ liệu gắn cứng cũ của sinh viên 522H0118
+      try {
+        localStorage.removeItem('tdtu_certs_522H0118');
+        localStorage.removeItem('tdtu_certs_522h0118');
+        if (this._certsCache) {
+          this._certsCache.delete('522H0118');
+          this._certsCache.delete('522h0118');
+        }
+        db.collection('tdtu_certificates').doc('cert_522H0118_ielts_01').delete().catch(() => {});
+        db.collection('tdtu_certificates').doc('cert_522H0118_toeic_02').delete().catch(() => {});
+      } catch {}
 
       // 1.5 Lắng nghe hồ sơ khai báo doanh nghiệp & CV thời gian thực (tdtu_declarations)
       db.collection('tdtu_declarations').onSnapshot(snapshot => {
@@ -436,8 +443,14 @@ class ApiClient {
           try { localStorage.setItem('tdtu_published_jds', JSON.stringify(jds)); } catch {}
           window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: jds }));
         } else {
-          try { localStorage.setItem('tdtu_published_jds', JSON.stringify([])); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: [] }));
+          const defaults = ApiClient.getDefaultSeedJds();
+          if (defaults.length > 0) {
+            try { localStorage.setItem('tdtu_published_jds', JSON.stringify(defaults)); } catch {}
+            defaults.forEach(jd => {
+              db.collection('tdtu_jds').doc(jd.id).set(jd, { merge: true }).catch(() => {});
+            });
+            window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: defaults }));
+          }
         }
       }, err => {
         console.info('[Firestore Sync note - JDs]: Chế độ bộ nhớ cục bộ.', err.message);
@@ -3630,49 +3643,8 @@ class ApiClient {
   // ==========================================
   // REAL-TIME FIRESTORE CRUD: CHỨNG CHỈ (tdtu_certificates)
   // ==========================================
-  // Dữ liệu chứng chỉ tiếng Anh khởi tạo chuẩn của Sinh viên (Ví dụ 522H0118 có 2 chứng chỉ)
-  static BUILTIN_STUDENT_CERTS = [
-    {
-      id: 'cert_522H0118_ielts_01',
-      studentId: '522H0118',
-      studentName: 'Lý Hưng Lâm',
-      className: '22H50302',
-      name: 'IELTS',
-      type: 'Ngoại ngữ',
-      score: '6.5',
-      level: 'B2',
-      examDate: '10/10/2026',
-      issueDate: '24/10/2026',
-      driveLink: 'https://drive.google.com/file/d/1IELTS_522H0118_sample_proof/view',
-      proofData: 'https://drive.google.com/file/d/1IELTS_522H0118_sample_proof/view',
-      fileName: 'IELTS_Certificate_6.5.pdf',
-      fileType: 'LINK',
-      fileSize: 'Google Drive',
-      status: 'Đã nộp',
-      commitmentConfirmed: 1,
-      createdAt: '2026-10-25T08:00:00.000Z'
-    },
-    {
-      id: 'cert_522H0118_toeic_02',
-      studentId: '522H0118',
-      studentName: 'Lý Hưng Lâm',
-      className: '22H50302',
-      name: 'TOEIC',
-      type: 'Ngoại ngữ',
-      score: '650',
-      level: 'B1',
-      examDate: '15/09/2026',
-      issueDate: '28/09/2026',
-      driveLink: 'https://drive.google.com/file/d/1TOEIC_522H0118_sample_proof/view',
-      proofData: 'https://drive.google.com/file/d/1TOEIC_522H0118_sample_proof/view',
-      fileName: 'TOEIC_Certificate_650.pdf',
-      fileType: 'LINK',
-      fileSize: 'Google Drive',
-      status: 'Đã nộp',
-      commitmentConfirmed: 1,
-      createdAt: '2026-09-29T08:00:00.000Z'
-    }
-  ];
+  // Dữ liệu chứng chỉ tiếng Anh khởi tạo chuẩn của Sinh viên
+  static BUILTIN_STUDENT_CERTS: any[] = [];
 
   // ==========================================
   // Lấy toàn bộ chứng chỉ sinh viên toàn khoa (Scope All - Quyền Giảng viên & Admin Khoa)
@@ -3846,15 +3818,7 @@ class ApiClient {
         }
       }
 
-      // 4. Nếu là 522H0118, luôn bảo đảm có đủ 2 chứng chỉ IELTS 6.5 & TOEIC 650
-      if (sid === '522H0118') {
-        for (const bc of (this.BUILTIN_STUDENT_CERTS || []).filter(c => c.studentId === '522H0118')) {
-          if (!existingIds.has(bc.id)) {
-            list.push(bc);
-            existingIds.add(bc.id);
-          }
-        }
-      }
+
 
       if (list.length > 0) {
         this.setCachedCerts(sid, list);

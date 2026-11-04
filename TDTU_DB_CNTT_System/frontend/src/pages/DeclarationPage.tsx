@@ -1141,7 +1141,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                     <th className="py-3.5 px-4 text-center">Trạng thái</th>
                     <th className="py-3.5 px-4">Doanh nghiệp</th>
                     <th className="py-3.5 px-4">Vị trí</th>
-                    <th className="py-3.5 px-4">Mentor</th>
+                    <th className="py-3.5 px-4">Người hướng dẫn</th>
                     <th className="py-3.5 px-4 text-center">Link CV</th>
                     <th className="py-3.5 px-4 text-center">Thao tác</th>
                   </tr>
@@ -1184,14 +1184,18 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                         {/* Doanh nghiệp / Nơi thực tập */}
                         <td className="py-3.5 px-4">
                           <div className="font-extrabold text-[#003087] dark:text-sky-300">
-                            {row.companyName}
+                            {row.status === 'has_company'
+                              ? row.companyName
+                              : row.status === 'interviewing'
+                                ? (row.pendingCompany || 'Đang tìm kiếm / Chờ PV')
+                                : 'Khoa CNTT hỗ trợ điều phối'}
                           </div>
-                          {row.taxCode ? (
+                          {row.status === 'has_company' && row.taxCode ? (
                             <div className="text-[11px] font-mono text-slate-500 mt-0.5">
                               MST: {row.taxCode}
                             </div>
                           ) : null}
-                          {row.address ? (
+                          {row.status === 'has_company' && row.address ? (
                             <div className="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
                               {row.address}
                             </div>
@@ -1201,14 +1205,20 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                         {/* Vị trí thực tập */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-800 dark:text-slate-200">
-                            {row.position || 'Thực tập sinh'}
+                            {row.status === 'has_company'
+                              ? (row.position || 'Thực tập sinh')
+                              : row.status === 'interviewing'
+                                ? (row.desiredPosition || row.position || 'Đang chờ phỏng vấn')
+                                : (row.desiredPosition || row.position || 'Chờ Khoa hỗ trợ')}
                           </div>
                         </td>
 
-                        {/* Cán bộ hướng dẫn */}
+                        {/* Người hướng dẫn */}
                         <td className="py-3.5 px-4">
                           <div className="text-slate-700 dark:text-slate-300">
-                            {row.mentor || 'Chưa cập nhật'}
+                            {row.status === 'has_company'
+                              ? (row.mentor || 'Chưa chỉ định')
+                              : (row.status === 'need_support' ? 'Trợ lý DN Khoa' : '—')}
                           </div>
                         </td>
 
@@ -2117,101 +2127,123 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       {/* ========================================================================= */}
       {selectedDetailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 w-[95vw] max-w-6xl xl:max-w-7xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[94vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 w-[95vw] max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[94vh] flex flex-col">
             
             <div className="p-5 bg-[#003087] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base">
+                  <h3 className="font-extrabold text-lg">
                     Chi tiết Hồ sơ Khai báo Thực tập
                   </h3>
-                  
+                  <div className="text-xs text-white/80">
+                    Trạng thái: <strong className="text-white">{selectedDetailModal.statusLabel}</strong>
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedDetailModal(null)}
-                className="text-white/80 hover:text-white text-lg font-bold p-1 cursor-pointer"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 text-xl font-bold cursor-pointer transition"
+                title="Đóng cửa sổ"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+            <div className="p-6 md:p-8 overflow-y-auto space-y-5 text-sm">
               
               {/* Sinh viên & Môn học */}
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Họ và tên:</span>
-                  <div className="font-extrabold text-slate-900  mt-0.5 text-sm">{studentName}</div>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Họ và tên sinh viên:</span>
+                  <div className="font-extrabold text-slate-900 dark:text-white mt-1 text-base">{studentName}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Mã số sinh viên:</span>
-                  <div className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-0.5">{studentId}</div>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Mã số sinh viên:</span>
+                  <div className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-1 text-base">{studentId}</div>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Học phần phân bổ:</span>
-                  <div className="font-bold text-[#003087] dark:text-sky-300 mt-0.5">{selectedDetailModal.courseName}</div>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Học phần thực tập:</span>
+                  <div className="font-extrabold text-[#003087] dark:text-sky-300 mt-1 text-base">{selectedDetailModal.courseName}</div>
                 </div>
               </div>
 
-              {/* Thông tin nơi thực tập */}
-              <div className="p-4 bg-blue-50/40 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800 space-y-2.5">
-                <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-[11px]">
-                  Đơn vị tiếp nhận / Doanh nghiệp:
+              {/* Thông tin nơi thực tập & Doanh nghiệp */}
+              <div className="p-5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-3">
+                <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-xs flex items-center gap-2">
+                  <span>🏢</span>
+                  <span>{selectedDetailModal.status === 'has_company' ? 'Doanh nghiệp tiếp nhận thực tập:' : (selectedDetailModal.status === 'need_support' ? 'Điều phối tiếp nhận:' : 'Tình trạng ứng tuyển:')}</span>
                 </div>
-                <div className="font-extrabold text-base text-slate-900 ">
-                  {selectedDetailModal.companyName}
+                <div className="font-extrabold text-lg text-slate-900 dark:text-white">
+                  {selectedDetailModal.status === 'has_company'
+                    ? (selectedDetailModal.companyName || 'Doanh nghiệp đã khai báo')
+                    : (selectedDetailModal.status === 'need_support'
+                        ? 'Khoa CNTT hỗ trợ điều phối doanh nghiệp'
+                        : (selectedDetailModal.pendingCompany || 'Đang tìm kiếm / Chờ kết quả phỏng vấn'))}
                 </div>
-                {selectedDetailModal.taxCode && (
-                  <div className="font-mono text-slate-600 dark:text-slate-400">
-                    Mã số thuế: <strong>{selectedDetailModal.taxCode}</strong>
+                {selectedDetailModal.status === 'has_company' && selectedDetailModal.taxCode && (
+                  <div className="font-mono text-sm text-slate-700 dark:text-slate-300">
+                    Mã số thuế doanh nghiệp: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.taxCode}</strong>
                   </div>
                 )}
-                {selectedDetailModal.address && (
-                  <div className="text-slate-600 dark:text-slate-300">
-                    Địa chỉ: {selectedDetailModal.address}
+                {selectedDetailModal.status === 'has_company' && selectedDetailModal.address && (
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Địa chỉ làm việc: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.address}</strong>
                   </div>
                 )}
-                {selectedDetailModal.representative && (
-                  <div className="text-slate-600 dark:text-slate-300">
-                    Đại diện pháp luật: {selectedDetailModal.representative}
+                {selectedDetailModal.status === 'has_company' && selectedDetailModal.representative && (
+                  <div className="text-sm text-slate-700 dark:text-slate-300">
+                    Đại diện pháp luật: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.representative}</strong>
                   </div>
                 )}
               </div>
 
-              {/* Vị trí & Mentor */}
-              <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+              {/* Vị trí & Người hướng dẫn */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Vị trí thực tập:</span>
-                  <div className="font-extrabold text-[#003087] dark:text-sky-300 text-sm mt-0.5">{selectedDetailModal.position}</div>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
+                    {selectedDetailModal.status === 'has_company' ? 'Vị trí thực tập tiếp nhận:' : (selectedDetailModal.status === 'need_support' ? 'Vị trí nguyện vọng đề xuất:' : 'Vị trí đang phỏng vấn:')}
+                  </span>
+                  <div className="font-extrabold text-[#003087] dark:text-sky-300 text-base mt-1">
+                    {selectedDetailModal.status === 'has_company'
+                      ? (selectedDetailModal.position || 'Thực tập sinh')
+                      : (selectedDetailModal.status === 'need_support'
+                          ? (selectedDetailModal.desiredPosition || selectedDetailModal.position || 'Chờ Khoa hỗ trợ phân bổ')
+                          : (selectedDetailModal.desiredPosition || selectedDetailModal.position || 'Đang chờ kết quả phỏng vấn'))}
+                  </div>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Cán bộ hướng dẫn (Mentor):</span>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedDetailModal.mentor}</div>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Người hướng dẫn:</span>
+                  <div className="font-bold text-slate-800 dark:text-slate-200 text-base mt-1">
+                    {selectedDetailModal.status === 'has_company'
+                      ? (selectedDetailModal.mentor || 'Chưa chỉ định')
+                      : (selectedDetailModal.status === 'need_support'
+                          ? 'Trợ lý Doanh nghiệp Khoa CNTT'
+                          : 'Chưa có (Đang chờ phỏng vấn)')}
+                  </div>
                 </div>
               </div>
 
               {/* Minh chứng Drive nếu có */}
               {selectedDetailModal.cvDriveLink && (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Link CV:</span>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Hồ sơ năng lực (Link CV):</span>
                   <div>
                     <a
                       href={selectedDetailModal.cvDriveLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer mt-1"
+                      className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-sm font-bold transition inline-flex items-center gap-2 shadow-xs cursor-pointer"
                     >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
                       </svg>
-                      <span>Xem CV</span>
+                      <span>Mở xem CV trên Google Drive</span>
                       <span>↗</span>
                     </a>
                   </div>
@@ -2220,9 +2252,9 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
 
               {/* Ghi chú */}
               {selectedDetailModal.supportNote && (
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold">Ghi chú bổ sung:</span>
-                  <div className="text-slate-700 dark:text-slate-300 italic mt-0.5">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Ghi chú bổ sung:</span>
+                  <div className="text-slate-800 dark:text-slate-200 text-sm italic mt-1 leading-relaxed">
                     "{selectedDetailModal.supportNote}"
                   </div>
                 </div>
@@ -2231,13 +2263,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
             </div>
 
             <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 Cơ quan xét duyệt: Khoa CNTT - ĐH Tôn Đức Thắng
               </span>
               <button
                 type="button"
                 onClick={() => setSelectedDetailModal(null)}
-                className="px-5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition text-xs cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition text-sm cursor-pointer"
               >
                 Đóng
               </button>
