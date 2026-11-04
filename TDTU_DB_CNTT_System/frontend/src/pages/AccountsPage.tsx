@@ -269,7 +269,7 @@ const AccountsPage = ({ currentUser }) => {
       <div className="bg-white  p-6 rounded-xl border border-[#e5e7eb]  shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1f2937] ">
-            Quản trị Tài khoản & Cấu hình Hạn chót
+            Quản trị Tài khoản & Phân quyền
           </h1>
           
         </div>
@@ -378,7 +378,7 @@ const AccountsPage = ({ currentUser }) => {
                       <th className="p-4 w-48 text-center">Vai trò hệ thống</th>
                       <th className="p-4 w-32 text-center">Phân quyền</th>
                       <th className="p-4 w-36 text-center">Trạng thái</th>
-                      <th className="p-4 w-48 text-right sticky right-0 bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Tác vụ Quản trị</th>
+                      <th className="p-4 w-72 min-w-[260px] whitespace-nowrap text-right sticky right-0 bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Tác vụ Quản trị</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f1f5f9] font-medium">
@@ -401,7 +401,7 @@ const AccountsPage = ({ currentUser }) => {
                           </td>
 
                           <td className="p-4">
-                            <span className="font-mono text-[13.5px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
+                            <span className="font-mono text-[13.5px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-md border border-[#bfdbfe] whitespace-nowrap inline-block">
                               {u.taxCode || u.lecturerCode || u.studentId || u.uid || '—'}
                             </span>
                           </td>
@@ -450,7 +450,7 @@ const AccountsPage = ({ currentUser }) => {
                             )}
                           </td>
 
-                          <td className="p-4 text-right space-x-2 sticky right-0 bg-white group-hover:bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                          <td className="p-4 text-right space-x-2 sticky right-0 bg-white group-hover:bg-[#f8fafc] z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] w-72 min-w-[260px] whitespace-nowrap">
                             {u.role === 'lecturer' && (
                               <button
                                 type="button"

@@ -87,6 +87,7 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
     setSemestersList(list);
     try {
       localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: list }));
     } catch {}
   };
 
@@ -103,7 +104,19 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
       isActive: s.id === id
     }));
     saveSemesters(updated);
-    showToast(` Đã kích hoạt học kỳ chính thức thành công!`);
+    try {
+      localStorage.setItem('tdtu_active_semester', id);
+    } catch {}
+    const target = updated.find(s => s.id === id);
+    if (target && window.ApiClient?.saveSystemDeadlines) {
+      window.ApiClient.saveSystemDeadlines(target);
+    }
+    window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: id, semester: target } }));
+    window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: updated }));
+    if (target) {
+      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: target }));
+    }
+    showToast(`Đã kích hoạt học kỳ "${target?.name || id}" thành công!`);
   };
 
   // Xóa học kỳ
@@ -131,6 +144,11 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
     // Cập nhật cả deadline hệ thống
     if (editingSemester.isActive && window.ApiClient?.saveSystemDeadlines) {
       window.ApiClient.saveSystemDeadlines(editingSemester);
+    }
+    window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: updated }));
+    if (editingSemester.isActive) {
+      window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: editingSemester.id, semester: editingSemester } }));
+      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: editingSemester }));
     }
     setEditingSemester(null);
     showToast(' Đã cập nhật thông tin học kỳ và các mốc hạn chót!');
@@ -298,10 +316,10 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={() => handleDelete(sem.id)}
-                      className="p-1 text-[#dc2626] hover:bg-[#fef2f2] rounded-lg text-[14px] cursor-pointer"
+                      className="px-2.5 py-1 text-[#dc2626] bg-[#fef2f2] hover:bg-[#fee2e2] rounded-lg text-[13px] font-bold cursor-pointer transition border border-[#fecaca]"
                       title="Xóa học kỳ"
                     >
-                      
+                      Xóa
                     </button>
                   )}
                 </div>

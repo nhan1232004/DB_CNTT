@@ -1040,57 +1040,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
       {/* ========================================================================= */}
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {/* Banner Bản nháp đang lưu */}
-          {savedDraft && !serverDeclaration && (
-            <div className="p-5 rounded-2xl bg-[#ebf3ff] border-2 border-[#003087] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-fadeIn">
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-white text-[#003087] flex items-center justify-center font-bold text-lg border border-[#bfdbfe] shrink-0 shadow-2xs">
-                  📝
-                </div>
-                <div>
-                  <div className="text-[15px] font-bold text-[#003087] flex items-center gap-2">
-                    <span>Hồ sơ khai báo bản nháp đang lưu</span>
-                    {savedDraft.savedAt && (
-                      <span className="text-[12px] font-semibold text-[#4b5563] bg-white px-2.5 py-0.5 rounded-full border border-[#cbd5e1]">
-                        Lúc {savedDraft.savedAt}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[13px] text-[#4b5563] mt-0.5 font-medium">
-                    {savedDraft.companyInfo?.name || savedDraft.companyName
-                      ? `Đơn vị: ${savedDraft.companyInfo?.name || savedDraft.companyName} · Vị trí: ${savedDraft.position || 'Thực tập sinh'}`
-                      : (savedDraft.internshipStatus === 'need_support' ? 'Trạng thái: Đề nghị Khoa CNTT hỗ trợ điều phối' : 'Đang điền thông tin (chưa gửi phê duyệt)')}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('form');
-                    if (savedDraft.currentStep) setCurrentStep(savedDraft.currentStep);
-                  }}
-                  className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>Tiếp tục hoàn thiện bản nháp</span>
-                  <span>→</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('Bạn có chắc chắn muốn xóa bản nháp khai báo này không?')) {
-                      localStorage.removeItem('tdtu_decl_draft_' + studentId);
-                      setSavedDraft(null);
-                    }
-                  }}
-                  className="px-4 py-2.5 bg-white text-[#dc2626] border border-[#fecaca] hover:bg-[#fee2e2] text-[13px] font-bold rounded-xl transition cursor-pointer"
-                >
-                  Xóa nháp
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
           
           {/* Card Table Header */}
@@ -1313,11 +1262,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
               <span>Quay lại bảng hồ sơ đã nộp</span>
             </button>
             <div className="flex items-center gap-3">
-              {Boolean(lastSavedTime) && (
-                <span className="text-[11.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                  ✓ Đã lưu bản nháp lúc {lastSavedTime}
-                </span>
-              )}
               <div className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                 {isEditingExisting ? 'Cập nhật hồ sơ thực tập' : 'Biểu mẫu khai báo thực tập mới'}
               </div>
@@ -1332,7 +1276,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
               
               {/* Stepper Header (Dynamic theo ngữ cảnh) */}
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xs">
-                <div className="flex items-center justify-between gap-2 overflow-x-auto">
+                <div className="flex items-center justify-between gap-2 overflow-hidden">
                   {stepsMeta.map((s, idx) => {
                     const isPassed = currentStep > s.num;
                     const isCurrent = currentStep === s.num;
@@ -1387,7 +1331,8 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                     <div
                       onClick={() => {
                         setInternshipStatus('has_company');
-                        saveDraft({ internshipStatus: 'has_company' });
+                        setPendingCompany('');
+                        setDesiredPosition('');
                       }}
                       className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                         internshipStatus === 'has_company'
@@ -1413,9 +1358,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                           Doanh nghiệp đã đồng ý tiếp nhận bạn làm thực tập sinh. Bạn cần nhập MST và thông tin người hướng dẫn.
                         </p>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-                        Cần hoàn thành 3 bước →
-                      </span>
                     </div>
 
                     {/* Option 2: Đang tìm / Chờ phỏng vấn */}
@@ -1426,8 +1368,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                         setCompanyInfo({ name: '', address: '', representative: '', taxDepartment: '', status: '', updatedAt: '', orgType: '' });
                         setContactPerson('');
                         setContactPhone('');
+                        setPosition('');
+                        setDesiredPosition('');
+                        setPendingCompany('');
                         setTaxConfirmed(false);
-                        saveDraft({ internshipStatus: 'interviewing', currentStep: 1 });
                       }}
                       className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                         internshipStatus === 'interviewing'
@@ -1451,9 +1395,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                           Bạn đang chủ động nộp hồ sơ, chờ kết quả phỏng vấn. Bạn sẽ cập nhật khi có kết quả chính thức.
                         </p>
                       </div>
-                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                        Chỉ cần 2 bước (Không cần MST) →
-                      </span>
                     </div>
 
                     {/* Option 3: Cần Khoa hỗ trợ */}
@@ -1464,8 +1405,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                         setCompanyInfo({ name: '', address: '', representative: '', taxDepartment: '', status: '', updatedAt: '', orgType: '' });
                         setContactPerson('');
                         setContactPhone('');
+                        setPosition('');
+                        setDesiredPosition('');
+                        setPendingCompany('');
                         setTaxConfirmed(false);
-                        saveDraft({ internshipStatus: 'need_support', currentStep: 1 });
                       }}
                       className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                         internshipStatus === 'need_support'
@@ -1489,10 +1432,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                           Bạn chưa tìm được nơi thực tập. Khoa CNTT sẽ kết nối doanh nghiệp đối tác và sắp xếp phỏng vấn.
                         </p>
                       </div>
-                      <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                        Chỉ cần 2 bước (Gửi nguyện vọng) →
-                      </span>
                     </div>
+                  </div>
+                </div>
+              )}
                   </div>
                 </div>
               )}
@@ -1938,20 +1881,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                  {/* Nút Lưu bản nháp chủ động (Item 3) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      saveDraft();
-                      const nowStr = new Date().toLocaleTimeString('vi-VN');
-                      setLastSavedTime(nowStr);
-                      setMessage({ type: 'success', text: `Đã lưu bản nháp lúc ${nowStr}` });
-                    }}
-                    className="px-5 py-2.5 min-w-[130px] rounded-lg border border-[#003087] bg-white hover:bg-[#ebf3ff] text-xs font-bold text-[#003087] transition flex items-center justify-center cursor-pointer whitespace-nowrap"
-                  >
-                    <span>Lưu bản nháp</span>
-                  </button>
-
                   {/* Trường hợp: has_company Bước 1 hoặc 2 -> Nút Tiếp tục */}
                   {internshipStatus === 'has_company' && currentStep < 3 && (
                     <button
@@ -1981,8 +1910,12 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={handleSubmitInterviewing}
-                      disabled={submitting || isReadOnly}
-                      className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+                      disabled={!interviewCommitment || submitting || isReadOnly}
+                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        !interviewCommitment || submitting || isReadOnly
+                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                          : 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm cursor-pointer'
+                      }`}
                     >
                       {submitting ? 'Đang lưu...' : 'Gửi cập nhật trạng thái ✓'}
                     </button>
@@ -2005,8 +1938,12 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={handleSubmitNeedSupport}
-                      disabled={submitting || isReadOnly}
-                      className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+                      disabled={!supportCommitment || submitting || isReadOnly}
+                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        !supportCommitment || submitting || isReadOnly
+                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                          : 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm cursor-pointer'
+                      }`}
                     >
                       {submitting ? 'Đang gửi...' : 'Nộp đề xuất tới Khoa CNTT ✓'}
                     </button>
@@ -2017,8 +1954,12 @@ const DeclarationPage = ({ currentUser, onNavigateTab }) => {
                     <button
                       type="button"
                       onClick={handleSubmitFinal}
-                      disabled={submitting || isReadOnly}
-                      className="px-7 py-2.5 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+                      disabled={!finalConfirmed || submitting || isReadOnly}
+                      className={`px-7 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        !finalConfirmed || submitting || isReadOnly
+                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                          : 'bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm cursor-pointer'
+                      }`}
                     >
                       {submitting ? 'Đang lưu hồ sơ...' : 'Xác nhận & Hoàn tất khai báo ✓'}
                     </button>

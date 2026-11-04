@@ -9,6 +9,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
   // State Quản lý Hồ sơ Cá nhân
   const [cvLink, setCvLink] = React.useState('');
   const [cvSavedToast, setCvSavedToast] = React.useState(null);
+  const [showCvPreview, setShowCvPreview] = React.useState(false);
   const [declaration, setDeclaration] = React.useState(null);
   const [draft, setDraft] = React.useState(null);
   const [certs, setCerts] = React.useState([]);
@@ -435,25 +436,58 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
                   Xem trước CV đã lưu (Review CV trực tuyến)
                 </span>
               </div>
-              <a
-                href={cvLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[12.5px] font-bold text-[#003087] hover:underline flex items-center gap-1 self-start sm:self-auto"
-              >
-                <span>Mở trong thẻ mới</span>
-                <span>↗</span>
-              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCvPreview(!showCvPreview)}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] hover:bg-[#dbeafe] text-[12.5px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>{showCvPreview ? 'Thu gọn xem trước' : 'Xem trước CV trực tuyến'}</span>
+                </button>
+                <a
+                  href={cvLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12.5px] font-bold text-[#003087] hover:underline flex items-center gap-1 self-start sm:self-auto ml-1"
+                >
+                  <span>Mở trong thẻ mới</span>
+                  <span>↗</span>
+                </a>
+              </div>
             </div>
 
-            <div className="w-full h-[520px] rounded-xl border border-[#cbd5e1] overflow-hidden bg-[#f8fafc] shadow-inner relative">
-              <iframe
-                src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(cvLink) : cvLink}
-                title="Review CV Sinh viên"
-                className="w-full h-full border-0"
-                allow="autoplay"
-              />
-            </div>
+            {showCvPreview ? (
+              (() => {
+                const isGoogleDrive = cvLink.includes('drive.google.com') || cvLink.includes('docs.google.com');
+                if (!isGoogleDrive) {
+                  return (
+                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-medium flex items-center gap-2">
+                      <span>⚠️</span>
+                      <span>Đường dẫn liên kết không phải miền Google Drive hợp lệ (drive.google.com). Để đảm bảo an ninh bảo mật, hệ thống không cho phép nhúng trực tiếp website bên ngoài. Bạn có thể bấm "Mở trong thẻ mới ↗" để kiểm tra.</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="w-full h-[520px] rounded-xl border border-[#cbd5e1] overflow-hidden bg-[#f8fafc] shadow-inner relative animate-fadeIn">
+                    <iframe
+                      src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(cvLink) : cvLink}
+                      title="Review CV Sinh viên"
+                      className="w-full h-full border-0"
+                      allow="autoplay"
+                    />
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="p-4 text-center border border-[#e5e7eb] rounded-xl bg-[#f8fafc] text-[13px] text-[#4b5563]">
+                Nhấn nút <strong>"Xem trước CV trực tuyến"</strong> ở trên để nạp khung xem trước tài liệu khi cần duyệt.
+              </div>
+            )}
+
             <p className="text-[11.5px] text-[#6b7280]">
               * Lưu ý: Hãy đảm bảo bạn đã bật quyền <strong>"Bất kỳ ai có đường liên kết đều có thể xem (Anyone with the link can view)"</strong> trên Google Drive để Giảng viên có thể xem trực tiếp hồ sơ của bạn.
             </p>

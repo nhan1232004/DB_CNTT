@@ -11,6 +11,40 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
   const [notifications, setNotifications] = React.useState([]);
   const [showDrawer, setShowDrawer] = React.useState(false);
   const [toast, setToast] = React.useState(null);
+  const [semesters, setSemesters] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('tdtu_semesters_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [
+      { id: 'hk1_2026_2027', name: 'HK1 2026–2027 (Hiện tại)' },
+      { id: 'hk2_2025_2026', name: 'HK2 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'HK1 2025–2026' }
+    ];
+  });
+  const [deadlineText, setDeadlineText] = React.useState('Hạn chót: Còn 18 ngày');
+
+  const computeDeadline = React.useCallback(() => {
+    try {
+      const dl = window.ApiClient?.getSystemDeadlines ? window.ApiClient.getSystemDeadlines() : null;
+      const targetDateStr = dl?.declarationDeadline || '2026-11-30';
+      const targetTime = new Date(targetDateStr).getTime();
+      const nowTime = new Date().getTime();
+      const diffDays = Math.ceil((targetTime - nowTime) / (1000 * 3600 * 24));
+      if (diffDays > 0) {
+        setDeadlineText(`Hạn chót: Còn ${diffDays} ngày`);
+      } else if (diffDays === 0) {
+        setDeadlineText('Hạn chót: Hôm nay');
+      } else {
+        setDeadlineText('Hạn chót: Đã kết thúc');
+      }
+    } catch {
+      setDeadlineText('Hạn chót: Đang cập nhật');
+    }
+  }, []);
 
   const loadNotifications = async () => {
     try {
@@ -28,31 +62,50 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
 
   React.useEffect(() => {
     loadNotifications();
+    computeDeadline();
 
     const handleNotifSent = (e) => {
       const newNote = e.detail;
       loadNotifications();
       setToast({
-        title: 'Thông báo Email tự động',
-        message: `Đã gửi xác nhận tới: ${newNote.to || newNote.targetStudentId || 'Hệ thống'}`,
-        subject: newNote.subject || newNote.title
+        title: 'Thông báo hệ thống',
+        message: 'Đã tiếp nhận và cập nhật hồ sơ vào hệ thống học vụ thành công',
+        subject: newNote.subject || newNote.title || 'Khai báo thực tập'
       });
       setTimeout(() => {
         setToast(null);
-      }, 5000);
+      }, 4000);
     };
 
     const handleNotifReceived = () => {
       loadNotifications();
     };
 
+    const handleSemestersUpdated = (e) => {
+      if (e?.detail?.list && Array.isArray(e.detail.list)) {
+        setSemesters(e.detail.list);
+      }
+      computeDeadline();
+    };
+
+    const handleDeadlinesUpdated = () => {
+      computeDeadline();
+    };
+
     window.addEventListener('tdtu_notification_sent', handleNotifSent);
     window.addEventListener('tdtu_notification_received', handleNotifReceived);
+    window.addEventListener('tdtu_semesters_updated', handleSemestersUpdated);
+    window.addEventListener('tdtu_semester_changed', handleDeadlinesUpdated);
+    window.addEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
+
     return () => {
       window.removeEventListener('tdtu_notification_sent', handleNotifSent);
       window.removeEventListener('tdtu_notification_received', handleNotifReceived);
+      window.removeEventListener('tdtu_semesters_updated', handleSemestersUpdated);
+      window.removeEventListener('tdtu_semester_changed', handleDeadlinesUpdated);
+      window.removeEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
     };
-  }, [currentUser]);
+  }, [currentUser, computeDeadline]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const readCount = notifications.filter(n => n.read).length;
@@ -139,7 +192,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
               CỔNG THÔNG TIN THỰC TẬP DOANH NGHIỆP
             </div>
             <div className="text-[12.5px] font-medium text-[#4b5563] hidden sm:block">
-              Học phần KTCN & TSNN · Khoa Công nghệ Thông tin TDTU
+              Học phần KTCN & TSNN
             </div>
           </div>
         </div>
@@ -147,28 +200,35 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange }) => {
         {/* Right Side Controls: Semester Selector, Deadline Pill, Notification Bell */}
         <div className="flex items-center gap-3 sm:gap-4">
           
-          {/* Semester Selector cho toàn bộ người dùng (Giảng viên, Admin và Sinh viên xem lại kỳ đã học) */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#ebf3ff] rounded-lg border border-[#bfdbfe]">
-            <svg className="w-4 h-4 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-[13px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
-            <select
-              value={activeSemester || 'hk1_2026_2027'}
-              onChange={e => onSemesterChange(e.target.value)}
-              className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none p-0"
-              title="Chọn học kỳ để xem dữ liệu tương ứng"
-            >
-              <option value="hk1_2026_2027">HK1 2026–2027 (Hiện tại)</option>
-              <option value="hk2_2025_2026">HK2 2025–2026</option>
-              <option value="hk1_2025_2026">HK1 2025–2026</option>
-            </select>
+          {/* Semester Selector cho toàn bộ người dùng với giao diện tinh gọn, chuẩn TDTU */}
+          <div className="relative inline-flex items-center">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#ebf3ff] hover:bg-[#dbeafe] rounded-lg border border-[#bfdbfe] transition cursor-pointer shadow-2xs">
+              <svg className="w-4 h-4 text-[#003087] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-[12.5px] font-bold text-[#1f2937] hidden md:inline">Học kỳ:</span>
+              <select
+                value={activeSemester || 'hk1_2026_2027'}
+                onChange={e => onSemesterChange(e.target.value)}
+                className="bg-transparent text-[13px] font-bold text-[#003087] outline-none cursor-pointer border-none pr-4 appearance-none"
+                title="Chọn học kỳ để xem dữ liệu tương ứng"
+              >
+                {semesters.map(sem => (
+                  <option key={sem.id} value={sem.id} className="text-[#1f2937] font-semibold bg-white">
+                    {sem.name || sem.id} {sem.isActive ? '(Hiện tại)' : ''}
+                  </option>
+                ))}
+              </select>
+              <svg className="w-3.5 h-3.5 text-[#003087] pointer-events-none -ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
-          {/* Urgent Deadline Alert Badge (Màu Đỏ cảnh báo theo quy chuẩn) */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#fef2f2] text-[#dc2626] font-bold text-[12.5px] rounded-full border border-[#fecaca] whitespace-nowrap">
+          {/* Urgent Deadline Alert Badge (Cập nhật động theo hạn chót học kỳ) */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#fef2f2] text-[#dc2626] font-bold text-[12.5px] rounded-full border border-[#fecaca] whitespace-nowrap shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#dc2626] animate-pulse"></span>
-            <span>Hạn chót: Còn 18 ngày</span>
+            <span>{deadlineText}</span>
           </div>
 
           {/* Notification Service Bell Icon */}

@@ -3,13 +3,13 @@
 // & Quản lý lịch sử thông báo đã gửi kèm tính năng Anti-spam
 
 const TARGET_AUDIENCE_OPTIONS = [
-  { value: 'all', label: 'Toàn hệ thống (Tất cả đối tượng)', desc: 'Tất cả Giảng viên, Sinh viên & Quản trị viên' },
-  { value: 'all_lecturers', label: 'Toàn bộ Giảng viên', desc: 'Tất cả Thầy/Cô cố vấn & Ban chủ nhiệm Khoa' },
-  { value: 'all_students', label: 'Toàn bộ Sinh viên', desc: 'Tất cả sinh viên trong danh sách học kỳ' },
-  { value: 'students_seeking', label: 'Sinh viên chưa có nơi thực tập', desc: 'Sinh viên đang tìm kiếm doanh nghiệp hoặc chờ phỏng vấn' },
-  { value: 'students_need_support', label: 'Sinh viên cần Khoa hỗ trợ', desc: 'Sinh viên nộp nguyện vọng nhờ Khoa CNTT điều phối' },
-  { value: 'students_no_cert', label: 'Sinh viên chưa nộp chứng chỉ tiếng Anh', desc: 'Sinh viên chưa cập nhật chứng chỉ B1 xét tốt nghiệp' },
-  { value: 'students_dual_course', label: 'Sinh viên thực tập song song (2 môn)', desc: 'Sinh viên học cùng lúc cả KTCN (160h) và TSNN (320h)' },
+  { value: 'all', label: 'Toàn hệ thống (Tất cả người dùng)', desc: 'Giảng viên, Sinh viên & Quản trị viên' },
+  { value: 'all_lecturers', label: 'Toàn bộ Giảng viên', desc: 'Cố vấn học tập & Ban chủ nhiệm Khoa' },
+  { value: 'all_students', label: 'Toàn bộ Sinh viên trong kỳ', desc: 'Tất cả sinh viên có tên trong danh sách học kỳ' },
+  { value: 'students_seeking', label: 'Sinh viên chưa có nơi thực tập', desc: 'Đang tìm kiếm doanh nghiệp hoặc chờ phỏng vấn' },
+  { value: 'students_need_support', label: 'Sinh viên cần Khoa hỗ trợ', desc: 'Đã nộp nguyện vọng nhờ Khoa điều phối doanh nghiệp' },
+  { value: 'students_no_cert', label: 'Sinh viên chưa nộp chứng chỉ ngoại ngữ', desc: 'Chưa cập nhật chứng chỉ B1 xét chuẩn tốt nghiệp' },
+  { value: 'students_dual_course', label: 'Sinh viên thực tập song song 2 môn', desc: 'Học cùng lúc cả KTCN (160h) và TSNN (320h)' },
   { value: 'students_by_major', label: 'Sinh viên theo chuyên ngành cụ thể', desc: 'Chỉ gửi tới sinh viên thuộc ngành đào tạo chỉ định' },
   { value: 'specific_student', label: 'Đích danh 1 sinh viên (theo MSSV)', desc: 'Chỉ gửi riêng tư tới 1 sinh viên có mã số chỉ định' }
 ];
@@ -243,7 +243,7 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
                 >
                   {TARGET_AUDIENCE_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label} ({opt.desc})
+                      {opt.label}
                     </option>
                   ))}
                 </select>

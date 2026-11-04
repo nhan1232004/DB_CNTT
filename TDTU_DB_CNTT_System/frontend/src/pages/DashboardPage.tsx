@@ -229,10 +229,12 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
     window.addEventListener('tdtu_data_updated', handleUpdate);
     window.addEventListener('tdtu_declarations_updated', handleUpdate);
     window.addEventListener('tdtu_certs_updated', handleUpdate);
+    window.addEventListener('tdtu_semester_changed', handleUpdate);
     return () => {
       window.removeEventListener('tdtu_data_updated', handleUpdate);
       window.removeEventListener('tdtu_declarations_updated', handleUpdate);
       window.removeEventListener('tdtu_certs_updated', handleUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleUpdate);
     };
   }, [loadData]);
 
@@ -639,14 +641,14 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
               <div className="flex items-center justify-between gap-2 mb-2">
                 <h3 className="font-bold text-[#1f2937] text-[17.5px] text-left">{cfg.title}</h3>
                 <span className="text-[12px] font-bold text-[#003087] bg-[#ebf3ff] px-2.5 py-1 rounded-lg border border-[#bfdbfe]">
-                  Chuẩn ĐBCL
+                  Chuẩn Đảm bảo chất lượng (B1)
                 </span>
               </div>
               <FlexibleChartRenderer
                 chartType={cfg.chartType}
                 slices={englishSlices}
                 centerText={`${englishSlices[0]?.percentage || 0}%`}
-                centerSub="Đã có CC"
+                centerSub="Đã nộp chứng chỉ"
               />
             </div>
             <div className="pt-3 border-t border-[#e5e7eb] text-[13px] text-[#4b5563] flex items-center justify-between">
@@ -667,15 +669,15 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-[#e5e7eb]">
         <div>
           <h1 className="text-[26px] sm:text-[28px] font-bold text-[#1f2937] text-left tracking-tight">
-            {isStudent ? 'Tổng quan Tiến độ Thực tập Cá nhân & Toàn khóa' : 'Bảng điều khiển & Chỉ số Điều phối Thực tập'}
+            {isStudent ? 'Tổng quan Tiến độ Thực tập' : 'Bảng điều khiển'}
           </h1>
           <p className="text-[13.5px] text-[#4b5563] mt-0.5">
-            Dữ liệu đồng bộ thời gian thực từ danh sách sinh viên Học kỳ HK1 2026–2027 ({totalStudents} sinh viên)
+            Dữ liệu đồng bộ thời gian thực từ danh sách sinh viên ({totalStudents} sinh viên)
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          {/* Nút Quản lý biểu đồ (Item 13) - Chỉ hiển thị cho Giảng viên / Ban Quản trị, ẩn đối với Sinh viên */}
+          {/* Nút Quản lý biểu đồ - Chỉ hiển thị cho Giảng viên / Ban Quản trị, ẩn đối với Sinh viên */}
           {!isStudent && (
             <button
               type="button"
@@ -689,19 +691,52 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
               <span>Quản lý biểu đồ</span>
             </button>
           )}
+        </div>
+      </div>
 
-          {!isStudent && (
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              className="px-5 py-2.5 min-w-[160px] bg-[#003087] hover:bg-[#002266] text-white font-bold text-[12.5px] rounded-lg transition flex items-center justify-center gap-2 shadow-xs cursor-pointer whitespace-nowrap"
-            >
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span className="text-white">Xuất báo cáo Excel</span>
-            </button>
-          )}
+      {/* THANH TIẾN ĐỘ MÔN HỌC TRONG HỌC KỲ (SEMESTER PROGRESSION BAR) */}
+      <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#003087] animate-pulse"></span>
+            <span className="text-[13.5px] font-bold text-[#1f2937]">
+              Tiến độ Thực tập Học kỳ {activeSemester.toUpperCase().replace(/_/g, ' ')}
+            </span>
+            <span className="text-[12px] font-bold text-[#003087] bg-[#ebf3ff] px-2 py-0.5 rounded border border-[#bfdbfe]">
+              Tuần 9 / 15 (60%)
+            </span>
+          </div>
+          <span className="text-[12px] text-[#4b5563] font-medium">
+            Giai đoạn: Thực tập tại Doanh nghiệp & Hoàn thiện hồ sơ
+          </span>
+        </div>
+
+        {/* Multi-step progression line */}
+        <div className="w-full bg-[#e2e8f0] h-2.5 rounded-full overflow-hidden mb-3">
+          <div 
+            className="bg-[#003087] h-full rounded-full transition-all duration-500 ease-out" 
+            style={{ width: '60%' }}
+          ></div>
+        </div>
+
+        {/* 4 Milestones */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11.5px] pt-1">
+          <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
+            <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center text-[10px]">✓</span>
+            <span>1. Khai báo DN</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
+            <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center text-[10px]">✓</span>
+            <span>2. Nộp Chứng chỉ B1</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[#003087] font-bold">
+            <span className="w-4 h-4 rounded-full bg-[#ebf3ff] border border-[#bfdbfe] text-[#003087] flex items-center justify-center text-[10px]">●</span>
+            <span>3. GV Thẩm định</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[#64748b] font-medium">
+            <span className="w-4 h-4 rounded-full bg-slate-100 border border-slate-300 text-slate-500 flex items-center justify-center text-[10px]">4</span>
+            <span>4. Báo cáo Tổng kết</span>
+          </div>
         </div>
       </div>
 

@@ -580,7 +580,7 @@ const BulletinPage = ({ currentUser }) => {
                         </div>
                       </div>
 
-                      <span className="px-2 py-0.5 rounded-full text-[13.5px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                      <span className="px-2.5 py-0.5 rounded-full text-[12.5px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] whitespace-nowrap shrink-0">
                         {jd.field}
                       </span>
                     </div>
@@ -640,7 +640,7 @@ const BulletinPage = ({ currentUser }) => {
                         onClick={() => handleSelectAsInternship(jd)}
                         className="px-4 py-2.5 rounded-lg bg-[#003087] hover:bg-[#002266] text-white text-[13px] font-bold transition flex items-center justify-center cursor-pointer whitespace-nowrap"
                       >
-                        Chọn làm nơi TT
+                        Chọn làm nơi thực tập
                       </button>
                     </div>
                   </div>

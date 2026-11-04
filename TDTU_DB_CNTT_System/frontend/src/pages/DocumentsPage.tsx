@@ -464,7 +464,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
       {/* 1. TOP HEADER & MODE NAVIGATION (ẨN KHI IN)                               */}
       {/* ========================================================================= */}
       <div className="no-print bg-white rounded-2xl border border-[#e5e7eb] p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-[12px] font-mono font-bold text-[#dc2626]">
               HK1 / 2026–2027
@@ -696,6 +696,41 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
           {/* ========================================================================= */}
           {/* KHUNG XEM TRƯỚC TRANG IN A4 TRỰC QUAN (A4 PRINT PREVIEW PAPER)            */}
           {/* ========================================================================= */}
+          {/* Toolbar Thao tác In ấn / Xuất file (no-print) */}
+          <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-2xl border border-[#cbd5e1] shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-[#ebf3ff] text-[#003087] flex items-center justify-center font-bold text-sm">
+                🖨️
+              </span>
+              <div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Bản xem trước A4 trực quan
+                </div>
+                <div className="text-sm font-extrabold text-[#1f2937]">
+                  {selectedTemplate === 'mau_tong_ket' && 'Mẫu 1: Báo cáo Tổng kết & Xét duyệt Đợt Thực tập'}
+                  {selectedTemplate === 'mau_phan_bo' && 'Mẫu 2: Bảng Phân bổ Sinh viên theo Doanh nghiệp'}
+                  {selectedTemplate === 'mau_bang_diem' && 'Mẫu 3: Bảng Điểm & Đánh giá Cuối kỳ'}
+                  {selectedTemplate === 'mau_giay_gioi_thieu' && 'Mẫu 4: Giấy Giới Thiệu Thực Tập (GGT)'}
+                  {selectedTemplate === 'mau_dieu_phoi' && 'Mẫu 5: Danh sách SV Cần hỗ trợ Điều phối'}
+                  {selectedTemplate === 'mau_bo_bieu_mau' && 'Mẫu 6: Bộ Biểu Mẫu Chuẩn BM-01 đến BM-04'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleExecutePrint}
+                className="px-6 py-2.5 rounded-xl bg-[#003087] hover:bg-[#002266] text-white text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>In ấn / Xuất file PDF (Ctrl + P)</span>
+              </button>
+            </div>
+          </div>
+
           <div className="bg-[#f1f5f9] p-3 sm:p-8 rounded-2xl border border-[#cbd5e1] overflow-x-auto shadow-inner">
             
             <div 
@@ -1519,17 +1554,6 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                   className="px-4 py-2.5 bg-white border border-[#cbd5e1] hover:bg-[#f8fafc] text-[#1f2937] rounded-xl text-[13px] font-bold transition cursor-pointer"
                 >
                   Xuất DS chứng chỉ (Excel)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setViewMode('print_center')}
-                  className="px-4 py-2.5 bg-[#f8fafc] border border-[#003087] text-[#003087] hover:bg-[#ebf3ff] rounded-xl text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  <span>Mở Trung tâm In ấn</span>
                 </button>
               </div>
             </div>

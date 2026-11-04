@@ -75,13 +75,19 @@ const normalizeDateForInput = (dStr) => {
   return dStr;
 };
 
-// Chuẩn hóa ngày hiển thị dd/mm/yyyy
+// Chuẩn hóa ngày hiển thị dd-mm-yyyy chuẩn hệ thống
 const formatDateForDisplay = (dStr) => {
   if (!dStr) return '—';
+  if (dStr.includes('/')) {
+    const parts = dStr.split('/');
+    if (parts.length === 3) {
+      return `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[2]}`;
+    }
+  }
   if (dStr.includes('-')) {
     const parts = dStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
     }
   }
   return dStr;
@@ -500,12 +506,12 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
 
                       {/* Ngày thi */}
                       <td className="py-3.5 px-4 text-[#1f2937] text-[13.5px] font-mono text-center">
-                        {cert.examDate || '—'}
+                        {formatDateForDisplay(cert.examDate)}
                       </td>
 
                       {/* Ngày cấp */}
                       <td className="py-3.5 px-4 text-[#1f2937] text-[13.5px] font-mono text-center">
-                        {cert.issueDate || cert.examDate || '—'}
+                        {formatDateForDisplay(cert.issueDate || cert.examDate)}
                       </td>
 
                       {/* Minh chứng Google Drive */}
@@ -688,11 +694,11 @@ const ScopeAllCertificatesView = ({ currentUser }) => {
                 </div>
                 <div>
                   <span className="text-[#1f2937] block text-[10.5px]">Ngày thi:</span>
-                  <span className="text-[#1f2937] ">{selectedProofModal.examDate || '—'}</span>
+                  <span className="text-[#1f2937] font-mono">{formatDateForDisplay(selectedProofModal.examDate)}</span>
                 </div>
                 <div>
                   <span className="text-[#1f2937] block text-[10.5px]">Ngày cấp bằng:</span>
-                  <span className="text-[#1f2937] ">{selectedProofModal.issueDate || selectedProofModal.examDate || '—'}</span>
+                  <span className="text-[#1f2937] font-mono">{formatDateForDisplay(selectedProofModal.issueDate || selectedProofModal.examDate)}</span>
                 </div>
               </div>
 
@@ -1232,13 +1238,13 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
                       </td>
 
                       {/* Ngày thi */}
-                      <td className="py-3.5 px-4 text-[#1f2937]  text-[11px]">
-                        {c.examDate || '—'}
+                      <td className="py-3.5 px-4 text-[#1f2937] text-xs font-mono">
+                        {formatDateForDisplay(c.examDate)}
                       </td>
 
                       {/* Ngày cấp chứng chỉ */}
-                      <td className="py-3.5 px-4 text-[#1f2937]  text-[11px]">
-                        {c.issueDate || c.examDate || '—'}
+                      <td className="py-3.5 px-4 text-[#1f2937] text-xs font-mono">
+                        {formatDateForDisplay(c.issueDate || c.examDate)}
                       </td>
 
                       {/* Minh chứng Google Drive */}
@@ -1264,12 +1270,12 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
 
                       {/* Thao tác CRUD (Sửa / Xóa) */}
                       <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(c)}
                             title="Chỉnh sửa thông tin chứng chỉ"
-                            className="p-1.5 rounded-lg text-[#003087] hover:text-blue-800 hover:bg-[#ebf3ff]  transition cursor-pointer"
+                            className="w-8 h-8 rounded-lg text-[#003087] hover:text-[#002266] bg-[#ebf3ff] hover:bg-[#dbeafe] border border-[#bfdbfe] flex items-center justify-center transition cursor-pointer shadow-2xs"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1279,7 +1285,7 @@ const StudentPersonalCertificatesView = ({ currentUser }) => {
                             type="button"
                             onClick={() => handleDeleteCert(c.id, c.name)}
                             title="Xóa chứng chỉ này"
-                            className="p-1.5 rounded-lg text-[#dc2626] hover:text-[#dc2626] hover:bg-[#fef2f2]  transition cursor-pointer"
+                            className="w-8 h-8 rounded-lg text-[#dc2626] hover:text-[#b91c1c] bg-[#fef2f2] hover:bg-[#fee2e2] border border-[#fecaca] flex items-center justify-center transition cursor-pointer shadow-2xs"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

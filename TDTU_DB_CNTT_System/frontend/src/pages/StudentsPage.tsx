@@ -30,8 +30,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [studentCerts, setStudentCerts] = React.useState([]);
   const [studentCertsLoading, setStudentCertsLoading] = React.useState(false);
   const [studentCvLink, setStudentCvLink] = React.useState('');
+  const [showCvModalPreview, setShowCvModalPreview] = React.useState(false);
   const [noteSaved, setNoteSaved] = React.useState(false);
   const [openActionMenuId, setOpenActionMenuId] = React.useState(null);
+
+  const formatDateVN = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      const d = new Date(dateVal);
+      if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+      }
+      const parts = String(dateVal).split(/[-/]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+        return `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[2]}`;
+      }
+    } catch {}
+    return String(dateVal);
+  };
 
   // Modal Import Excel Admin / Lecturer
   const [importModalOpen, setImportModalOpen] = React.useState(false);
@@ -179,6 +199,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   }, [selectedStudent]);
 
   const handleOpenStudentDetail = async (sv) => {
+    setShowCvModalPreview(false);
     let enriched = { ...sv };
     const sid = String(sv.studentId || sv.mssv || '').trim().toUpperCase();
     let decl = sv.declarationData;
@@ -1017,12 +1038,12 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       }
       const wb = XLSX.utils.book_new();
       const sampleKTCN = [
-        { 'STT': 1, 'Mã số': '522H0101', 'Họ lót': 'Nguyễn Hoàng', 'Tên': 'ách', 'Phái': 'Nam', 'Ngày sinh': '15/05/2004', 'Nơi sinh': 'TP. Hồ Chí Minh', 'Lớp': '22H50201', 'Ngành': 'Kỹ thuật phần mềm', 'GPA (Hệ 10)': 8.5, 'GPA (Hệ 4)': 3.4, 'Xếp loại': 'Giỏi', 'Số điện thoại': '0901234567' },
-        { 'STT': 2, 'Mã số': '522H0102', 'Họ lót': 'Trần Thảo', 'Tên': 'My', 'Phái': 'Nữ', 'Ngày sinh': '20/08/2004', 'Nơi sinh': 'Đồng Nai', 'Lớp': '22H50101', 'Ngành': 'Khoa học máy tính', 'GPA (Hệ 10)': 9.1, 'GPA (Hệ 4)': 3.7, 'Xếp loại': 'Xuất sắc', 'Số điện thoại': '0902345678' }
+        { 'STT': 1, 'Mã số': '522H0101', 'Họ lót': 'Nguyễn Hoàng', 'Tên': 'Bách', 'Phái': 'Nam', 'Ngày sinh': '15/05/2004', 'Nơi sinh': 'TP. Hồ Chí Minh', 'Lớp': '22H50201', 'Ngành': 'Kỹ thuật phần mềm', 'GPA (Hệ 10)': 8.5, 'Xếp loại': 'Giỏi', 'Số điện thoại': '0901234567' },
+        { 'STT': 2, 'Mã số': '522H0102', 'Họ lót': 'Trần Thảo', 'Tên': 'My', 'Phái': 'Nữ', 'Ngày sinh': '20/08/2004', 'Nơi sinh': 'Đồng Nai', 'Lớp': '22H50101', 'Ngành': 'Khoa học máy tính', 'GPA (Hệ 10)': 9.1, 'Xếp loại': 'Xuất sắc', 'Số điện thoại': '0902345678' }
       ];
       const sampleTSNN = [
-        { 'STT': 1, 'Mã số': '522H0101', 'Họ lót': 'Nguyễn Hoàng', 'Tên': 'ách', 'Phái': 'Nam', 'Ngày sinh': '15/05/2004', 'Nơi sinh': 'TP. Hồ Chí Minh', 'Lớp': '22H50201', 'Ngành': 'Kỹ thuật phần mềm', 'GPA (Hệ 10)': 8.5, 'GPA (Hệ 4)': 3.4, 'Xếp loại': 'Giỏi', 'Số điện thoại': '0901234567' },
-        { 'STT': 2, 'Mã số': '522H0103', 'Họ lót': 'Lê Minh', 'Tên': 'Khôi', 'Phái': 'Nam', 'Ngày sinh': '10/11/2003', 'Nơi sinh': 'Long An', 'Lớp': '21H50301', 'Ngành': 'Mạng máy tính và truyền thông dữ liệu', 'GPA (Hệ 10)': 7.2, 'GPA (Hệ 4)': 2.88, 'Xếp loại': 'Khá', 'Số điện thoại': '0903456789' }
+        { 'STT': 1, 'Mã số': '522H0101', 'Họ lót': 'Nguyễn Hoàng', 'Tên': 'Bách', 'Phái': 'Nam', 'Ngày sinh': '15/05/2004', 'Nơi sinh': 'TP. Hồ Chí Minh', 'Lớp': '22H50201', 'Ngành': 'Kỹ thuật phần mềm', 'GPA (Hệ 10)': 8.5, 'Xếp loại': 'Giỏi', 'Số điện thoại': '0901234567' },
+        { 'STT': 2, 'Mã số': '522H0103', 'Họ lót': 'Lê Minh', 'Tên': 'Khôi', 'Phái': 'Nam', 'Ngày sinh': '10/11/2003', 'Nơi sinh': 'Long An', 'Lớp': '21H50301', 'Ngành': 'Mạng máy tính và truyền thông dữ liệu', 'GPA (Hệ 10)': 7.2, 'Xếp loại': 'Khá', 'Số điện thoại': '0903456789' }
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleKTCN), 'DSSV_KTCN');
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sampleTSNN), 'DSSV_TSNN');
@@ -1232,7 +1253,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 </th>
                 <th className="py-4 px-3 w-28">MSSV</th>
                 <th className="py-4 px-3 w-56">HỌ VÀ TÊN</th>
-                <th className="py-4 px-3 w-32 text-center">MÔN HỌC</th>
+                <th className="py-4 px-3 w-36 min-w-[130px] text-center">MÔN HỌC</th>
                 <th className="py-4 px-3 w-40 text-center">TRẠNG THÁI</th>
                 <th className="py-4 px-3 w-64">DOANH NGHIỆP</th>
                 <th className="py-4 px-3 w-36 text-center">NGÀY CẬP NHẬT</th>
@@ -1304,8 +1325,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-3 text-center">
-                        <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1] inline-block">
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                        <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1] inline-flex items-center justify-center whitespace-nowrap">
                           {(() => {
                             const cArr = Array.isArray(sv.courses) ? sv.courses.map((c: any) => String(c).toUpperCase()) : [];
                             const cCode = String(sv.courseCode || sv.course_str || sv.courseName || '').toUpperCase();
@@ -1338,10 +1359,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         )}
                       </td>
 
-                      <td className="py-3.5 px-3 text-[#4b5563] text-[13.5px] font-mono text-center">
-                        {sv.updatedAt && typeof sv.updatedAt === 'string' && sv.updatedAt.includes('T') && !isNaN(Date.parse(sv.updatedAt))
-                          ? new Date(sv.updatedAt).toLocaleDateString('vi-VN')
-                          : (sv.updatedAt || sv.updated || '22/09/2026')}
+                      <td className="py-3.5 px-3 text-[#4b5563] text-[13.5px] font-mono text-center whitespace-nowrap">
+                        {formatDateVN(sv.updatedAt || sv.updated || '2026-09-22')}
                       </td>
 
                       <td className="py-3.5 px-4 text-center relative">
@@ -1893,6 +1912,17 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       <div className="flex items-center gap-2.5">
                         <button
                           type="button"
+                          onClick={() => setShowCvModalPreview(!showCvModalPreview)}
+                          className="px-4 py-2 bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] hover:bg-[#dbeafe] rounded-xl text-[13px] font-bold transition cursor-pointer shadow-2xs flex items-center gap-1.5"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>{showCvModalPreview ? 'Thu gọn xem trước' : 'Xem trước CV trực tuyến'}</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             const link = studentCvLink || selectedStudent.cvLink;
                             navigator.clipboard.writeText(link);
@@ -1917,14 +1947,34 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
                   {(studentCvLink || selectedStudent.cvLink) ? (
                     <div className="space-y-3">
-                      <div className="w-full h-[600px] rounded-2xl border-2 border-[#cbd5e1] overflow-hidden bg-white shadow-inner relative">
-                        <iframe
-                          src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(studentCvLink || selectedStudent.cvLink) : (studentCvLink || selectedStudent.cvLink)}
-                          title={`Review CV - ${selectedStudent.fullName || selectedStudent.name}`}
-                          className="w-full h-full border-0"
-                          allow="autoplay"
-                        />
-                      </div>
+                      {showCvModalPreview ? (
+                        (() => {
+                          const rawLink = studentCvLink || selectedStudent.cvLink || '';
+                          const isGoogleDrive = rawLink.includes('drive.google.com') || rawLink.includes('docs.google.com');
+                          if (!isGoogleDrive) {
+                            return (
+                              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-medium flex items-center gap-2">
+                                <span>⚠️</span>
+                                <span>Đường dẫn liên kết không phải miền Google Drive hợp lệ (drive.google.com). Để đảm bảo an toàn, hệ thống không nhúng xem trước website bên ngoài. Bạn có thể bấm "Mở tab mới ↗" để kiểm tra.</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="w-full h-[600px] rounded-2xl border-2 border-[#cbd5e1] overflow-hidden bg-white shadow-inner relative animate-fadeIn">
+                              <iframe
+                                src={window.ApiClient?.formatCvPreviewUrl ? window.ApiClient.formatCvPreviewUrl(rawLink) : rawLink}
+                                title={`Review CV - ${selectedStudent.fullName || selectedStudent.name}`}
+                                className="w-full h-full border-0"
+                                allow="autoplay"
+                              />
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="p-6 text-center border border-[#e5e7eb] rounded-xl bg-[#f8fafc] text-[13px] text-[#4b5563]">
+                          Nhấn nút <strong>"Xem trước CV trực tuyến"</strong> ở trên để nạp khung xem trước tài liệu khi cần duyệt.
+                        </div>
+                      )}
                       <p className="text-[12px] text-[#6b7280]">
                         * Nếu khung xem trước không hiển thị do chính sách bảo mật Google Drive của trình duyệt, giảng viên có thể nhấn nút <strong>"Mở tab mới ↗"</strong> ở trên để đọc trực tiếp.
                       </p>

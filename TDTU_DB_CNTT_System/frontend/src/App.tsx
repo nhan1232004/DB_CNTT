@@ -213,7 +213,20 @@ const AppInner = () => {
   const [currentUser, setCurrentUser] = React.useState(null);
   const [activeTab, setActiveTab] = React.useState('dashboard');
   const [authChecking, setAuthChecking] = React.useState(true);
-  const [activeSemester, setActiveSemester] = React.useState('hk1_2026_2027');
+  const [activeSemester, setActiveSemester] = React.useState(() => {
+    try {
+      return localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+    } catch {}
+    return 'hk1_2026_2027';
+  });
+
+  const handleSemesterChange = React.useCallback((newSem) => {
+    setActiveSemester(newSem);
+    try {
+      localStorage.setItem('tdtu_active_semester', newSem);
+    } catch {}
+    window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
+  }, []);
 
   // Chống can thiệp URL & LocalStorage để chuyển đổi tài khoản hoặc vượt quyền trái phép
   React.useEffect(() => {
@@ -292,10 +305,18 @@ const AppInner = () => {
       setAuthChecking(false);
     }
 
+    const handleSemesterEvt = (e) => {
+      if (e?.detail?.semesterId) {
+        setActiveSemester(e.detail.semesterId);
+      }
+    };
+    window.addEventListener('tdtu_semester_changed', handleSemesterEvt);
+
     return () => {
       window.removeEventListener('popstate', sanitizeUrl);
       window.removeEventListener('hashchange', sanitizeUrl);
       window.removeEventListener('storage', handleStorageTamper);
+      window.removeEventListener('tdtu_semester_changed', handleSemesterEvt);
     };
   }, []);
 
@@ -419,7 +440,7 @@ const AppInner = () => {
         <window.Navbar
           currentUser={currentUser}
           activeSemester={activeSemester}
-          onSemesterChange={setActiveSemester}
+          onSemesterChange={handleSemesterChange}
         />
 
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5 lg:px-6 bg-white w-full">
@@ -427,7 +448,7 @@ const AppInner = () => {
             {activeTab === 'dashboard' && (
               <window.DashboardPage
                 activeSemester={activeSemester}
-                onSemesterChange={setActiveSemester}
+                onSemesterChange={handleSemesterChange}
                 currentUser={currentUser}
                 onNavigateTab={setActiveTab}
               />
@@ -437,7 +458,7 @@ const AppInner = () => {
               <window.ProfilePage
                 currentUser={currentUser}
                 onNavigateTab={setActiveTab}
-                onSemesterChange={setActiveSemester}
+                onSemesterChange={handleSemesterChange}
               />
             )}
             
@@ -450,7 +471,7 @@ const AppInner = () => {
                 <window.StudentsPage
                   currentUser={currentUser}
                   activeSemester={activeSemester}
-                  onSemesterChange={setActiveSemester}
+                  onSemesterChange={handleSemesterChange}
                 />
               ) : (
                 <div className="p-8 text-center text-[#1f2937] font-bold">
