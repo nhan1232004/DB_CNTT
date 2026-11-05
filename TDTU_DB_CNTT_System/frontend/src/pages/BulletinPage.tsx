@@ -451,7 +451,7 @@ const BulletinPage = ({ currentUser }) => {
         type: 'success',
         text: isPartner
           ? `Tin tuyển dụng từ [${companyName}] đã được gửi tới Khoa CNTT để phê duyệt.`
-          : 'Bóc tách Email Forward thành công! JD mới đã được thêm vào hàng đợi duyệt.'
+          : 'Đã thêm JD vào hàng đợi duyệt.'
       });
     } catch (err) {
       setNotification({
@@ -570,12 +570,6 @@ const BulletinPage = ({ currentUser }) => {
           </div>
         )}
 
-        {isLecturer && !isAdmin && (
-          <div className="px-3.5 py-2 bg-white text-[#1f2937] text-[14.5px] font-bold rounded-lg border border-[#e5e7eb] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#003087]"></span>
-            <span>Chế độ Giảng viên: Theo dõi JD và hỗ trợ sinh viên chọn nơi thực tập</span>
-          </div>
-        )}
       </div>
 
       {/* Global Toast Notification */}
@@ -705,9 +699,6 @@ const BulletinPage = ({ currentUser }) => {
                       {myApps.length} đơn
                     </span>
                   </div>
-                  <span className="text-xs text-[#4b5563]">
-                    Trạng thái hồ sơ chính thức cập nhật "Đã có nơi TT" sau khi Doanh nghiệp phê duyệt
-                  </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
                   {myApps.map(app => {
@@ -825,7 +816,7 @@ const BulletinPage = ({ currentUser }) => {
                   Chưa có tin tuyển dụng thực tập nào
                 </div>
                 <p className="text-[13.5px] text-[#4b5563] max-w-md mx-auto text-justify">
-                  Hiện tại danh sách tin tuyển dụng cho chuyên ngành đã chọn đang trống. Vui lòng quay lại sau hoặc liên hệ Bộ phận hỗ trợ thực tập Khoa CNTT.
+                  Chưa có tin tuyển dụng phù hợp.
                 </p>
               </div>
             ) : (
@@ -985,15 +976,6 @@ const BulletinPage = ({ currentUser }) => {
           {/* SubTab 1: Hàng đợi duyệt */}
           {lecturerSubTab === 'review' && (
             <div className="space-y-4">
-              <div className="bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl p-4 text-[14.5px] text-[#1f2937]">
-                <div className="font-bold text-[#003087] mb-1">
-                  Nguồn nhận JD tự động & Thẩm định đối tác
-                </div>
-                <p className="text-[14px] text-[#1f2937] text-justify">
-                  Chỉ email và văn bản từ doanh nghiệp đối tác hợp lệ mới được đưa vào hàng đợi. Nội dung cần được ban điều phối xác minh mã số thuế, tính pháp lý và chế độ đãi ngộ trước khi công khai lên Bảng tin sinh viên.
-                </p>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {reviewQueue.length === 0 ? (
                   <div className="col-span-full bg-white border border-[#e5e7eb] rounded-xl p-10 text-center space-y-3 shadow-xs">
@@ -1001,7 +983,7 @@ const BulletinPage = ({ currentUser }) => {
                       Hàng đợi duyệt tin tuyển dụng hiện đang trống
                     </div>
                     <p className="text-[13.5px] text-[#4b5563] text-justify max-w-md mx-auto">
-                      Hiện tại không có tin tuyển dụng nào đang chờ phê duyệt. Bạn có thể sử dụng chức năng "Dán Email Forward" để đưa tin mới vào hệ thống.
+                      Không có JD chờ duyệt.
                     </p>
                   </div>
                 ) : (
@@ -1172,15 +1154,7 @@ const BulletinPage = ({ currentUser }) => {
           {/* SubTab 3: Quản lý & Phê duyệt Đơn ứng tuyển của Sinh viên */}
           {lecturerSubTab === 'applications' && (
             <div className="space-y-4">
-              <div className="bg-[#ebf3ff] border border-[#bfdbfe] rounded-xl p-4 text-[14px] text-[#1f2937] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="font-bold text-[#003087] mb-0.5">
-                    Quy trình xét duyệt tiếp nhận thực tập
-                  </div>
-                  <p className="text-[13px] text-[#4b5563]">
-                    Khi sinh viên nộp đơn ứng tuyển, trạng thái của SV là "Đang tìm / Chờ phỏng vấn". Khi Doanh nghiệp hoặc Giảng viên đại diện nhấn <strong>[✓ Tiếp nhận]</strong>, trạng thái hồ sơ của sinh viên sẽ chính thức chuyển sang <strong>"Đã có nơi TT"</strong> theo thời gian thực.
-                  </p>
-                </div>
+              <div className="flex items-center justify-end gap-3">
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs font-semibold text-[#4b5563]">Bộ lọc:</span>
                   <select
@@ -1454,7 +1428,7 @@ const BulletinPage = ({ currentUser }) => {
                 </h3>
                 <p className="text-[14px] text-[#1f2937] text-justify mt-0.5">
                   {isPartner 
-                    ? 'Nhập nội dung mô tả vị trí, yêu cầu kỹ năng và quyền lợi trợ cấp để gửi tới Khoa CNTT thẩm định.'
+                    ? 'Mô tả vị trí, yêu cầu và quyền lợi.'
                     : 'Hệ thống tự động trích xuất Tên công ty, Vị trí, Yêu cầu, Trợ cấp và Hạn nộp.'}
                 </p>
               </div>
@@ -1732,7 +1706,7 @@ const BulletinPage = ({ currentUser }) => {
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[12px] text-amber-900 leading-relaxed flex items-start gap-2.5">
                 <span className="text-base leading-none">📌</span>
                 <div>
-                  <strong>Quy trình phân luồng trạng thái:</strong> Sau khi nộp, yêu cầu được chuyển tới Doanh nghiệp tiếp nhận. Trạng thái của bạn sẽ hiển thị <strong>"Đang tìm / Chờ phỏng vấn"</strong>. Khi Doanh nghiệp hoặc Giảng viên phê duyệt tiếp nhận, hồ sơ của bạn mới chính thức cập nhật thành <strong>"Đã có nơi TT"</strong>.
+                  Hồ sơ sẽ được gửi tới doanh nghiệp xét duyệt.
                 </div>
               </div>
 

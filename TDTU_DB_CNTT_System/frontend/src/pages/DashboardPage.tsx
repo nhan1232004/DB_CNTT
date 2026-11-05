@@ -908,7 +908,7 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
               <div>
                 <h3 className="text-[18px] font-bold text-[#1f2937]">Quản Lý & Tùy Chỉnh Biểu Đồ Tổng Quan</h3>
                 <p className="text-[12px] text-[#1f2937] mt-0.5">
-                  Bật/tắt hiển thị, chuyển đổi kiểu biểu đồ (Tròn Donut / Cột Bar / Thanh ngang Progress) và điều chỉnh thứ tự
+                  Bật/tắt, đổi kiểu và sắp xếp biểu đồ.
                 </p>
               </div>
               <button

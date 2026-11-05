@@ -21,7 +21,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     const clean = String(userEmail || '').trim().toLowerCase();
     if (!isStrictTdtuEmail(clean)) {
       throw new Error(
-        `Từ chối truy cập: Hệ thống chỉ chấp nhận email nội bộ Trường ĐH Tôn Đức Thắng (@tdtu.edu.vn hoặc @student.tdtu.edu.vn).`
+        `Chỉ chấp nhận email @tdtu.edu.vn hoặc @student.tdtu.edu.vn.`
       );
     }
 
@@ -119,7 +119,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             if (window.FirebaseService?.signOut) await window.FirebaseService.signOut();
             window.ApiClient?.clearToken?.();
             setError(
-              `Email không được phép truy cập. Vui lòng sử dụng email TDTU (@student.tdtu.edu.vn đối với Sinh viên hoặc @tdtu.edu.vn đối với Giảng viên).`
+              `Chỉ chấp nhận email @tdtu.edu.vn hoặc @student.tdtu.edu.vn.`
             );
             return;
           }
@@ -165,7 +165,7 @@ const LoginPage = ({ onLoginSuccess }) => {
         }
         window.ApiClient?.clearToken?.();
         setError(
-          `Email không được phép truy cập. Vui lòng sử dụng email TDTU (@student.tdtu.edu.vn đối với Sinh viên hoặc @tdtu.edu.vn đối với Giảng viên).`
+          `Chỉ chấp nhận email @tdtu.edu.vn hoặc @student.tdtu.edu.vn.`
         );
         setLoading(false);
         return;
@@ -218,7 +218,7 @@ const LoginPage = ({ onLoginSuccess }) => {
 
     if (!isStrictTdtuEmail(clean)) {
       setError(
-        `Từ chối truy cập: Chỉ chấp nhận tài khoản thuộc tên miền @tdtu.edu.vn (Giảng viên / Quản trị) hoặc @student.tdtu.edu.vn (Sinh viên).`
+        `Chỉ chấp nhận email @tdtu.edu.vn hoặc @student.tdtu.edu.vn.`
       );
       return;
     }
@@ -346,7 +346,7 @@ const LoginPage = ({ onLoginSuccess }) => {
               textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)',
             }}
           >
-            Một không gian để kết nối cơ hội thực tập, hoàn thiện hồ sơ và sẵn sàng cho bước tiến mới.
+            Kết nối cơ hội thực tập cho sinh viên Khoa CNTT.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxWidth: '440px' }}>
@@ -454,7 +454,7 @@ const LoginPage = ({ onLoginSuccess }) => {
               Chào mừng bạn trở lại
             </h2>
             <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-              Đăng nhập bằng tài khoản nhà trường để tiếp tục hành trình thực tập của bạn.
+              Đăng nhập bằng email TDTU.
             </p>
           </div>
 
@@ -606,7 +606,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <span>
-                  Chỉ chấp nhận email do trường cấp. Nếu chưa đăng ký môn trong học kỳ, bạn sẽ được xem Cẩm nang thực tập.
+                  Chỉ chấp nhận email do trường cấp.
                 </span>
               </div>
             </div>
@@ -789,7 +789,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                   textAlign: 'center',
                 }}
               >
-                Dành cho giảng viên: đăng nhập email và mật khẩu nội bộ hoặc Google SSO @tdtu.edu.vn tại thẻ phía trên.
+                Giảng viên: đăng nhập bằng email @tdtu.edu.vn.
               </div>
             </div>
           )}

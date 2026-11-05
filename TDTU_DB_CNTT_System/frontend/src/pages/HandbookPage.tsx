@@ -64,7 +64,7 @@ const HandbookPage = ({ currentUser }) => {
               Bạn chưa có trong danh sách kỳ học HK1 2026–2027
             </div>
             <p className="text-[13.5px] text-[#4b5563] text-justify leading-relaxed">
-              Bạn vẫn có thể tham khảo quy định, tìm kiếm cơ hội thực tập và chuẩn bị hồ sơ. Vui lòng liên hệ Văn phòng Khoa CNTT nếu bạn đã hoàn tất đăng ký môn học nhưng chưa thấy thông tin cập nhật trên hệ thống.
+              Bạn vẫn có thể xem quy định và cơ hội thực tập.
             </p>
           </div>
         </div>
@@ -85,7 +85,7 @@ const HandbookPage = ({ currentUser }) => {
             </span>
           </div>
           <p className="text-[12.5px] text-white/95 text-justify leading-relaxed">
-            Cung cấp toàn diện thông tin cần thiết cho học phần thực tập KTCN / TSNN. Tra cứu quy định, tải biểu mẫu chuẩn và nhận kênh hướng dẫn chính thức từ Khoa Công nghệ thông tin Trường Đại học Tôn Đức Thắng.
+            Quy định, biểu mẫu và kênh liên hệ học phần KTCN/TSNN.
           </p>
         </div>
       </div>
@@ -113,7 +113,7 @@ const HandbookPage = ({ currentUser }) => {
             </div>
 
             <p className="text-[12.5px] text-[#1f2937] text-justify leading-relaxed">
-              Sinh viên cần hoàn tất việc khai báo thông tin doanh nghiệp, cập nhật các chứng chỉ ngoại ngữ bắt buộc và nộp hồ sơ theo đúng thời hạn quy định. Tất cả hồ sơ sẽ được Ban Chủ nhiệm Khoa thẩm định trực tiếp trên hệ thống số hóa.
+              Hoàn tất khai báo doanh nghiệp, chứng chỉ ngoại ngữ và hồ sơ đúng hạn.
             </p>
 
             {/* Timeline Table */}

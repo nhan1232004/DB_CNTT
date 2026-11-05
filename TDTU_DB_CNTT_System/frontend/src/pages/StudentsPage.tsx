@@ -1851,7 +1851,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                             <div>
                               <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wide mb-1.5">Cam kết của sinh viên:</div>
                               <div className="text-[15px] font-medium text-[#1f2937]">
-                                Tự liên hệ ứng tuyển, cam kết cập nhật lại thông tin ngay khi nhận được thư tiếp nhận từ doanh nghiệp.
+                                Đang tự ứng tuyển.
                               </div>
                             </div>
                           </div>
@@ -2077,7 +2077,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                           return (
                             <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-medium flex items-center gap-2">
                               <span>⚠️</span>
-                              <span>Đường dẫn liên kết không phải miền Google Drive hợp lệ (drive.google.com). Để đảm bảo an toàn, hệ thống không nhúng xem trước website bên ngoài. Bạn có thể bấm "Mở trên Drive ↗" để kiểm tra.</span>
+                              <span>Chỉ xem trước được link Google Drive. Bấm "Mở trên Drive ↗" để mở.</span>
                             </div>
                           );
                         }
@@ -2165,9 +2165,6 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                 <h3 className="font-extrabold text-[22px] md:text-[24px] text-[#1f2937] tracking-tight">
                   {editingStudentId ? `Chỉnh sửa hồ sơ sinh viên (${editingStudentId})` : 'Thêm sinh viên mới vào học kỳ'}
                 </h3>
-                <p className="text-[13.5px] text-[#4b5563] mt-1 font-medium">
-                  Dữ liệu sẽ đồng bộ tức thì lên Biểu đồ Dashboard, SQLite Backend và Cloud Firestore.
-                </p>
               </div>
               <button 
                 type="button" 
@@ -2380,7 +2377,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                   Nhập danh sách sinh viên từ Excel (.xlsx, .xls, .csv)
                 </h3>
                 <p className="text-[12px] text-[#1f2937] mt-0.5">
-                  Tự động phân tích đa Sheet môn học (KTCN & TSNN), kiểm tra GPA hệ 10, hệ 4, xếp loại học lực và cho phép xem trước trước khi nạp.
+                  Hỗ trợ .xlsx, .xls, .csv và xem trước khi nạp.
                 </p>
               </div>
               <button

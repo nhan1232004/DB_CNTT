@@ -174,7 +174,7 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
               Phát Thông Báo Học Vụ Phân Quyền
             </h3>
             <p className="text-[12px] text-[#1f2937] mt-0.5">
-              Gửi thông báo phân loại theo nhóm đối tượng · Chống gửi trùng lặp · Quản lý bởi Ban Quản trị Khoa
+              Gửi thông báo theo nhóm đối tượng
             </p>
           </div>
           <button
@@ -284,7 +284,7 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
                     className="w-full px-3 py-1.5 text-xs font-mono font-bold uppercase rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                   />
                   <p className="text-[10.5px] text-purple-600 dark:text-purple-400">
-                    Thông báo này chỉ hiển thị trên tài khoản sinh viên được chỉ định, tuyệt đối không lộ cho sinh viên khác.
+                    Chỉ sinh viên này nhìn thấy thông báo.
                   </p>
                 </div>
               )}
@@ -384,7 +384,6 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
               {/* Action Buttons */}
               <div className="pt-3 flex items-center justify-between border-t border-[#e5e7eb]">
                 <div className="text-[11.5px] text-[#1f2937]">
-                  Cơ chế chống gửi trùng lặp tự động khóa thông báo trùng trong 20 giây.
                 </div>
                 <div className="flex items-center gap-3">
                   <button

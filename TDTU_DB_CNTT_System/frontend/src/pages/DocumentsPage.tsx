@@ -485,7 +485,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
             Trung tâm Biểu mẫu & Báo cáo Giảng viên
           </h1>
           <p className="text-[12.5px] text-[#4b5563] mt-1 leading-relaxed max-w-2xl break-words">
-            Kết xuất và in ấn các mẫu biểu hành chính, bảng điểm đánh giá và giấy giới thiệu thực tập chuẩn thể thức TDTU.
+            In biểu mẫu và giấy giới thiệu thực tập.
           </p>
         </div>
 

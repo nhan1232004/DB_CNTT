@@ -655,7 +655,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
                 return (
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[13px] font-medium flex items-center gap-2">
                     <span>⚠️</span>
-                    <span>Đường dẫn liên kết không phải miền Google Drive hợp lệ (drive.google.com). Để đảm bảo an toàn bảo mật, hệ thống không cho phép nhúng trực tiếp website bên ngoài. Bạn có thể bấm "Mở trên Drive ↗" ở trên để kiểm tra.</span>
+                    <span>Chỉ xem trước được link Google Drive. Bấm "Mở trên Drive ↗" để mở.</span>
                   </div>
                 );
               }

@@ -160,7 +160,7 @@ const AccountsPage = ({ currentUser }) => {
       window.ApiClient.saveSystemDeadlines(deadlinesForm);
       setMessage({
         type: 'success',
-        text: ' Đã cập nhật thành công các mốc thời gian & hạn chót học kỳ! Toàn bộ đồng hồ đếm ngược và bảng theo dõi trên hệ thống đã được đồng bộ.'
+        text: 'Đã cập nhật hạn chót học kỳ.'
       });
     } catch (err) {
       setMessage({ type: 'error', text: 'Lỗi lưu hạn chót: ' + err.message });
@@ -196,7 +196,7 @@ const AccountsPage = ({ currentUser }) => {
       }
       setMessage({
         type: 'success',
-        text: ' Đã lưu thành công Ma trận Phân quyền Nguyên tố lên Cloud Firestore & Hệ thống!'
+        text: 'Đã lưu phân quyền.'
       });
     } catch (err) {
       setMessage({ type: 'error', text: 'Lỗi lưu ma trận quyền: ' + err.message });
@@ -556,7 +556,7 @@ const AccountsPage = ({ currentUser }) => {
                   Bảng ma trận chức năng cho Role: <span className="text-[#003087] ">[{selectedRoleForMatrix}]</span>
                 </h3>
                 <p className="text-[13px] text-[#1f2937]">
-                  Tích chọn để cấp quyền (nhân thừa số nguyên tố), bỏ tích để thu hồi quyền (chia bớt thừa số).
+                  Tích để cấp quyền, bỏ tích để thu hồi.
                 </p>
               </div>
 
@@ -714,7 +714,7 @@ const AccountsPage = ({ currentUser }) => {
                   Tạo tài khoản Đối tác Doanh nghiệp
                 </h3>
                 <p className="text-[14px] text-[#1f2937]">
-                  Cấp tài khoản đăng nhập cho đơn vị tuyển dụng bên ngoài vào hệ thống thực tập TDTU.
+                  Cấp tài khoản cho doanh nghiệp tuyển dụng.
                 </p>
               </div>
               <button

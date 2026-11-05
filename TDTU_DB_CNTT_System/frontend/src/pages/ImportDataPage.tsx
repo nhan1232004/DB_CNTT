@@ -326,7 +326,7 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
       <div className="max-w-4xl mx-auto p-8 text-center bg-white rounded-xl border border-[#e5e7eb] my-8">
         <h2 className="text-[19px] font-bold text-[#dc2626]">Không có quyền truy cập chức năng</h2>
         <p className="text-[12.5px] text-[#1f2937] mt-2 text-justify leading-relaxed">
-          Chức năng nhập dữ liệu sinh viên từ file Excel chỉ dành riêng cho Ban Chủ nhiệm Khoa và Quản trị viên phụ trách thực tập. Vui lòng liên hệ Văn phòng Khoa để được cấp quyền.
+          Bạn không có quyền truy cập mục này.
         </p>
       </div>
     );
@@ -340,7 +340,7 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
             Nhập Dữ Liệu Học Phần Thực Tập
           </h1>
           <p className="text-[12.5px] text-[#1f2937] mt-1 text-justify leading-relaxed">
-            Hỗ trợ nạp danh sách sinh viên trực tiếp từ tệp tin Excel (.xlsx, .xls, .csv), tự động nhận diện đa Sheet môn học (Kiến tập Công nghiệp & Tập sự Nghề nghiệp), kiểm tra điểm GPA hệ 10, hệ 4 và xếp loại học lực.
+            Nạp danh sách sinh viên từ file Excel.
           </p>
         </div>
 

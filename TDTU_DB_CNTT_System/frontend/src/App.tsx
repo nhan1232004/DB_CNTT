@@ -25,7 +25,7 @@ class ErrorBoundary extends React.Component {
             </div>
             <h2 className="text-[20px] font-bold text-[#1f2937]">Đang tải lại Cổng thông tin</h2>
             <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
-              Hệ thống đang tự động tối ưu hóa phiên làm việc của bạn. Vui lòng bấm nút bên dưới để tải lại giao diện.
+              Vui lòng tải lại trang.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
@@ -86,7 +86,7 @@ class TabErrorBoundary extends React.Component {
           </div>
           <h3 className="text-[17px] font-bold text-[#1f2937]">Đang đồng bộ dữ liệu giao diện</h3>
           <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
-            Hệ thống đang nạp thông tin mới nhất. Bạn có thể nhấn thử lại hoặc chuyển sang mục khác bên thanh điều hướng.
+            Không tải được nội dung. Vui lòng thử lại.
           </p>
           {this.state.error && (
             <p className="text-[11px] text-red-500 font-mono bg-red-50 p-2 rounded-lg border border-red-100 text-left overflow-x-auto">

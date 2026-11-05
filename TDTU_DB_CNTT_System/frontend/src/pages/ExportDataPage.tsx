@@ -256,7 +256,7 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
         <div className="text-4xl mb-3"></div>
         <h2 className="text-xl font-bold text-[#dc2626] ">Không có quyền truy cập chức năng</h2>
         <p className="text-sm text-[#1f2937] mt-2">
-          Chức năng "Export dữ liệu" chỉ dành riêng cho Thầy Phúc (Admin Khoa - Mã quyền 34).
+          Bạn không có quyền truy cập mục này.
         </p>
       </div>
     );
@@ -336,7 +336,7 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
               Bảng Tổng hợp Chứng chỉ ĐBCL
             </h3>
             <p className="text-[14.5px] text-[#1f2937]  mt-1 leading-relaxed">
-              Xuất danh sách sinh viên đã nộp chứng chỉ tiếng Anh (Aptis, TOEIC, IELTS...), điểm số, cấp độ CEFR và link Drive đối chiếu.
+              Danh sách chứng chỉ, điểm và link minh chứng.
             </p>
           </div>
 
@@ -362,7 +362,7 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
               Báo cáo Doanh nghiệp Tiếp nhận
             </h3>
             <p className="text-[14.5px] text-[#1f2937]  mt-1 leading-relaxed">
-              Thống kê số lượng sinh viên tiếp nhận theo từng đối tác doanh nghiệp, phục vụ công tác liên kết và khen thưởng.
+              Thống kê sinh viên theo doanh nghiệp.
             </p>
           </div>
 

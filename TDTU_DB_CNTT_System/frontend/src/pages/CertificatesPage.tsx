@@ -881,7 +881,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
 
               <div className="p-3 bg-[#f8fafc]/70  border border-[#e5e7eb]  rounded-xl text-[11px] text-[#1f2937] ">
                 <strong>Cam kết trung thực của sinh viên: </strong> 
-                Sinh viên đã xác nhận cam đoan toàn bộ thông tin và minh chứng chứng chỉ tiếng Anh cung cấp là chính xác, hoàn toàn chịu trách nhiệm trước Nhà trường và Khoa CNTT nếu có sự sai lệch.
+                Đã cam kết thông tin trung thực.
               </div>
             </div>
 
@@ -1324,7 +1324,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
               Bạn chưa khai báo chứng chỉ tiếng Anh nào
             </h4>
             <p className="text-xs text-[#1f2937] max-w-md mx-auto mt-1 mb-4">
-              Nhấn nút "Khai báo chứng chỉ mới" bên dưới để nộp chứng chỉ tiếng Anh (TOEIC, IELTS, TOEFL iBT, Aptis ESOL, Cambridge) xét chuẩn thực tập và tốt nghiệp.
+              Bạn chưa khai báo chứng chỉ.
             </p>
             <button
               type="button"
@@ -1574,7 +1574,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
               <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-[12px] flex items-start gap-2.5">
                 <span className="text-base leading-none">ℹ️</span>
                 <div className="leading-relaxed">
-                  <strong>Quy định chứng chỉ tiếng Anh:</strong> Mỗi sinh viên chỉ lưu duy nhất <strong>1 hồ sơ chứng chỉ ngoại ngữ</strong>. Khi bạn khai báo chứng chỉ mới, hồ sơ này sẽ tự động <strong>thay thế</strong> chứng chỉ cũ trên toàn hệ thống (cả bên Sinh viên và Giảng viên).
+                  Khai báo mới sẽ thay thế chứng chỉ hiện tại.
                 </div>
               </div>
 
@@ -1720,7 +1720,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                   />
                   <label htmlFor="cert-commitment-check" className="text-xs text-[#1f2937]  font-medium leading-relaxed select-none cursor-pointer">
                     <strong className="text-[#1f2937]  font-bold">Cam kết của sinh viên: </strong> 
-                    Tôi xin cam đoan toàn bộ thông tin và liên kết minh chứng chứng chỉ tiếng Anh cung cấp là chính xác, trung thực. Tôi xin hoàn toàn chịu trách nhiệm trước Nhà trường và Khoa CNTT nếu có bất kỳ sự sai lệch nào.
+                    Tôi cam kết thông tin và minh chứng là trung thực.
                   </label>
                 </div>
               </div>
@@ -1789,7 +1789,7 @@ class CertificatesErrorBoundary extends React.Component {
           </div>
           <h3 className="text-[17px] font-bold text-[#1f2937]">Đang tải dữ liệu chứng chỉ ngoại ngữ</h3>
           <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
-            Hệ thống đang đồng bộ dữ liệu chứng chỉ mới nhất. Bạn có thể nhấn thử lại để làm mới giao diện.
+            Không tải được dữ liệu. Vui lòng thử lại.
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button

@@ -688,7 +688,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({
         type: 'success',
-        text: '✓ Đã cập nhật trạng thái "Đang tìm / Chờ phỏng vấn" thành công tới Khoa CNTT!'
+        text: '✓ Đã cập nhật trạng thái.'
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
@@ -810,7 +810,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({
         type: 'success',
-        text: '✓ Đã gửi yêu cầu hỗ trợ tới Khoa CNTT thành công! Thầy/Cô Trợ lý Doanh nghiệp sẽ liên hệ sắp xếp lịch phỏng vấn cho bạn.'
+        text: '✓ Đã gửi yêu cầu hỗ trợ.'
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
@@ -977,7 +977,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
       setMessage({
         type: 'success',
-        text: 'Chúc mừng! Hồ sơ khai báo thực tập của bạn đã được ghi nhận thành công và cập nhật mốc thời gian tới Khoa CNTT.'
+        text: 'Đã lưu khai báo thực tập.'
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
@@ -1007,7 +1007,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       setShowDeleteModal(false);
       setMessage({
         type: 'success',
-        text: 'Đã xóa / rút hồ sơ khai báo thực tập thành công. Bạn có thể tiến hành khai báo mới bất kỳ lúc nào.'
+        text: 'Đã rút khai báo.'
       });
     } catch (err) {
       setMessage({
@@ -1540,9 +1540,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-[#003087] dark:text-sky-300 flex items-center justify-center text-xs">1</span>
                       <span>Xác định trạng thái nơi thực tập của bạn</span>
                     </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Khoa sẽ căn cứ vào lựa chọn của bạn để hướng dẫn thủ tục tiếp theo hoặc điều phối doanh nghiệp hỗ trợ.
-                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1589,7 +1586,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           Đã có nơi thực tập
                         </div>
                         <p className="text-xs text-[#4b5563] leading-relaxed">
-                          Doanh nghiệp đã đồng ý tiếp nhận bạn làm thực tập sinh. Bạn cần nhập MST và thông tin người hướng dẫn.
+                          Đã có DN tiếp nhận, cần nhập MST và người hướng dẫn.
                         </p>
                       </div>
                     </div>
@@ -1626,7 +1623,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           Đang tìm / Chờ phỏng vấn
                         </div>
                         <p className="text-xs text-[#4b5563] leading-relaxed">
-                          Bạn đang chủ động nộp hồ sơ, chờ kết quả phỏng vấn. Bạn sẽ cập nhật khi có kết quả chính thức.
+                          Đang chờ kết quả phỏng vấn.
                         </p>
                       </div>
                     </div>
@@ -1663,7 +1660,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           Cần Khoa hỗ trợ
                         </div>
                         <p className="text-xs text-[#4b5563] leading-relaxed">
-                          Bạn chưa tìm được nơi thực tập. Khoa CNTT sẽ kết nối doanh nghiệp đối tác và sắp xếp phỏng vấn.
+                          Khoa sẽ kết nối doanh nghiệp đối tác.
                         </p>
                       </div>
                     </div>
@@ -1683,7 +1680,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           <span>Thông tin Doanh nghiệp & Cán bộ hướng dẫn</span>
                         </h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          Nhập Mã số thuế để tra cứu thông tin doanh nghiệp, sau đó nhập thông tin người hướng dẫn.
+                          Nhập MST để tra cứu doanh nghiệp.
                         </p>
                       </div>
 
@@ -1833,7 +1830,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           className="mt-0.5 w-4 h-4 text-[#003087] rounded border-slate-300 focus:ring-[#003087]"
                         />
                         <span className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
-                          Tôi cam kết các thông tin về Doanh nghiệp tiếp nhận và Cán bộ hướng dẫn nêu trên là hoàn toàn chính xác và đã có sự đồng thuận từ phía doanh nghiệp.
+                          Tôi cam kết thông tin doanh nghiệp là chính xác.
                         </span>
                       </label>
                     </div>
@@ -1911,7 +1908,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           className="mt-0.5 w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
                         />
                         <span className="text-xs text-amber-900 dark:text-amber-200 leading-snug">
-                          Tôi cam kết sẽ chủ động hoàn tất phỏng vấn và quay lại hệ thống để cập nhật thông tin doanh nghiệp chính thức trước hạn chót (30/09/2026).
+                          Tôi sẽ cập nhật thông tin doanh nghiệp trước hạn chót.
                         </span>
                       </label>
                     </div>
@@ -1944,7 +1941,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                               Doanh nghiệp ứng tuyển đã hết chỉ tiêu tiếp nhận
                             </option>
                             <option value="Cần Khoa giới thiệu vào đối tác chiến lược TDTU">
-                              Cần Khoa giới thiệu vào đối tác chiến lược TDTU (TMA, FPT, VNG, Gameloft...)
+                              Cần Khoa giới thiệu doanh nghiệp đối tác
                             </option>
                             <option value="Thời gian gấp cần Khoa hỗ trợ khẩn cấp">
                               Thời gian gấp cần Khoa hỗ trợ khẩn cấp để kịp tiến độ học phần
@@ -2016,7 +2013,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           className="mt-0.5 w-4 h-4 text-rose-600 rounded border-rose-300 focus:ring-rose-500"
                         />
                         <span className="text-xs text-rose-900 dark:text-rose-200 leading-snug">
-                          Tôi cam kết sẽ tham gia phỏng vấn nghiêm túc, đúng giờ khi Khoa bố trí lịch và tuân thủ quy chế thực tập của doanh nghiệp được điều phối.
+                          Tôi cam kết tham gia phỏng vấn theo lịch Khoa bố trí.
                         </span>
                       </label>
                     </div>
@@ -2083,7 +2080,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500"
                     />
                     <span className="text-xs text-emerald-950 dark:text-emerald-200 leading-relaxed">
-                      Tôi xác nhận các thông tin trên là chính xác và cam kết hoàn thành đúng khối lượng thời gian của môn học thực tập theo quy chế của Khoa CNTT - ĐH Tôn Đức Thắng.
+                      Tôi xác nhận thông tin trên là chính xác.
                     </span>
                   </label>
                 </div>
@@ -2284,9 +2281,6 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                   <div className="flex items-center gap-2 text-xs font-bold text-[#003087] dark:text-sky-400">
                     <span>Bạn cần hỗ trợ thêm?</span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Nếu bạn có vướng mắc về học phần thực tập hoặc quy chế xét tốt nghiệp, hãy liên hệ trực tiếp với Khoa CNTT.
-                  </p>
                   <div>
                     <a href="mailto:khoacntt@tdtu.edu.vn" className="text-xs font-bold text-blue-600 dark:text-sky-400 hover:underline">
                       Email: khoacntt@tdtu.edu.vn

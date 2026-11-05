@@ -136,7 +136,7 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
         <div className="text-4xl mb-3"></div>
         <h2 className="text-xl font-bold text-[#dc2626] ">Không có quyền truy cập chức năng</h2>
         <p className="text-sm text-[#1f2937] mt-2">
-          Chức năng "Auto forward from email JD" có mã quyền 1 đối với vai trò của bạn.
+          Bạn không có quyền truy cập mục này.
         </p>
       </div>
     );
