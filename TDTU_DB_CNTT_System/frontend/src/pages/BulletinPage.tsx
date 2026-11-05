@@ -90,13 +90,19 @@ const BulletinPage = ({ currentUser }) => {
         if ((window as any).FirebaseService?.db) {
           try {
             const snap = await (window as any).FirebaseService.db.collection('tdtu_jds').get();
-            if (snap && !snap.empty) {
+            if (snap) {
               const remoteJds: any[] = [];
-              snap.forEach((doc: any) => remoteJds.push({ id: doc.id, ...doc.data() }));
-              if (remoteJds.length > 0) {
-                setPublishedJds(remoteJds);
-                try { localStorage.setItem('tdtu_published_jds', JSON.stringify(remoteJds)); } catch {}
+              if (!snap.empty) {
+                snap.forEach((doc: any) => {
+                  const data = doc.data();
+                  const id = doc.id || data.id;
+                  if (id && !String(id).startsWith('post-jd-')) {
+                    remoteJds.push({ id, ...data });
+                  }
+                });
               }
+              setPublishedJds(remoteJds);
+              try { localStorage.setItem('tdtu_published_jds', JSON.stringify(remoteJds)); } catch {}
             }
           } catch {}
         }
@@ -169,6 +175,13 @@ const BulletinPage = ({ currentUser }) => {
         setApplications(window.ApiClient.getApplications());
       }
     };
+    const handleAppsUpdate = (e) => {
+      if (e && e.detail && Array.isArray(e.detail)) {
+        setApplications(e.detail);
+      } else {
+        handleApps();
+      }
+    };
 
     let bc = null;
     try {
@@ -194,6 +207,7 @@ const BulletinPage = ({ currentUser }) => {
     window.addEventListener('tdtu_notification_sent', loadData);
     window.addEventListener('tdtu_notification_received', loadData);
     window.addEventListener('tdtu_notifications_updated', loadData);
+    window.addEventListener('tdtu_applications_updated', handleAppsUpdate);
     window.addEventListener('tdtu_application_submitted', handleApps);
     window.addEventListener('tdtu_application_approved', handleApps);
     window.addEventListener('tdtu_application_rejected', handleApps);
@@ -206,6 +220,7 @@ const BulletinPage = ({ currentUser }) => {
       window.removeEventListener('tdtu_notification_sent', loadData);
       window.removeEventListener('tdtu_notification_received', loadData);
       window.removeEventListener('tdtu_notifications_updated', loadData);
+      window.removeEventListener('tdtu_applications_updated', handleAppsUpdate);
       window.removeEventListener('tdtu_application_submitted', handleApps);
       window.removeEventListener('tdtu_application_approved', handleApps);
       window.removeEventListener('tdtu_application_rejected', handleApps);
@@ -962,7 +977,7 @@ const BulletinPage = ({ currentUser }) => {
             >
               <span>Hồ sơ SV ứng tuyển</span>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[12.5px] font-bold">
-                {applications.filter(a => a.status === 'pending').length}
+                {applications.length}
               </span>
             </button>
           </div>
@@ -1174,7 +1189,7 @@ const BulletinPage = ({ currentUser }) => {
                     className="px-3 py-1.5 bg-white border border-[#cbd5e1] rounded-lg text-xs font-bold text-[#003087] outline-none cursor-pointer"
                   >
                     <option value="all">Tất cả ({applications.length})</option>
-                    <option value="pending">Chờ xét duyệt ({applications.filter(a => a.status === 'pending').length})</option>
+                    <option value="pending">Chờ xét duyệt ({applications.filter(a => !a.status || a.status === 'pending' || a.status === 'submitted').length})</option>
                     <option value="accepted">Đã tiếp nhận ({applications.filter(a => a.status === 'accepted').length})</option>
                     <option value="rejected">Từ chối ({applications.filter(a => a.status === 'rejected').length})</option>
                   </select>
@@ -1198,7 +1213,13 @@ const BulletinPage = ({ currentUser }) => {
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {applications
-                        .filter(a => appStatusFilter === 'all' || a.status === appStatusFilter)
+                        .filter(a => {
+                          if (appStatusFilter === 'all') return true;
+                          if (appStatusFilter === 'pending') {
+                            return !a.status || a.status === 'pending' || a.status === 'submitted';
+                          }
+                          return a.status === appStatusFilter;
+                        })
                         .length === 0 ? (
                         <tr>
                           <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -1207,9 +1228,15 @@ const BulletinPage = ({ currentUser }) => {
                         </tr>
                       ) : (
                         applications
-                          .filter(a => appStatusFilter === 'all' || a.status === appStatusFilter)
+                          .filter(a => {
+                            if (appStatusFilter === 'all') return true;
+                            if (appStatusFilter === 'pending') {
+                              return !a.status || a.status === 'pending' || a.status === 'submitted';
+                            }
+                            return a.status === appStatusFilter;
+                          })
                           .map((app, idx) => {
-                            const isPending = app.status === 'pending';
+                            const isPending = !app.status || app.status === 'pending' || app.status === 'submitted';
                             const isAccepted = app.status === 'accepted';
                             const isRejected = app.status === 'rejected';
 

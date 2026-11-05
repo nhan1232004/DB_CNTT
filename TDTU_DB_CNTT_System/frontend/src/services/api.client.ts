@@ -653,21 +653,18 @@ class ApiClient {
 
       // 1.7 Lắng nghe tin JD tuyển dụng đã duyệt (tdtu_jds)
       db.collection('tdtu_jds').onSnapshot(snapshot => {
+        const jds = [];
         if (!snapshot.empty) {
-          const jds = [];
-          snapshot.forEach(doc => jds.push({ id: doc.id, ...doc.data() }));
-          try { localStorage.setItem('tdtu_published_jds', JSON.stringify(jds)); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: jds }));
-        } else {
-          const defaults = ApiClient.getDefaultSeedJds();
-          if (defaults.length > 0) {
-            try { localStorage.setItem('tdtu_published_jds', JSON.stringify(defaults)); } catch {}
-            defaults.forEach(jd => {
-              db.collection('tdtu_jds').doc(jd.id).set(jd, { merge: true }).catch(() => {});
-            });
-            window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: defaults }));
-          }
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id || data.id;
+            if (id && !String(id).startsWith('post-jd-')) {
+              jds.push({ id, ...data });
+            }
+          });
         }
+        try { localStorage.setItem('tdtu_published_jds', JSON.stringify(jds)); } catch {}
+        window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: jds }));
       }, err => {
         console.info('[Firestore Sync note - JDs]: Chế độ bộ nhớ cục bộ.', err.message);
       });
@@ -709,6 +706,25 @@ class ApiClient {
         }
       }, err => {
         console.info('[Firestore Sync note - Announcements]: Chế độ bộ nhớ cục bộ.', err.message);
+      });
+
+      // 1.10 Lắng nghe đơn ứng tuyển của sinh viên (tdtu_applications)
+      db.collection('tdtu_applications').onSnapshot(snapshot => {
+        const apps = [];
+        if (!snapshot.empty) {
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id || data.id;
+            if (data && data.jdId && !String(data.jdId).startsWith('post-jd-')) {
+              apps.push({ id, ...data });
+            }
+          });
+          apps.sort((a, b) => String(b.appliedAt || '').localeCompare(String(a.appliedAt || '')));
+        }
+        try { localStorage.setItem('tdtu_applications', JSON.stringify(apps)); } catch {}
+        window.dispatchEvent(new CustomEvent('tdtu_applications_updated', { detail: apps }));
+      }, err => {
+        console.info('[Firestore Sync note - Applications]: Chế độ bộ nhớ cục bộ.', err.message);
       });
 
       console.log('[Firestore Sync]: Đã kích hoạt Real-time Multi-device Sync toàn diện.');
@@ -2601,57 +2617,6 @@ class ApiClient {
           priority: 'URGENT',
           status: 'published',
           createdAt: '2026-10-24T08:00:00Z'
-        },
-        {
-          id: 'post-jd-01',
-          type: 'recruitment_jd',
-          title: 'FPT Software Tuyển dụng 20 Thực tập sinh Fullstack (NodeJS + React) & AI Engineer',
-          content: 'Email chuyển tiếp từ VP Tuyển dụng FPT Software: Tuyển dụng sinh viên Khoa CNTT TDTU thực tập có trợ cấp. Cơ hội chuyển thành nhân viên chính thức sau 320 giờ thực tập. Yêu cầu: Nắm chắc OOP, React, NodeJS hoặc Python. Hỗ trợ phụ cấp từ 6.000.000 đến 10.000.000 VNĐ/tháng.',
-          author: 'GV. Nguyễn Văn A',
-          authorRole: 'Giảng viên Điều phối Doanh nghiệp',
-          sourceEmail: 'tuyendung-fpt@fsoft.com.vn',
-          companyName: 'Công ty TNHH Phần mềm FPT',
-          taxCode: '0101778162',
-          position: 'Thực tập sinh Fullstack (React / NodeJS) & AI',
-          salary: '6.000.000 - 10.000.000 VNĐ / tháng',
-          location: 'F-Town 3, Khu Công nghệ Cao, TP. Thủ Đức, TP.HCM',
-          slots: 20,
-          status: 'published',
-          createdAt: '2026-10-23T09:30:00Z'
-        },
-        {
-          id: 'post-jd-02',
-          type: 'recruitment_jd',
-          title: 'VNG Corporation Tuyển Thực tập sinh Backend Golang / Node.js',
-          content: 'Email chuyển tiếp từ HR VNG: Tuyển 5 thực tập sinh làm việc tại VNG Campus. Hỗ trợ phụ cấp 8.000.000 VNĐ + Cơm trưa buffet + Xe buýt đưa đón sinh viên từ cơ sở Tân Phong TDTU. Yêu cầu: Thành thạo giải thuật, OOP, RESTful API.',
-          author: 'GV. Phạm Văn C',
-          authorRole: 'Ban Chủ nhiệm Khoa CNTT',
-          sourceEmail: 'recruitment@vng.com.vn',
-          companyName: 'Công ty Cổ phần VNG',
-          taxCode: '0303882213',
-          position: 'Backend Developer Intern (Golang / Node.js)',
-          salary: '8.000.000 VNĐ / tháng',
-          location: 'VNG Campus, Tân Thuận Đông, Quận 7, TP.HCM',
-          slots: 5,
-          status: 'published',
-          createdAt: '2026-10-22T10:15:00Z'
-        },
-        {
-          id: 'post-jd-03',
-          type: 'recruitment_jd',
-          title: 'Viettel Telecom & Cyber Security Tuyển Thực tập sinh An toàn Thông tin & SOC',
-          content: 'Email chuyển tiếp từ Viettel Cyber Security: Tuyển 6 sinh viên tham gia dự án giám sát an toàn thông tin SOC và Pentest mạng. Yêu cầu: Sinh viên ngành MMT&TT, ATTT, nắm vững Linux, Wireshark, Burp Suite. Trợ cấp 10.000.000 VNĐ/tháng.',
-          author: 'GV. Nguyễn Văn A',
-          authorRole: 'Giảng viên Điều phối Doanh nghiệp',
-          sourceEmail: 'tuyendung@viettel.com.vn',
-          companyName: 'Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel)',
-          taxCode: '0100109106',
-          position: 'Cyber Security Analyst / Network Intern',
-          salary: '10.000.000 VNĐ / tháng',
-          location: 'Tòa nhà Viettel, 285 Cách Mạng Tháng 8, Quận 10, TP.HCM',
-          slots: 6,
-          status: 'published',
-          createdAt: '2026-10-21T14:00:00Z'
         }
       ];
       return defaultPosts;
@@ -4968,77 +4933,7 @@ class ApiClient {
   // REAL-TIME FIRESTORE CRUD: BẢNG TIN JD & HÀNG ĐỢI (tdtu_jds & tdtu_jd_queue)
   // ==========================================
   static getDefaultSeedJds() {
-    return [
-      {
-        id: 'post-jd-01',
-        company: 'Công ty TNHH Phần mềm FPT (FPT Software)',
-        shortName: 'FPT',
-        field: 'Phần mềm',
-        position: 'Thực tập sinh Fullstack (React / NodeJS) & AI',
-        location: 'F-Town 3, Khu Công nghệ Cao, TP. Thủ Đức, TP.HCM',
-        deadline: '15/11/2026',
-        deadlineDays: 'Còn 15 ngày',
-        slots: 20,
-        salary: '6.000.000 - 10.000.000 VNĐ / tháng',
-        taxCode: '0101778162',
-        tags: ['ReactJS', 'NodeJS', 'AI / ML', 'TDTU Đối tác'],
-        requirements: ['Sinh viên năm 3-4 chuyên ngành CNTT, KTPM', 'Nắm chắc kiến thức OOP, Web Development'],
-        summary: 'Tuyển dụng 20 sinh viên Khoa CNTT TDTU thực tập có trợ cấp. Cơ hội chuyển thành nhân viên chính thức sau 320 giờ.',
-        description: 'Tuyển dụng sinh viên Khoa CNTT TDTU thực tập có trợ cấp. Cơ hội chuyển thành nhân viên chính thức sau 320 giờ thực tập. Yêu cầu: Nắm chắc OOP, React, NodeJS hoặc Python. Hỗ trợ phụ cấp từ 6.000.000 đến 10.000.000 VNĐ/tháng.',
-        sourceEmail: 'tuyendung-fpt@fsoft.com.vn',
-        status: 'published',
-        statusType: 'success',
-        selectCount: 14,
-        createdAt: '2026-10-23T09:30:00Z',
-        postDate: '23/10/2026'
-      },
-      {
-        id: 'post-jd-02',
-        company: 'Công ty Cổ phần VNG',
-        shortName: 'VNG',
-        field: 'Phần mềm',
-        position: 'Backend Developer Intern (Golang / Node.js)',
-        location: 'VNG Campus, Tân Thuận Đông, Quận 7, TP.HCM',
-        deadline: '20/11/2026',
-        deadlineDays: 'Còn 20 ngày',
-        slots: 5,
-        salary: '8.000.000 VNĐ / tháng',
-        taxCode: '0303882213',
-        tags: ['Golang', 'NodeJS', 'Cloud Services', 'Quận 7'],
-        requirements: ['Thành thạo cấu trúc dữ liệu & giải thuật', 'Có dự án cá nhân hoặc môn học với REST API'],
-        summary: 'Tuyển 5 thực tập sinh làm việc tại VNG Campus (gần TDTU). Hỗ trợ phụ cấp 8.000.000 VNĐ + cơm trưa buffet + xe buýt đưa đón.',
-        description: 'Email chuyển tiếp từ HR VNG: Tuyển 5 thực tập sinh làm việc tại VNG Campus. Hỗ trợ phụ cấp 8.000.000 VNĐ + Cơm trưa buffet + Xe buýt đưa đón sinh viên từ cơ sở Tân Phong TDTU.',
-        sourceEmail: 'recruitment@vng.com.vn',
-        status: 'published',
-        statusType: 'success',
-        selectCount: 8,
-        createdAt: '2026-10-22T10:15:00Z',
-        postDate: '22/10/2026'
-      },
-      {
-        id: 'post-jd-03',
-        company: 'Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel)',
-        shortName: 'VTL',
-        field: 'An toàn thông tin',
-        position: 'Cyber Security Analyst / Network Intern',
-        location: 'Tòa nhà Viettel, 285 Cách Mạng Tháng 8, Quận 10, TP.HCM',
-        deadline: '25/11/2026',
-        deadlineDays: 'Còn 25 ngày',
-        slots: 6,
-        salary: '10.000.000 VNĐ / tháng',
-        taxCode: '0100109106',
-        tags: ['SOC', 'Pentest', 'Linux', 'Network'],
-        requirements: ['Sinh viên chuyên ngành MMT&TTDL, An toàn thông tin', 'Nắm vững Linux, giao thức mạng TCP/IP'],
-        summary: 'Tuyển 6 sinh viên tham gia dự án giám sát an toàn thông tin SOC và Pentest mạng tại Viettel.',
-        description: 'Email chuyển tiếp từ Viettel Cyber Security: Tuyển 6 sinh viên tham gia dự án giám sát an toàn thông tin SOC và Pentest mạng. Trợ cấp 10.000.000 VNĐ/tháng.',
-        sourceEmail: 'tuyendung@viettel.com.vn',
-        status: 'published',
-        statusType: 'success',
-        selectCount: 5,
-        createdAt: '2026-10-21T14:00:00Z',
-        postDate: '21/10/2026'
-      }
-    ];
+    return [];
   }
 
   static getPublishedJds() {
@@ -5046,14 +4941,12 @@ class ApiClient {
       const saved = localStorage.getItem('tdtu_published_jds');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(j => j && j.id && !String(j.id).startsWith('post-jd-'));
+        }
       }
     } catch {}
-    const defaults = this.getDefaultSeedJds();
-    try {
-      localStorage.setItem('tdtu_published_jds', JSON.stringify(defaults));
-    } catch {}
-    return defaults;
+    return [];
   }
 
   static getJdReviewQueue() {
@@ -5335,7 +5228,9 @@ class ApiClient {
       const raw = localStorage.getItem('tdtu_applications');
       if (raw) {
         const list = JSON.parse(raw);
-        if (Array.isArray(list)) return list;
+        if (Array.isArray(list)) {
+          return list.filter(a => a && a.jdId && !String(a.jdId).startsWith('post-jd-'));
+        }
       }
     } catch {}
     return [];
@@ -5346,17 +5241,21 @@ class ApiClient {
     if (window.FirebaseService?.db) {
       try {
         const snap = await window.FirebaseService.db.collection('tdtu_applications').get();
-        if (snap && !snap.empty) {
-          const map = new Map();
-          list.forEach(a => { if (a && a.id) map.set(String(a.id), a); });
-          snap.forEach(doc => {
-            const data = doc.data();
-            const id = doc.id || data.id;
-            map.set(String(id), { id, ...data });
-          });
-          list = Array.from(map.values()).sort((a, b) =>
-            String(b.appliedAt || '').localeCompare(String(a.appliedAt || ''))
-          );
+        if (snap) {
+          const remoteList = [];
+          if (!snap.empty) {
+            snap.forEach(doc => {
+              const data = doc.data();
+              const id = doc.id || data.id;
+              if (data && data.jdId && !String(data.jdId).startsWith('post-jd-')) {
+                remoteList.push({ id, ...data });
+              }
+            });
+            remoteList.sort((a, b) =>
+              String(b.appliedAt || '').localeCompare(String(a.appliedAt || ''))
+            );
+          }
+          list = remoteList;
           try {
             localStorage.setItem('tdtu_applications', JSON.stringify(list));
           } catch {}
@@ -5910,6 +5809,40 @@ class ApiClient {
 }
 
 window.ApiClient = ApiClient;
+
+// Tự động dọn dẹp các dữ liệu mẫu cũ (mock JDs, mock applications, mock forwarded emails)
+try {
+  const pubSaved = localStorage.getItem('tdtu_published_jds');
+  if (pubSaved) {
+    const pub = JSON.parse(pubSaved);
+    if (Array.isArray(pub)) {
+      const cleanedPub = pub.filter(j => j && j.id && !String(j.id).startsWith('post-jd-'));
+      if (cleanedPub.length !== pub.length) {
+        localStorage.setItem('tdtu_published_jds', JSON.stringify(cleanedPub));
+      }
+    }
+  }
+  const appSaved = localStorage.getItem('tdtu_applications');
+  if (appSaved) {
+    const apps = JSON.parse(appSaved);
+    if (Array.isArray(apps)) {
+      const cleanedApps = apps.filter(a => a && a.jdId && !String(a.jdId).startsWith('post-jd-'));
+      if (cleanedApps.length !== apps.length) {
+        localStorage.setItem('tdtu_applications', JSON.stringify(cleanedApps));
+      }
+    }
+  }
+  const emailSaved = localStorage.getItem('tdtu_email_forwarded_jds');
+  if (emailSaved) {
+    const emails = JSON.parse(emailSaved);
+    if (Array.isArray(emails)) {
+      const cleanedEmails = emails.filter(e => e && e.id && !String(e.id).startsWith('em-'));
+      if (cleanedEmails.length !== emails.length) {
+        localStorage.setItem('tdtu_email_forwarded_jds', JSON.stringify(cleanedEmails));
+      }
+    }
+  }
+} catch {}
 
 // Tự động khởi tạo kết nối Cloud Firestore Real-time Sync tức thì
 try {

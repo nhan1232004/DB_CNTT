@@ -10,63 +10,35 @@ const EmailJdPage = ({ currentUser, onNavigateTab }) => {
   const canUpdate = window.PrimeRbac?.hasPrimePermission(mask, 5);
   const canDelete = window.PrimeRbac?.hasPrimePermission(mask, 7);
 
-  // Danh sách email JD mô phỏng đã tiếp nhận qua luồng forwarding
+  // Danh sách email JD tiếp nhận qua luồng forwarding
   const [emailJds, setEmailJds] = React.useState(() => {
     try {
       const saved = localStorage.getItem('tdtu_email_forwarded_jds');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
-      {
-        id: 'em-001',
-        fromEmail: 'tuyendung@fpt.com',
-        senderName: 'HR FPT Software HCM',
-        subject: 'FPT Software tuyển dụng 25 Thực tập sinh Java & Frontend React HK1 2026-2027',
-        receivedAt: '2026-10-28 09:15',
-        companyName: 'Công ty TNHH Phần mềm FPT (FPT Software HCM)',
-        taxCode: '0101778115',
-        position: 'Thực tập sinh Phần mềm (Java / ReactJS)',
-        slots: 25,
-        salary: '6.000.000 - 8.500.000 VNĐ/tháng',
-        location: 'Khu Công Nghệ Cao, TP. Thủ Đức, TP.HCM',
-        deadline: '2026-11-20',
-        status: 'pending', // 'pending' | 'approved' | 'rejected'
-        rawBody: 'Kính gửi Khoa CNTT - Đại học Tôn Đức Thắng,\nFPT Software trân trọng gửi quý Khoa thông tin đợt tuyển dụng Thực tập sinh Doanh nghiệp đợt 1 năm học 2026-2027...'
-      },
-      {
-        id: 'em-002',
-        fromEmail: 'recruitment@kms-technology.com',
-        senderName: 'Talent Acquisition Team KMS',
-        subject: '[KMS Technology] Tuyển dụng Intern QA/QC Automation & Software Tester',
-        receivedAt: '2026-10-29 14:30',
-        companyName: 'KMS Technology Vietnam',
-        taxCode: '0309998877',
-        position: 'Thực tập sinh Kiểm thử Phần mềm (Automation QA)',
-        slots: 12,
-        salary: '5.500.000 - 7.500.000 VNĐ/tháng',
-        location: 'Số 2 Tản Viên, Q. Tân Bình, TP.HCM',
-        deadline: '2026-11-25',
-        status: 'approved',
-        rawBody: 'Dear TDTU Faculty of Information Technology,\nKMS Technology is seeking passionate student interns for QA Automation...'
-      },
-      {
-        id: 'em-003',
-        fromEmail: 'hr@vng.com.vn',
-        senderName: 'VNG Campus Recruitment',
-        subject: 'VNG Tech Fresher & Intern Program 2026 - Data Engineering & AI Track',
-        receivedAt: '2026-10-30 08:00',
-        companyName: 'Công ty Cổ phần VNG',
-        taxCode: '0303576603',
-        position: 'AI & Data Engineering Intern',
-        slots: 10,
-        salary: '8.000.000 - 10.000.000 VNĐ/tháng',
-        location: 'VNG Campus, Khu chế xuất Tân Thuận, Q.7, TP.HCM',
-        deadline: '2026-11-30',
-        status: 'pending',
-        rawBody: 'Kính gửi Ban Chủ nhiệm Khoa CNTT TDTU,\nVNG mở cổng tiếp nhận sinh viên thực tập các mảng AI, NLP và Big Data...'
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(e => e && e.id && !String(e.id).startsWith('em-'));
+        }
       }
-    ];
+    } catch {}
+    return [];
   });
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tdtu_email_forwarded_jds');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(e => e && e.id && !String(e.id).startsWith('em-'));
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem('tdtu_email_forwarded_jds', JSON.stringify(cleaned));
+            setEmailJds(cleaned);
+          }
+        }
+      }
+    } catch {}
+  }, []);
 
   const [selectedJd, setSelectedJd] = React.useState(null);
   const [filterStatus, setFilterStatus] = React.useState('all');
