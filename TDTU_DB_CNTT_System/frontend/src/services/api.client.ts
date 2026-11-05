@@ -218,12 +218,17 @@ class ApiClient {
           user.isAdmin = true;
           user.role = 'lecturer';
           if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
-            user.name = user.name || 'TS. Dương Hữu Phúc';
+            user.name = 'GV. Dương Hữu Phúc';
           }
         } else {
           user.isAdmin = false;
           user.role = 'lecturer';
         }
+      }
+
+      if (user.role === 'lecturer' || user.isAdmin) {
+        user.name = this.formatTeacherTitle(user.name, user.role, user.isAdmin);
+        user.displayName = this.formatTeacherTitle(user.displayName || user.name, user.role, user.isAdmin);
       }
 
       const expectedSig = this._computeUserSig(user);
@@ -240,6 +245,16 @@ class ApiClient {
     } catch {
       return null;
     }
+  }
+
+  static formatTeacherTitle(name: string, role = 'lecturer', isAdmin = false) {
+    if (!name) return 'GV. Khoa CNTT';
+    const str = String(name).trim();
+    if (role !== 'lecturer' && !isAdmin && role !== 'admin') return str;
+    let clean = str.replace(/^(TS\.|ThS\.|PGS\.TS\.|GS\.TS\.|PGS\.|GS\.|Ths\.|Ts\.|Thạc sĩ|Tiến sĩ)\s*/i, '').trim();
+    if (clean.startsWith('GV.')) clean = clean.substring(3).trim();
+    else if (clean.startsWith('GV ')) clean = clean.substring(3).trim();
+    return `GV. ${clean}`;
   }
 
   static setSavedUser(user) {
@@ -261,11 +276,16 @@ class ApiClient {
         normalized.role = 'lecturer';
         normalized.isAdmin = true;
         if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
-          normalized.name = normalized.name || 'TS. Dương Hữu Phúc';
+          normalized.name = 'GV. Dương Hữu Phúc';
         }
       } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
         normalized.role = 'lecturer';
         normalized.isAdmin = false;
+      }
+
+      if (normalized.role === 'lecturer' || normalized.isAdmin) {
+        normalized.name = this.formatTeacherTitle(normalized.name, normalized.role, normalized.isAdmin);
+        normalized.displayName = this.formatTeacherTitle(normalized.displayName || normalized.name, normalized.role, normalized.isAdmin);
       }
       const sig = this._computeUserSig(normalized);
       normalized._sig = sig;
@@ -298,8 +318,8 @@ class ApiClient {
           const phucAccount = {
             uid: 'u_gv_phuc',
             email: 'duonghuuphuc@tdtu.edu.vn',
-            name: 'TS. Dương Hữu Phúc',
-            displayName: 'TS. Dương Hữu Phúc',
+            name: 'GV. Dương Hữu Phúc',
+            displayName: 'GV. Dương Hữu Phúc',
             role: 'lecturer',
             isAdmin: true,
             isActive: true,
@@ -315,7 +335,7 @@ class ApiClient {
           } else if (!list[existingPhucIdx].isAdmin) {
             list[existingPhucIdx].isAdmin = true;
             list[existingPhucIdx].role = 'lecturer';
-            list[existingPhucIdx].name = list[existingPhucIdx].name || 'TS. Dương Hữu Phúc';
+            list[existingPhucIdx].name = 'GV. Dương Hữu Phúc';
             try {
               db.collection('tdtu_users').doc(list[existingPhucIdx].uid || 'u_gv_phuc').set({ isAdmin: true, role: 'lecturer' }, { merge: true }).catch(() => {});
             } catch {}
@@ -362,6 +382,8 @@ class ApiClient {
         if (doc.exists) {
           const data = doc.data();
           if (data) {
+            const semId = data.id || data.semesterId || 'hk1_2026_2027';
+            localStorage.setItem(`tdtu_system_deadlines_${semId}`, JSON.stringify(data));
             localStorage.setItem('tdtu_system_deadlines', JSON.stringify(data));
             window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: data }));
             console.log('[Firestore Sync]: Đã nhận dữ liệu hạn chót học kỳ thời gian thực.');
@@ -369,6 +391,20 @@ class ApiClient {
         }
       }, err => {
         console.info('[Firestore Sync note - Deadlines]: Chế độ bộ nhớ cục bộ.', err.message);
+      });
+
+      // 1.3.1 Lắng nghe danh sách học kỳ toàn hệ thống thời gian thực (tdtu_system/semesters)
+      db.collection('tdtu_system').doc('semesters').onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data && Array.isArray(data.list) && data.list.length > 0) {
+            localStorage.setItem('tdtu_semesters_list', JSON.stringify(data.list));
+            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: data.list, semesters: data.list } }));
+            console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', data.list.length);
+          }
+        }
+      }, err => {
+        console.info('[Firestore Sync note - Semesters]: Chế độ bộ nhớ cục bộ.', err.message);
       });
 
       // 1.4 Lắng nghe thông báo học vụ thời gian thực (tdtu_notifications)
@@ -673,10 +709,10 @@ class ApiClient {
   static async _seedFirestoreUsers(db) {
     try {
       const seed = [
-        { uid: 'u_gv_phuc', email: 'duonghuuphuc@tdtu.edu.vn', name: 'TS. Dương Hữu Phúc', displayName: 'TS. Dương Hữu Phúc', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
-        { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'TS. Phạm Văn C', displayName: 'TS. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
-        { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'ThS. Nguyễn Văn A', displayName: 'ThS. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
-        { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'ThS. Trần Minh Lan', displayName: 'ThS. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
+        { uid: 'u_gv_phuc', email: 'duonghuuphuc@tdtu.edu.vn', name: 'GV. Dương Hữu Phúc', displayName: 'GV. Dương Hữu Phúc', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
+        { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'GV. Phạm Văn C', displayName: 'GV. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
+        { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'GV. Nguyễn Văn A', displayName: 'GV. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
+        { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'GV. Trần Minh Lan', displayName: 'GV. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
         { uid: 'u_sv01', email: '522h0045@student.tdtu.edu.vn', name: 'Nguyễn Hữu Nhân', displayName: 'Nguyễn Hữu Nhân', studentId: '522H0045', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
         { uid: 'u_sv02', email: '522h0001@student.tdtu.edu.vn', name: 'Nguyễn Minh Anh', displayName: 'Nguyễn Minh Anh', studentId: '522H0001', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
         { uid: 'u_sv03', email: '522h0002@student.tdtu.edu.vn', name: 'Trần Hoàng Nam', displayName: 'Trần Hoàng Nam', studentId: '522H0002', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
@@ -2128,21 +2164,21 @@ class ApiClient {
         role = 'lecturer';
         if (this.isAdminEmail(email)) {
           if (email === 'duonghuuphuc@tdtu.edu.vn') {
-            userName = userName || 'TS. Dương Hữu Phúc';
+            userName = userName || 'GV. Dương Hữu Phúc';
           } else if (email.includes('thayphuc')) {
-            userName = userName || 'TS. BCN Khoa CNTT';
+            userName = userName || 'GV. BCN Khoa CNTT';
           } else {
-            userName = userName || 'TS. Phạm Văn C';
+            userName = userName || 'GV. Phạm Văn C';
           }
           isAdmin = true;
         } else if (email.includes('nguyenvana')) {
-          userName = 'ThS. Nguyễn Văn A';
+          userName = 'GV. Nguyễn Văn A';
           isAdmin = false;
         } else if (email.includes('tranminhlan')) {
-          userName = 'ThS. Trần Minh Lan';
+          userName = 'GV. Trần Minh Lan';
           isAdmin = false;
         } else if (email.includes('tranvanb')) {
-          userName = 'TS. Trần Văn B';
+          userName = 'GV. Trần Văn B';
           isAdmin = false;
         } else {
           userName = userName || 'Giảng viên Khoa CNTT';
@@ -2548,7 +2584,7 @@ class ApiClient {
           type: 'announcement',
           title: 'Thông báo số 104/TB-CNTT: Khai báo Nơi thực tập & Nộp Phiếu tiếp nhận BM-01 (HK1/2026-2027)',
           content: 'Khoa Công nghệ Thông tin thông báo: Tất cả sinh viên đã đăng ký học phần Kiến tập công nghiệp (KTCN) và Tập sự nghề nghiệp (TSNN) phải hoàn tất việc khai báo thông tin doanh nghiệp tiếp nhận và xác thực Mã số thuế trên cổng trước ngày 15/11/2026. Sinh viên đi 2 môn đồng thời tại 1 doanh nghiệp chỉ cần khai báo 1 lần duy nhất trên hệ thống. Sau thời hạn trên, sinh viên chưa có nơi thực tập sẽ được Khoa liên hệ hỗ trợ phỏng vấn tại các doanh nghiệp đối tác.',
-          author: 'TS. Phạm Văn C',
+          author: 'GV. Phạm Văn C',
           authorRole: 'Ban Chủ nhiệm Khoa CNTT',
           priority: 'URGENT',
           status: 'published',
@@ -2559,7 +2595,7 @@ class ApiClient {
           type: 'recruitment_jd',
           title: 'FPT Software Tuyển dụng 20 Thực tập sinh Fullstack (NodeJS + React) & AI Engineer',
           content: 'Email chuyển tiếp từ VP Tuyển dụng FPT Software: Tuyển dụng sinh viên Khoa CNTT TDTU thực tập có trợ cấp. Cơ hội chuyển thành nhân viên chính thức sau 320 giờ thực tập. Yêu cầu: Nắm chắc OOP, React, NodeJS hoặc Python. Hỗ trợ phụ cấp từ 6.000.000 đến 10.000.000 VNĐ/tháng.',
-          author: 'ThS. Nguyễn Văn A',
+          author: 'GV. Nguyễn Văn A',
           authorRole: 'Giảng viên Điều phối Doanh nghiệp',
           sourceEmail: 'tuyendung-fpt@fsoft.com.vn',
           companyName: 'Công ty TNHH Phần mềm FPT',
@@ -2576,7 +2612,7 @@ class ApiClient {
           type: 'recruitment_jd',
           title: 'VNG Corporation Tuyển Thực tập sinh Backend Golang / Node.js',
           content: 'Email chuyển tiếp từ HR VNG: Tuyển 5 thực tập sinh làm việc tại VNG Campus. Hỗ trợ phụ cấp 8.000.000 VNĐ + Cơm trưa buffet + Xe buýt đưa đón sinh viên từ cơ sở Tân Phong TDTU. Yêu cầu: Thành thạo giải thuật, OOP, RESTful API.',
-          author: 'TS. Phạm Văn C',
+          author: 'GV. Phạm Văn C',
           authorRole: 'Ban Chủ nhiệm Khoa CNTT',
           sourceEmail: 'recruitment@vng.com.vn',
           companyName: 'Công ty Cổ phần VNG',
@@ -2593,7 +2629,7 @@ class ApiClient {
           type: 'recruitment_jd',
           title: 'Viettel Telecom & Cyber Security Tuyển Thực tập sinh An toàn Thông tin & SOC',
           content: 'Email chuyển tiếp từ Viettel Cyber Security: Tuyển 6 sinh viên tham gia dự án giám sát an toàn thông tin SOC và Pentest mạng. Yêu cầu: Sinh viên ngành MMT&TT, ATTT, nắm vững Linux, Wireshark, Burp Suite. Trợ cấp 10.000.000 VNĐ/tháng.',
-          author: 'ThS. Nguyễn Văn A',
+          author: 'GV. Nguyễn Văn A',
           authorRole: 'Giảng viên Điều phối Doanh nghiệp',
           sourceEmail: 'tuyendung@viettel.com.vn',
           companyName: 'Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel)',
@@ -3757,12 +3793,12 @@ class ApiClient {
       semesterName: 'Học kỳ 1 / 2026–2027',
       name: 'Học kỳ 1 / 2026–2027',
       academicYear: '2026–2027',
-      declarationDeadline: '2026-09-30',
-      certDeadline: '2026-10-15',
-      reviewDeadline: '2026-10-20',
-      reportDeadline: '2027-01-05',
+      declarationDeadline: '2026-12-24',
+      certDeadline: '2026-12-30',
+      reviewDeadline: '2026-12-31',
+      reportDeadline: '2027-01-15',
       totalStudents: 91,
-      regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 30/09/2026 để Khoa kịp thời thẩm định.'
+      regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 24/12/2026 để Khoa kịp thời thẩm định.'
     };
   }
 
@@ -3784,6 +3820,82 @@ class ApiClient {
       } catch (err) {}
     }
     return { success: true, deadlines };
+  }
+
+  // ==========================================
+  // Quản lý Danh sách Học kỳ Toàn hệ thống (Semesters Registry)
+  // ==========================================
+  static DEFAULT_SEMESTERS_REGISTRY = [
+    {
+      id: 'hk1_2026_2027',
+      name: 'Học kỳ 1 / 2026–2027',
+      academicYear: '2026–2027',
+      isActive: true,
+      declarationDeadline: '2026-12-24',
+      certDeadline: '2026-12-30',
+      reviewDeadline: '2026-12-31',
+      reportDeadline: '2027-01-15',
+      regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 24/12/2026.',
+      totalStudents: 91,
+      enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+    },
+    {
+      id: 'hk2_2025_2026',
+      name: 'Học kỳ 2 / 2025–2026',
+      academicYear: '2025–2026',
+      isActive: false,
+      declarationDeadline: '2026-02-28',
+      certDeadline: '2026-03-15',
+      reviewDeadline: '2026-03-25',
+      reportDeadline: '2026-06-10',
+      regulationNote: '',
+      totalStudents: 0,
+      enrolledCourses: ['Tập sự nghề nghiệp (TSNN)']
+    },
+    {
+      id: 'hk1_2025_2026',
+      name: 'Học kỳ 1 / 2025–2026',
+      academicYear: '2025–2026',
+      isActive: false,
+      declarationDeadline: '2025-09-30',
+      certDeadline: '2025-10-15',
+      reviewDeadline: '2025-10-20',
+      reportDeadline: '2026-01-05',
+      regulationNote: '',
+      totalStudents: 0,
+      enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+    }
+  ];
+
+  static getSemesters() {
+    try {
+      const raw = localStorage.getItem('tdtu_semesters_list');
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length > 0) return list;
+      }
+    } catch {}
+    return this.DEFAULT_SEMESTERS_REGISTRY;
+  }
+
+  static saveSemesters(list: any[]) {
+    if (!Array.isArray(list)) return;
+    try {
+      localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
+      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', {
+        detail: { list, semesters: list }
+      }));
+    } catch {}
+
+    // Đồng bộ lên Firestore collection tdtu_system doc semesters
+    if (window.FirebaseService?.db) {
+      try {
+        window.FirebaseService.db.collection('tdtu_system').doc('semesters').set({
+          list,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      } catch {}
+    }
   }
 
   // ==========================================
@@ -4029,8 +4141,8 @@ class ApiClient {
     const phucAccount = {
       uid: 'u_gv_phuc',
       email: 'duonghuuphuc@tdtu.edu.vn',
-      name: 'TS. Dương Hữu Phúc',
-      displayName: 'TS. Dương Hữu Phúc',
+      name: 'GV. Dương Hữu Phúc',
+      displayName: 'GV. Dương Hữu Phúc',
       role: 'lecturer',
       isAdmin: true,
       isActive: true,
@@ -4049,7 +4161,7 @@ class ApiClient {
           } else {
             parsed[pIdx].isAdmin = true;
             parsed[pIdx].role = 'lecturer';
-            parsed[pIdx].name = parsed[pIdx].name || 'TS. Dương Hữu Phúc';
+            parsed[pIdx].name = 'GV. Dương Hữu Phúc';
           }
           return parsed;
         }
@@ -4058,9 +4170,9 @@ class ApiClient {
 
     const seed = [
       phucAccount,
-      { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'TS. Phạm Văn C', displayName: 'TS. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
-      { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'ThS. Nguyễn Văn A', displayName: 'ThS. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
-      { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'ThS. Trần Minh Lan', displayName: 'ThS. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
+      { uid: 'u_gv01', email: 'phamvanc@tdtu.edu.vn', name: 'GV. Phạm Văn C', displayName: 'GV. Phạm Văn C', role: 'lecturer', isAdmin: true, isActive: true, department: 'Ban Chủ nhiệm Khoa CNTT', createdAt: '2025-08-01' },
+      { uid: 'u_gv02', email: 'nguyenvana@tdtu.edu.vn', name: 'GV. Nguyễn Văn A', displayName: 'GV. Nguyễn Văn A', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn CN Phần mềm', createdAt: '2025-08-10' },
+      { uid: 'u_gv03', email: 'tranminhlan@tdtu.edu.vn', name: 'GV. Trần Minh Lan', displayName: 'GV. Trần Minh Lan', role: 'lecturer', isAdmin: false, isActive: true, department: 'Bộ môn Hệ thống & Mạng', createdAt: '2025-08-15' },
       { uid: 'u_sv01', email: '522h0045@student.tdtu.edu.vn', name: 'Nguyễn Hữu Nhân', displayName: 'Nguyễn Hữu Nhân', studentId: '522H0045', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
       { uid: 'u_sv02', email: '522h0001@student.tdtu.edu.vn', name: 'Nguyễn Minh Anh', displayName: 'Nguyễn Minh Anh', studentId: '522H0001', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },
       { uid: 'u_sv03', email: '522h0002@student.tdtu.edu.vn', name: 'Trần Hoàng Nam', displayName: 'Trần Hoàng Nam', studentId: '522H0002', role: 'student', isAdmin: false, isActive: true, createdAt: '2025-09-01' },

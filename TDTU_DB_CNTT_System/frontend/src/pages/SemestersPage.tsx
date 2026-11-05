@@ -142,10 +142,14 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
       totalStudents: getSemesterStudentCount(s.id)
     }));
     setSemestersList(withRealCounts);
-    try {
-      localStorage.setItem('tdtu_semesters_list', JSON.stringify(withRealCounts));
-      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: withRealCounts }));
-    } catch {}
+    if (window.ApiClient?.saveSemesters) {
+      window.ApiClient.saveSemesters(withRealCounts);
+    } else {
+      try {
+        localStorage.setItem('tdtu_semesters_list', JSON.stringify(withRealCounts));
+        window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: withRealCounts, semesters: withRealCounts } }));
+      } catch {}
+    }
   };
 
   const showToast = (msg) => {
@@ -238,6 +242,9 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
     };
     const updated = [newSem, ...semestersList];
     saveSemesters(updated);
+    if (window.ApiClient?.saveSystemDeadlines) {
+      window.ApiClient.saveSystemDeadlines(newSem);
+    }
     setShowCreateModal(false);
     setNewSemesterName('');
     showToast(` Đã tạo thành công học kỳ "${newSem.name}"!`);

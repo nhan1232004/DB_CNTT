@@ -140,6 +140,27 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   // Phân trang Scope All
   const [currentPage, setCurrentPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
+  const [semestersList, setSemestersList] = React.useState(() => {
+    return window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [
+      { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027 (Hiện tại)' },
+      { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
+    ];
+  });
+
+  React.useEffect(() => {
+    const handleSemUpdate = () => {
+      if (window.ApiClient?.getSemesters) {
+        setSemestersList(window.ApiClient.getSemesters());
+      }
+    };
+    window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('storage', handleSemUpdate);
+    return () => {
+      window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('storage', handleSemUpdate);
+    };
+  }, []);
 
   // Tải danh sách toàn bộ chứng chỉ và tổng số sinh viên thực tế theo học kỳ đã chọn (khai báo trước các useEffect)
   const loadData = React.useCallback(async (targetSemester) => {
@@ -307,11 +328,17 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const toeflCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('TOEFL')).length;
   const cambridgeCount = validCerts.filter(c => String(c.name || '').toUpperCase().includes('CAMBRIDGE')).length;
 
-  const semesterLabels = {
-    'hk1_2026_2027': 'Học kỳ 1 / 2026–2027 (Hiện tại)',
-    'hk2_2025_2026': 'Học kỳ 2 / 2025–2026',
-    'hk1_2025_2026': 'Học kỳ 1 / 2025–2026'
-  };
+  const semesterLabels = React.useMemo(() => {
+    const map: Record<string, string> = {
+      'hk1_2026_2027': 'Học kỳ 1 / 2026–2027 (Hiện tại)',
+      'hk2_2025_2026': 'Học kỳ 2 / 2025–2026',
+      'hk1_2025_2026': 'Học kỳ 1 / 2025–2026'
+    };
+    semestersList.forEach(s => {
+      if (s?.id) map[s.id] = s.name || s.id;
+    });
+    return map;
+  }, [semestersList]);
 
   const handleSemesterSelect = (e) => {
     const s = e.target.value;
@@ -342,9 +369,11 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
               onChange={handleSemesterSelect}
               className="px-3 py-2 bg-white text-[#003087] border border-[#cbd5e1] rounded-xl text-xs font-bold shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#003087]"
             >
-              <option value="hk1_2026_2027">Học kỳ 1 / 2026–2027 (Hiện tại)</option>
-              <option value="hk2_2025_2026">Học kỳ 2 / 2025–2026</option>
-              <option value="hk1_2025_2026">Học kỳ 1 / 2025–2026</option>
+              {semestersList.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name || s.id}
+                </option>
+              ))}
             </select>
           </div>
 

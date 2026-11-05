@@ -32,9 +32,26 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
     });
   };
 
+  const normalizeTeacherDisplayName = (name = '', role = '', isAdmin = false) => {
+    if (!name) return 'Người dùng TDTU';
+    const str = String(name).trim();
+    const isTeacher = role === 'lecturer' || Boolean(isAdmin) || role === 'admin';
+    if (!isTeacher) return str;
+
+    // Xóa các học vị TS., ThS., PGS.TS., GS.TS., Thạc sĩ, Tiến sĩ
+    let clean = str.replace(/^(TS\.|ThS\.|PGS\.TS\.|GS\.TS\.|PGS\.|GS\.|Ths\.|Ts\.|Thạc sĩ|Tiến sĩ)\s*/i, '').trim();
+    if (clean.startsWith('GV.')) {
+      clean = clean.substring(3).trim();
+    } else if (clean.startsWith('GV ')) {
+      clean = clean.substring(3).trim();
+    }
+    return `GV. ${clean}`;
+  };
+
   const getInitials = (name = '') => {
     if (!name) return 'TU';
-    const parts = name.trim().split(/\s+/);
+    const clean = name.replace(/^(GV\.|GV\s+|TS\.|ThS\.|PGS\.TS\.|GS\.TS\.|PGS\.|GS\.|Ths\.|Ts\.|Thạc sĩ|Tiến sĩ)\s*/i, '').trim();
+    const parts = clean.split(/\s+/);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
@@ -339,7 +356,7 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
               </div>
               <div className="min-w-0">
                 <div className="text-[15px] font-bold text-[#1f2937] truncate leading-tight">
-                  {currentUser?.name || 'Người dùng TDTU'}
+                  {normalizeTeacherDisplayName(currentUser?.name, currentUser?.role, currentUser?.isAdmin)}
                 </div>
                 <div className="text-[12.5px] font-bold text-[#dc2626] uppercase truncate mt-0.5">
                   {roleBadgeLabel()}

@@ -9,6 +9,27 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
   const canExport = window.PrimeRbac?.hasPrimePermission(mask, 17);
 
   const [selectedSemester, setSelectedSemester] = React.useState('hk1_2026_2027');
+  const [semestersList, setSemestersList] = React.useState(() => {
+    return window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [
+      { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027' },
+      { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
+    ];
+  });
+
+  React.useEffect(() => {
+    const handleSemUpdate = () => {
+      if (window.ApiClient?.getSemesters) {
+        setSemestersList(window.ApiClient.getSemesters());
+      }
+    };
+    window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('storage', handleSemUpdate);
+    return () => {
+      window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('storage', handleSemUpdate);
+    };
+  }, []);
   const [students, setStudents] = React.useState([]);
   const [exportingType, setExportingType] = React.useState(null);
   const [toastMessage, setToastMessage] = React.useState(null);
@@ -254,9 +275,11 @@ const ExportDataPage = ({ currentUser, onNavigateTab }) => {
             onChange={e => setSelectedSemester(e.target.value)}
             className="px-4 py-2.5 bg-white border border-[#e5e7eb] rounded-xl text-[14.5px] font-bold text-[#1f2937]  outline-none shadow-xs"
           >
-            <option value="hk1_2026_2027">Học kỳ 1 / 2026–2027</option>
-            <option value="hk2_2025_2026">Học kỳ 2 / 2025–2026</option>
-            <option value="hk1_2025_2026">Học kỳ 1 / 2025–2026</option>
+            {semestersList.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name || s.id}
+              </option>
+            ))}
           </select>
         </div>
       </div>

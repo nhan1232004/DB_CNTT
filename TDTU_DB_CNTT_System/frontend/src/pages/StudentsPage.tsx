@@ -32,6 +32,28 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [studentCvLink, setStudentCvLink] = React.useState('');
   const [noteSaved, setNoteSaved] = React.useState(false);
 
+  const [semestersList, setSemestersList] = React.useState(() => {
+    return window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [
+      { id: 'hk1_2026_2027', name: 'HK1 2026–2027' },
+      { id: 'hk2_2025_2026', name: 'HK2 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'HK1 2025–2026' }
+    ];
+  });
+
+  React.useEffect(() => {
+    const handleSemUpdate = () => {
+      if (window.ApiClient?.getSemesters) {
+        setSemestersList(window.ApiClient.getSemesters());
+      }
+    };
+    window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('storage', handleSemUpdate);
+    return () => {
+      window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('storage', handleSemUpdate);
+    };
+  }, []);
+
   const formatDateVN = (dateVal) => {
     if (!dateVal) return '—';
     try {
@@ -1223,9 +1245,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
               onChange={e => onSemesterChange && onSemesterChange(e.target.value)}
               className="px-3.5 py-2.5 bg-white border border-[#cbd5e1] rounded-xl text-[14px] font-semibold text-[#1f2937] outline-none cursor-pointer focus:border-[#003087]"
             >
-              <option value="hk1_2026_2027">HK1 2026–2027</option>
-              <option value="hk2_2025_2026">HK2 2025–2026</option>
-              <option value="hk1_2025_2026">HK1 2025–2026</option>
+              {semestersList.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name || s.id}
+                </option>
+              ))}
             </select>
 
             {/* Ngành */}
@@ -2367,9 +2391,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                     onChange={e => setImportSemester(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-white border border-[#e5e7eb] rounded-lg font-bold text-[#1f2937] outline-none focus:border-[#003087]"
                   >
-                    <option value="hk1_2026_2027">HK1 2026–2027 (Hiện tại)</option>
-                    <option value="hk2_2025_2026">HK2 2025–2026</option>
-                    <option value="hk1_2025_2026">HK1 2025–2026</option>
+                    {semestersList.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name || s.id}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

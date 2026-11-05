@@ -13,6 +13,9 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
   const [selectedNotifDetail, setSelectedNotifDetail] = React.useState(null);
   const [toast, setToast] = React.useState(null);
   const [semesters, setSemesters] = React.useState(() => {
+    if (window.ApiClient?.getSemesters) {
+      return window.ApiClient.getSemesters();
+    }
     try {
       const saved = localStorage.getItem('tdtu_semesters_list');
       if (saved) {
@@ -21,9 +24,9 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       }
     } catch {}
     return [
-      { id: 'hk1_2026_2027', name: 'HK1 2026–2027 (Hiện tại)' },
-      { id: 'hk2_2025_2026', name: 'HK2 2025–2026' },
-      { id: 'hk1_2025_2026', name: 'HK1 2025–2026' }
+      { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027 (Hiện tại)' },
+      { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
     ];
   });
   const [deadlineText, setDeadlineText] = React.useState('Hạn chót: Còn 18 ngày');
@@ -51,7 +54,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     // 2. Đối với học kỳ chính HK1 2026-2027
     if (semId === 'hk1_2026_2027') {
       try {
-        const liveRaw = localStorage.getItem('tdtu_live_students');
+        const liveRaw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
         if (liveRaw) {
           const liveArr = JSON.parse(liveRaw);
           if (Array.isArray(liveArr) && liveArr.length > 0) {
@@ -119,9 +122,11 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
 
   const computeDeadline = React.useCallback(() => {
     try {
-      const semToUse = isStudent ? displaySemesterId : (activeSemester || 'hk1_2026_2027');
+      // Đối với Sinh viên: Luôn luôn cố định học kỳ mà sinh viên thực tế đang theo học (displaySemesterId),
+      // hoàn toàn không bị ảnh hưởng khi Giảng viên chuyển sang hoặc kích hoạt học kỳ khác.
+      const semToUse = isStudent ? (displaySemesterId || 'hk1_2026_2027') : (activeSemester || 'hk1_2026_2027');
       const dl = window.ApiClient?.getSystemDeadlines ? window.ApiClient.getSystemDeadlines(semToUse) : null;
-      const targetDateStr = dl?.declarationDeadline || dl?.certDeadline || '2026-11-30';
+      const targetDateStr = dl?.declarationDeadline || dl?.certDeadline || '2026-12-24';
       const targetTime = new Date(targetDateStr).getTime();
       const nowTime = new Date().getTime();
       const diffDays = Math.ceil((targetTime - nowTime) / (1000 * 3600 * 24));
@@ -179,6 +184,15 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       if (e.key === 'tdtu_notifications' || e.key === 'tdtu_deleted_notifications' || (e.key && e.key.startsWith('tdtu_decl_'))) {
         loadNotifications();
       }
+      if (e.key === 'tdtu_semesters_list') {
+        try {
+          const arr = JSON.parse(e.newValue || '[]');
+          if (Array.isArray(arr) && arr.length > 0) {
+            setSemesters(arr);
+            computeDeadline();
+          }
+        } catch {}
+      }
     };
 
     let bc = null;
@@ -198,13 +212,24 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     } catch {}
 
     const handleSemestersUpdated = (e) => {
-      if (e?.detail?.list && Array.isArray(e.detail.list)) {
-        setSemesters(e.detail.list);
+      const list = Array.isArray(e?.detail) ? e.detail : (e?.detail?.list || e?.detail?.semesters);
+      if (Array.isArray(list) && list.length > 0) {
+        setSemesters(list);
+      } else if (window.ApiClient?.getSemesters) {
+        setSemesters(window.ApiClient.getSemesters());
       }
       computeDeadline();
     };
 
-    const handleDeadlinesUpdated = () => {
+    const handleDeadlinesUpdated = (e) => {
+      // Nếu là Sinh viên và sự kiện mang mốc thời gian của một kỳ khác (do Giảng viên kích hoạt),
+      // bỏ qua không ghi đè hạn chót của kỳ mà sinh viên đang tham gia
+      if (isStudent && e?.detail) {
+        const evtSemId = e.detail.id || e.detail.semesterId;
+        if (evtSemId && evtSemId !== displaySemesterId) {
+          return;
+        }
+      }
       computeDeadline();
     };
 

@@ -21,6 +21,27 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
   const canImport = (window as any).PrimeRbac?.hasPrimePermission(mask, 13);
 
   const [selectedSemester, setSelectedSemester] = useState<string>('hk1_2026_2027');
+  const [semestersList, setSemestersList] = useState<any[]>(() => {
+    return (window as any).ApiClient?.getSemesters ? (window as any).ApiClient.getSemesters() : [
+      { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027 (Hiện tại)' },
+      { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
+    ];
+  });
+
+  useEffect(() => {
+    const handleSemUpdate = () => {
+      if ((window as any).ApiClient?.getSemesters) {
+        setSemestersList((window as any).ApiClient.getSemesters());
+      }
+    };
+    window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('storage', handleSemUpdate);
+    return () => {
+      window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('storage', handleSemUpdate);
+    };
+  }, []);
   const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');
   const [importFileName, setImportFileName] = useState<string>('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);
@@ -334,9 +355,11 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
               onChange={e => setSelectedSemester(e.target.value)}
               className="w-full px-4 py-2.5 bg-white border border-[#e5e7eb] rounded-lg text-[12.5px] font-bold text-[#1f2937] outline-none focus:border-[#003087]"
             >
-              <option value="hk1_2026_2027">Học kỳ 1 / 2026–2027 (Hiện tại)</option>
-              <option value="hk2_2025_2026">Học kỳ 2 / 2025–2026</option>
-              <option value="hk1_2025_2026">Học kỳ 1 / 2025–2026</option>
+              {semestersList.map(s => (
+                <option key={s.id} value={s.id}>
+                  {s.name || s.id}
+                </option>
+              ))}
             </select>
           </div>
 

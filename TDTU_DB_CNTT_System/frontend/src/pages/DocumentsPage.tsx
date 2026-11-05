@@ -168,7 +168,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
             company: companyName ? companyName : (statusCode === 'need_support' ? 'Khoa CNTT hỗ trợ điều phối' : 'Chưa có nơi thực tập'),
             position: position ? position : (statusCode === 'need_support' ? 'Thực tập sinh phần mềm' : 'Chưa cập nhật'),
             taxCode: taxCode || '—',
-            academicAdvisor: localDecl?.academicAdvisor || s.academicAdvisor || 'ThS. Nguyễn Văn A',
+            academicAdvisor: localDecl?.academicAdvisor || s.academicAdvisor || 'GV. Nguyễn Văn A',
             advisorEmail: localDecl?.advisorEmail || s.advisorEmail || 'nguyenvana@tdtu.edu.vn',
             contactPerson: localDecl?.contactPerson || s.contactPerson || (statusCode === 'has_company' ? 'Quản lý Nhân sự' : '—'),
             contactRole: localDecl?.contactRole || s.contactRole || 'Mentor doanh nghiệp',
@@ -876,13 +876,13 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                       <div className="font-bold uppercase text-[9.5pt]">GIẢNG VIÊN ĐIỀU PHỐI</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">ThS. Nguyễn Văn A</div>
+                      <div className="font-bold text-[9.5pt]">GV. Nguyễn Văn A</div>
                     </div>
                     <div>
                       <div className="font-bold uppercase text-[9.5pt]">TRƯỞNG KHOA CNTT</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký, đóng dấu và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">TS. Phạm Văn C</div>
+                      <div className="font-bold text-[9.5pt]">GV. Phạm Văn C</div>
                     </div>
                   </div>
                 </div>
@@ -980,7 +980,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                       <div className="font-bold uppercase text-[9.5pt]">ĐẠI DIỆN KHOA CNTT - TDTU</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký, đóng dấu và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">ThS. Nguyễn Văn A</div>
+                      <div className="font-bold text-[9.5pt]">GV. Nguyễn Văn A</div>
                     </div>
                   </div>
                 </div>
@@ -1067,19 +1067,19 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                       <div className="font-bold uppercase text-[9.5pt]">CÁN BỘ CHẤM 1 (HƯỚNG DẪN)</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">ThS. Nguyễn Văn A</div>
+                      <div className="font-bold text-[9.5pt]">GV. Nguyễn Văn A</div>
                     </div>
                     <div>
                       <div className="font-bold uppercase text-[9.5pt]">CÁN BỘ CHẤM 2 (PHẢN BIỆN)</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">TS. Trần Văn B</div>
+                      <div className="font-bold text-[9.5pt]">GV. Trần Văn B</div>
                     </div>
                     <div>
                       <div className="font-bold uppercase text-[9.5pt]">TRƯỞNG BỘ MÔN / KHOA DUYỆT</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký, đóng dấu và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">TS. Phạm Văn C</div>
+                      <div className="font-bold text-[9.5pt]">GV. Phạm Văn C</div>
                     </div>
                   </div>
                 </div>
@@ -1172,7 +1172,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                       <div className="font-bold uppercase text-[10pt]">TRƯỞNG KHOA CÔNG NGHỆ THÔNG TIN</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký, đóng dấu và ghi rõ họ tên)</div>
                       <div className="h-24"></div>
-                      <div className="font-bold text-[10.5pt]">TS. Phạm Văn C</div>
+                      <div className="font-bold text-[10.5pt]">GV. Phạm Văn C</div>
                     </div>
                   </div>
                 </div>
@@ -1256,7 +1256,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
                       <div className="font-bold uppercase text-[9.5pt]">GIẢNG VIÊN PHỤ TRÁCH QUAN HỆ DN</div>
                       <div className="italic text-[8.5pt] mt-0.5">(Ký và ghi rõ họ tên)</div>
                       <div className="h-20"></div>
-                      <div className="font-bold text-[9.5pt]">ThS. Nguyễn Văn A</div>
+                      <div className="font-bold text-[9.5pt]">GV. Nguyễn Văn A</div>
                     </div>
                   </div>
                 </div>
