@@ -49,6 +49,19 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
   const [semestersList, setSemestersList] = React.useState(() => {
     let list = [
       {
+        id: 'hk2_2026_2027',
+        name: 'Học kỳ 2 / 2026–2027',
+        academicYear: '2026–2027',
+        isActive: false,
+        declarationDeadline: '2026-11-30',
+        certDeadline: '2026-12-15',
+        reviewDeadline: '2026-12-25',
+        reportDeadline: '2027-02-10',
+        regulationNote: '',
+        totalStudents: 0,
+        enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+      },
+      {
         id: 'hk1_2026_2027',
         name: 'Học kỳ 1 / 2026–2027',
         academicYear: '2026–2027',
@@ -58,7 +71,7 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
         reviewDeadline: '2026-10-20',
         reportDeadline: '2027-01-05',
         regulationNote: '',
-        totalStudents: 91,
+        totalStudents: 82,
         enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
       },
       {
@@ -125,6 +138,26 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
   const [editingSemester, setEditingSemester] = React.useState(null);
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState(null);
+
+  React.useEffect(() => {
+    const handleSemUpdate = () => {
+      if (window.ApiClient?.getSemesters) {
+        const list = window.ApiClient.getSemesters();
+        if (Array.isArray(list) && list.length > 0) {
+          setSemestersList(list.map(s => ({
+            ...s,
+            totalStudents: getSemesterStudentCount(s.id)
+          })));
+        }
+      }
+    };
+    window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('storage', handleSemUpdate);
+    return () => {
+      window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('storage', handleSemUpdate);
+    };
+  }, [getSemesterStudentCount]);
 
   // Form tạo mới học kỳ
   const [newSemesterName, setNewSemesterName] = React.useState('');

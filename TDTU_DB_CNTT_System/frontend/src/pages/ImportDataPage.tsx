@@ -6,7 +6,7 @@
 // 4. Bố cục: Cân đối, văn bản mô tả căn đều (text-justify)
 // 5. Tính năng nâng cao: Xem trước (Preview & Review), chọn nhiều (Multichoice checkboxes), Không dùng Emoji/AI
 
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect } = React;
 
 interface ImportDataPageProps {
   currentUser?: any;
@@ -23,6 +23,7 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
   const [selectedSemester, setSelectedSemester] = useState<string>('hk1_2026_2027');
   const [semestersList, setSemestersList] = useState<any[]>(() => {
     return (window as any).ApiClient?.getSemesters ? (window as any).ApiClient.getSemesters() : [
+      { id: 'hk2_2026_2027', name: 'Học kỳ 2 / 2026–2027' },
       { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027 (Hiện tại)' },
       { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
       { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
@@ -37,9 +38,21 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
     };
     window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
     window.addEventListener('storage', handleSemUpdate);
+    let bc: any = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (msg: any) => {
+        if (msg.data?.type === 'semesters_updated') {
+          handleSemUpdate();
+        }
+      };
+    } catch {}
     return () => {
       window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
       window.removeEventListener('storage', handleSemUpdate);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
     };
   }, []);
   const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');

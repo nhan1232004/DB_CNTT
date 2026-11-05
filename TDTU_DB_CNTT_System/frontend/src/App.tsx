@@ -346,7 +346,10 @@ const AppInner = () => {
       return activeSemester;
     }
 
-    const allSemesters = ['hk1_2026_2027', 'hk2_2025_2026', 'hk1_2025_2026'];
+    const semList = window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [];
+    const allSemesters = (Array.isArray(semList) && semList.length > 0)
+      ? semList.map(s => s.id)
+      : ['hk2_2026_2027', 'hk1_2026_2027', 'hk2_2025_2026', 'hk1_2025_2026'];
     for (const s of allSemesters) {
       if (isStudentEnrolledInSemester(sid, s)) {
         return s;

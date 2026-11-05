@@ -34,9 +34,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
   const [semestersList, setSemestersList] = React.useState(() => {
     return window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [
-      { id: 'hk1_2026_2027', name: 'HK1 2026–2027' },
-      { id: 'hk2_2025_2026', name: 'HK2 2025–2026' },
-      { id: 'hk1_2025_2026', name: 'HK1 2025–2026' }
+      { id: 'hk2_2026_2027', name: 'Học kỳ 2 / 2026–2027' },
+      { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027' },
+      { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
+      { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
     ];
   });
 
@@ -48,9 +49,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     };
     window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
     window.addEventListener('storage', handleSemUpdate);
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (msg) => {
+        if (msg.data?.type === 'semesters_updated') {
+          handleSemUpdate();
+        }
+      };
+    } catch {}
     return () => {
       window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
       window.removeEventListener('storage', handleSemUpdate);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
     };
   }, []);
 

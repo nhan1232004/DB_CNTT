@@ -397,10 +397,22 @@ class ApiClient {
       db.collection('tdtu_system').doc('semesters').onSnapshot(doc => {
         if (doc.exists) {
           const data = doc.data();
-          if (data && Array.isArray(data.list) && data.list.length > 0) {
-            localStorage.setItem('tdtu_semesters_list', JSON.stringify(data.list));
-            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: data.list, semesters: data.list } }));
-            console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', data.list.length);
+          let list = null;
+          if (data?.json) {
+            try { list = JSON.parse(data.json); } catch {}
+          }
+          if (!list && Array.isArray(data?.list)) {
+            list = data.list;
+          }
+          if (Array.isArray(list) && list.length > 0) {
+            localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
+            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list, semesters: list } }));
+            try {
+              const bc = new BroadcastChannel('tdtu_realtime_sync');
+              bc.postMessage({ type: 'semesters_updated', list });
+              bc.close();
+            } catch {}
+            console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', list.length);
           }
         }
       }, err => {
@@ -3108,7 +3120,19 @@ class ApiClient {
       });
     } catch {}
 
-    // 4. Kích hoạt sự kiện toàn cục để UI Dashboard & Báo cáo cập nhật realtime
+    // 4. Cập nhật số lượng sinh viên thực tế vào danh mục học kỳ và đồng bộ
+    try {
+      const currentSemesters = this.getSemesters();
+      const updatedSemesters = currentSemesters.map(s => {
+        if (s.id === semester) {
+          return { ...s, totalStudents: finalList.length };
+        }
+        return s;
+      });
+      this.saveSemesters(updatedSemesters);
+    } catch {}
+
+    // 5. Kích hoạt sự kiện toàn cục để UI Dashboard & Báo cáo cập nhật realtime
     window.dispatchEvent(new CustomEvent('tdtu_data_updated', {
       detail: { source: 'excel_import', semester, count: finalList.length }
     }));
@@ -3827,16 +3851,29 @@ class ApiClient {
   // ==========================================
   static DEFAULT_SEMESTERS_REGISTRY = [
     {
+      id: 'hk2_2026_2027',
+      name: 'Học kỳ 2 / 2026–2027',
+      academicYear: '2026–2027',
+      isActive: false,
+      declarationDeadline: '2026-11-30',
+      certDeadline: '2026-12-15',
+      reviewDeadline: '2026-12-25',
+      reportDeadline: '2027-02-10',
+      regulationNote: '',
+      totalStudents: 0,
+      enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+    },
+    {
       id: 'hk1_2026_2027',
       name: 'Học kỳ 1 / 2026–2027',
       academicYear: '2026–2027',
       isActive: true,
       declarationDeadline: '2026-12-24',
-      certDeadline: '2026-12-30',
-      reviewDeadline: '2026-12-31',
-      reportDeadline: '2027-01-15',
-      regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 24/12/2026.',
-      totalStudents: 91,
+      certDeadline: '2026-10-15',
+      reviewDeadline: '2026-10-20',
+      reportDeadline: '2027-01-05',
+      regulationNote: 'Hạn chót khai báo doanh nghiệp thực tập là ngày 24/12/2026.',
+      totalStudents: 82,
       enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
     },
     {
@@ -3887,11 +3924,18 @@ class ApiClient {
       }));
     } catch {}
 
+    try {
+      const bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.postMessage({ type: 'semesters_updated', list });
+      bc.close();
+    } catch {}
+
     // Đồng bộ lên Firestore collection tdtu_system doc semesters
     if (window.FirebaseService?.db) {
       try {
         window.FirebaseService.db.collection('tdtu_system').doc('semesters').set({
           list,
+          json: JSON.stringify(list),
           updatedAt: new Date().toISOString()
         }, { merge: true }).catch(() => {});
       } catch {}

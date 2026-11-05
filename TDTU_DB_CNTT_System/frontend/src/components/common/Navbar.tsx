@@ -24,6 +24,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       }
     } catch {}
     return [
+      { id: 'hk2_2026_2027', name: 'Học kỳ 2 / 2026–2027' },
       { id: 'hk1_2026_2027', name: 'Học kỳ 1 / 2026–2027 (Hiện tại)' },
       { id: 'hk2_2025_2026', name: 'Học kỳ 2 / 2025–2026' },
       { id: 'hk1_2025_2026', name: 'Học kỳ 1 / 2025–2026' }
@@ -199,7 +200,14 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.onmessage = (msg) => {
-        if (!msg?.data || 
+        if (msg?.data?.type === 'semesters_updated') {
+          if (Array.isArray(msg.data.list) && msg.data.list.length > 0) {
+            setSemesters(msg.data.list);
+          } else if (window.ApiClient?.getSemesters) {
+            setSemesters(window.ApiClient.getSemesters());
+          }
+          computeDeadline();
+        } else if (!msg?.data || 
             msg.data.type === 'notification_sent' || 
             msg.data.type === 'notification_received' || 
             msg.data.type === 'notification_deleted' ||
