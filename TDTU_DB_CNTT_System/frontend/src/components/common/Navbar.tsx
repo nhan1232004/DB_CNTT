@@ -120,10 +120,6 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       setDeadlineText('Hạn chót: 24/12/2026');
     }
   }, [currentUser, isStudent, activeSemester, isStudentEnrolledInSemester]);
-    } catch {
-      setDeadlineText('Hạn chót: Đang cập nhật');
-    }
-  }, [isStudent, displaySemesterId, activeSemester]);
 
   const loadNotifications = async () => {
     try {

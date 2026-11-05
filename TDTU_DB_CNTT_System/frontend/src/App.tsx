@@ -27,6 +27,11 @@ class ErrorBoundary extends React.Component {
             <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
               Vui lòng tải lại trang.
             </p>
+            {this.state.error && (
+              <p className="text-[11px] text-red-500 font-mono bg-red-50 p-2 rounded-lg border border-red-100 text-left overflow-x-auto">
+                {String(this.state.error?.message || this.state.error)}
+              </p>
+            )}
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 type="button"
