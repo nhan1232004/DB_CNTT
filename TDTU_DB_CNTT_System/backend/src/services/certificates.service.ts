@@ -102,8 +102,8 @@ export class CertificatesService {
 
   saveStudentCertificate(dto: StudentCertificateDto): any {
     const db = this.getDb();
-    const id = dto.id || ('cert_' + Date.now());
     const studentId = (dto.studentId || '522H0045').trim().toUpperCase();
+    const id = dto.id || ('cert_' + studentId);
     const now = new Date().toISOString();
     const status = dto.status || 'Đã nộp';
     const driveLink = (dto.driveLink || dto.proofData || '').trim();
@@ -114,6 +114,11 @@ export class CertificatesService {
     const commitmentConfirmed = dto.commitmentConfirmed !== undefined ? dto.commitmentConfirmed : 1;
 
     const issueDate = dto.issueDate || dto.examDate || '';
+
+    // Xóa mọi chứng chỉ cũ của sinh viên này để đảm bảo mỗi SV chỉ có 1 chứng chỉ duy nhất (thay thế)
+    try {
+      db.prepare(`DELETE FROM student_uploaded_certs WHERE UPPER(studentId) = UPPER(?) AND id != ?`).run(studentId, id);
+    } catch {}
 
     db.prepare(`
       INSERT INTO student_uploaded_certs (id, studentId, studentName, type, name, score, maxScore, level, examDate, issueDate, proofFileName, fileName, fileType, fileSize, proofData, driveLink, commitmentConfirmed, status, createdAt)

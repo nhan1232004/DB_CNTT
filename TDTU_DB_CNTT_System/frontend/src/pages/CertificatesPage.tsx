@@ -1119,29 +1119,23 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
         className: currentUser?.class || currentUser?.className || 'Khoa CNTT'
       };
 
-      if (editingCert) {
-        const updatedItem = {
-          ...editingCert,
-          ...certPayload,
-          id: editingCert.id
-        };
-        if (window.ApiClient?.saveStudentCert) {
-          await window.ApiClient.saveStudentCert(studentId, updatedItem);
-        }
-        setCerts(certs.map(c => c.id === editingCert.id ? updatedItem : c));
-        setNotification({ type: 'success', text: `Đã cập nhật thành công chứng chỉ ${formData.name}.` });
-      } else {
-        const newCert = {
-          id: 'cert_' + Date.now(),
-          ...certPayload,
-          createdAt: new Date().toISOString()
-        };
-        if (window.ApiClient?.saveStudentCert) {
-          await window.ApiClient.saveStudentCert(studentId, newCert);
-        }
-        setCerts([newCert, ...certs]);
-        setNotification({ type: 'success', text: `Đã thêm mới thành công chứng chỉ ${formData.name}.` });
+      const certId = 'cert_' + studentId.toUpperCase();
+      const newCert = {
+        id: certId,
+        ...certPayload,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (window.ApiClient?.saveStudentCert) {
+        await window.ApiClient.saveStudentCert(studentId, newCert);
       }
+      // Mỗi sinh viên chỉ có duy nhất 1 chứng chỉ tiếng Anh - thay thế hồ sơ cũ
+      setCerts([newCert]);
+      setNotification({
+        type: 'success',
+        text: `Đã lưu chứng chỉ ${formData.name}. Hồ sơ mới đã thay thế chứng chỉ cũ của bạn thành công.`
+      });
 
       setIsModalOpen(false);
     } catch (err) {
@@ -1175,7 +1169,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
           </svg>
-          <span>Khai báo chứng chỉ mới</span>
+          <span>{certs.length > 0 ? 'Khai báo chứng chỉ mới (Thay thế)' : 'Khai báo chứng chỉ mới'}</span>
         </button>
       </div>
 
@@ -1533,6 +1527,14 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
             {/* Modal Form */}
             <form onSubmit={handleSaveCert} className="space-y-4 text-xs">
               
+              {/* Alert thông báo thay thế chứng chỉ */}
+              <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-[12px] flex items-start gap-2.5">
+                <span className="text-base leading-none">ℹ️</span>
+                <div className="leading-relaxed">
+                  <strong>Quy định chứng chỉ tiếng Anh:</strong> Mỗi sinh viên chỉ lưu duy nhất <strong>1 hồ sơ chứng chỉ ngoại ngữ</strong>. Khi bạn khai báo chứng chỉ mới, hồ sơ này sẽ tự động <strong>thay thế</strong> chứng chỉ cũ trên toàn hệ thống (cả bên Sinh viên và Giảng viên).
+                </div>
+              </div>
+
               {/* Chọn loại Chứng chỉ */}
               <div>
                 <label className="block font-bold text-[#1f2937]  mb-1.5">

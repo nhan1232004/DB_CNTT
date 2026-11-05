@@ -15,21 +15,22 @@ class ApiClient {
   static _cvCache = new Map();
   static _allCertsCache = null;
 
-  // Lấy chứng chỉ tức thì từ bộ nhớ đệm In-Memory / LocalStorage (<0.5ms)
+  // Lấy chứng chỉ tức thì từ bộ nhớ đệm In-Memory / LocalStorage (<0.5ms) - Tối đa 1 chứng chỉ duy nhất / SV
   static getCachedCerts(studentId = '522H0045') {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
     if (!this._certsCache) this._certsCache = new Map();
     const mem = this._certsCache.get(sid);
     if (mem && Array.isArray(mem.certs) && mem.certs.length > 0) {
-      return mem.certs;
+      return mem.certs.slice(0, 1);
     }
     try {
       const saved = localStorage.getItem('tdtu_certs_' + sid) || localStorage.getItem('tdtu_certs_' + sid.toLowerCase());
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this._certsCache.set(sid, { certs: parsed, timestamp: Date.now() });
-          return parsed;
+          const single = parsed.slice(0, 1);
+          this._certsCache.set(sid, { certs: single, timestamp: Date.now() });
+          return single;
         }
       }
     } catch {}
@@ -37,14 +38,15 @@ class ApiClient {
     return [];
   }
 
-  // Cập nhật bộ nhớ đệm chứng chỉ đồng bộ
+  // Cập nhật bộ nhớ đệm chứng chỉ đồng bộ - Ép buộc tối đa 1 chứng chỉ duy nhất / SV
   static setCachedCerts(studentId = '522H0045', certs: any[] = []) {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
     if (!this._certsCache) this._certsCache = new Map();
-    this._certsCache.set(sid, { certs, timestamp: Date.now() });
+    const single = Array.isArray(certs) && certs.length > 0 ? [certs[0]] : [];
+    this._certsCache.set(sid, { certs: single, timestamp: Date.now() });
     try {
-      localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(certs));
-      localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(certs));
+      localStorage.setItem('tdtu_certs_' + sid, JSON.stringify(single));
+      localStorage.setItem('tdtu_certs_' + sid.toLowerCase(), JSON.stringify(single));
       localStorage.setItem('tdtu_certs_last_sync', String(Date.now()));
     } catch {}
   }
@@ -920,6 +922,21 @@ class ApiClient {
     ]);
     list = list.filter(n => n && n.id !== 'notif_init_01' && n.id !== 'notif_init_02' && !deletedSet.has(String(n.id)));
 
+    // Dọn dẹp triệt để các thông báo thay đổi trạng thái của sinh viên (theo yêu cầu không gửi thông báo cho giảng viên khi sv cập nhật trạng thái)
+    let hadDeclarationNotifs = false;
+    list = list.filter(n => {
+      if (n && (n.type === 'student_declaration_update' || n.metadata?.isStudentDeclaration)) {
+        hadDeclarationNotifs = true;
+        return false;
+      }
+      return true;
+    });
+    if (hadDeclarationNotifs) {
+      try {
+        localStorage.setItem(this.notificationKey, JSON.stringify(list));
+      } catch {}
+    }
+
     // Khi gọi nội bộ không truyền currentUser (VD: markNotificationRead), trả về nguyên danh sách để cập nhật
     if (!currentUser) {
       return list;
@@ -948,12 +965,12 @@ class ApiClient {
       cleanEmail === 'admin@tdtu.edu.vn'
     );
 
-    // Role Admin & Giảng viên: Nhận thông báo toàn hệ thống, toàn giảng viên và các thông báo cập nhật hồ sơ từ sinh viên
+    // Role Admin & Giảng viên: Nhận thông báo toàn hệ thống, toàn giảng viên (KHÔNG nhận thông báo sv đổi trạng thái)
     if (isLecturerOrAdmin) {
       return list.filter(n => {
+        if (n.type === 'student_declaration_update' || n.metadata?.isStudentDeclaration) return false;
         const aud = resolveAudience(n);
-        // Nhận thông báo chung, thông báo giảng viên, hoặc cập nhật hồ sơ từ sinh viên
-        if (aud === 'all' || aud === 'all_lecturers' || n.type === 'student_declaration_update' || n.metadata?.isStudentDeclaration) return true;
+        if (aud === 'all' || aud === 'all_lecturers') return true;
         // Nếu là admin, cho phép xem thêm các thông báo phát hành đến sinh viên
         const isAdminUser = currentUser.isAdmin || currentUser.role === 'admin' || cleanEmail.includes('phuc') || cleanEmail.includes('admin') || cleanEmail === 'phamvanc@tdtu.edu.vn';
         if (isAdminUser && (aud === 'all_students' || aud.startsWith('students_') || aud === 'specific_student')) return true;
@@ -1361,8 +1378,12 @@ class ApiClient {
     return notificationItem;
   }
 
-  // Phân luồng thông báo khi Sinh viên khai báo / cập nhật: CHỈ gửi đến Giảng viên và Admin ở thanh bên
-  static async notifyLecturersOfStudentDeclaration({ studentId, studentName, declaration }) {
+  // Phân luồng thông báo khi Sinh viên khai báo / cập nhật: Theo quy định mới KHÔNG gửi thông báo đến Giảng viên
+  static async notifyLecturersOfStudentDeclaration({ studentId, studentName, declaration }: any = {}) {
+    return { success: true, skipped: true };
+  }
+
+  static async _disabled_notifyLecturersOfStudentDeclaration({ studentId, studentName, declaration }) {
     const sid = String(studentId || '').trim().toUpperCase();
     const name = studentName || sid;
     const decl = declaration || {};
@@ -4282,6 +4303,28 @@ class ApiClient {
   // Dữ liệu chứng chỉ tiếng Anh khởi tạo chuẩn của Sinh viên
   static BUILTIN_STUDENT_CERTS: any[] = [];
 
+  // Hàm đảm bảo mỗi sinh viên chỉ có duy nhất 1 chứng chỉ tiếng Anh (thay thế chứng chỉ cũ)
+  static _deduplicateSingleCertPerStudent(arr: any[]) {
+    if (!Array.isArray(arr)) return [];
+    const map = new Map();
+    for (const item of arr) {
+      if (!item || typeof item !== 'object') continue;
+      const sid = String(item.studentId || item.mssv || '').trim().toUpperCase();
+      if (!sid) continue;
+      const existing = map.get(sid);
+      if (!existing) {
+        map.set(sid, item);
+      } else {
+        const curTime = new Date(item.updatedAt || item.createdAt || item.issueDate || item.examDate || 0).getTime();
+        const exTime = new Date(existing.updatedAt || existing.createdAt || existing.issueDate || existing.examDate || 0).getTime();
+        if (curTime >= exTime) {
+          map.set(sid, item);
+        }
+      }
+    }
+    return Array.from(map.values());
+  }
+
   // ==========================================
   // Lấy toàn bộ chứng chỉ sinh viên toàn khoa (Scope All - Quyền Giảng viên & Admin Khoa)
   static async fetchAllCertificates(semester = null) {
@@ -4409,10 +4452,10 @@ class ApiClient {
         }
       });
 
-      return semCerts;
+      return this._deduplicateSingleCertPerStudent(semCerts);
     }
 
-    return list;
+    return this._deduplicateSingleCertPerStudent(list);
   }
 
   static async getAllCertsScopeAll() {
@@ -4504,25 +4547,26 @@ class ApiClient {
 
 
       if (list.length > 0) {
-        this.setCachedCerts(sid, list);
-        return list;
+        const single = [list[0]];
+        this.setCachedCerts(sid, single);
+        return single;
       }
-      return cached;
+      return (cached || []).slice(0, 1);
     })();
 
     if (cached && cached.length > 0) {
-      // Trả về tức thì từ Cache cho UI hiển thị ngay lập tức (0ms)
+      // Trả về tức thì từ Cache cho UI hiển thị ngay lập tức (0ms) - Tối đa 1 chứng chỉ
       revalidatePromise.catch(() => {});
-      return cached;
+      return cached.slice(0, 1);
     }
 
     return await revalidatePromise;
   }
 
   static async saveStudentCert(studentId, certData) {
-    const cid = certData.id || ('cert_' + Date.now());
-    const driveLink = (certData.driveLink || certData.proofData || '').trim();
     const sid = String(studentId || certData.studentId || '522H0045').trim().toUpperCase();
+    const cid = 'cert_' + sid;
+    const driveLink = (certData.driveLink || certData.proofData || '').trim();
     const activeSem = certData.semester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
     const item = {
       ...certData,
@@ -4545,14 +4589,11 @@ class ApiClient {
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Cập nhật Cache tức thì (0ms) & broadcast realtime
+    // 1. Cập nhật Cache tức thì (Mỗi SV chỉ lưu duy nhất 1 chứng chỉ, thay thế cũ hoàn toàn)
     try {
-      const list = this.getCachedCerts(item.studentId);
-      const idx = list.findIndex(c => c.id === cid);
-      if (idx !== -1) list[idx] = item;
-      else list.unshift(item);
-      this.setCachedCerts(item.studentId, list);
-      window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [item.studentId]: list } }));
+      const list = [item];
+      this.setCachedCerts(sid, list);
+      window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [sid]: list } }));
     } catch {}
 
     // Cập nhật chứng chỉ vào live students cache
@@ -4572,14 +4613,14 @@ class ApiClient {
     // 2. Broadcast Channel across tabs and pages
     try {
       const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'cert_updated', studentId: item.studentId, cert: item });
+      bc.postMessage({ type: 'cert_updated', studentId: sid, cert: item });
       bc.close();
     } catch {}
 
-    // 3. Ghi trực tiếp lên Cloud Firestore
+    // 3. Ghi trực tiếp lên Cloud Firestore (Ghi đè cert_${sid} và dọn sạch doc thừa của SV này)
     if (window.FirebaseService?.db) {
       try {
-        await window.FirebaseService.db.collection('tdtu_certificates').doc(cid).set(item, { merge: true });
+        await window.FirebaseService.db.collection('tdtu_certificates').doc(cid).set(item);
         // Đồng bộ trực tiếp vào tài liệu sinh viên trong tdtu_students
         await window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
           cert: certSummary,
@@ -4588,7 +4629,26 @@ class ApiClient {
           certScore: item.score,
           updatedAt: new Date().toISOString()
         }, { merge: true });
-        console.log('[Firestore Sync]: Đã lưu chứng chỉ lên Firestore và cập nhật tdtu_students:', sid, certSummary);
+
+        // Dọn dẹp bất kỳ doc chứng chỉ cũ nào của sinh viên này có id khác cid
+        try {
+          const snap = await window.FirebaseService.db.collection('tdtu_certificates')
+            .where('studentId', '==', sid)
+            .get();
+          if (snap && !snap.empty) {
+            const batch = window.FirebaseService.db.batch();
+            let hasDeletes = false;
+            snap.forEach(d => {
+              if (d.id !== cid) {
+                batch.delete(d.ref);
+                hasDeletes = true;
+              }
+            });
+            if (hasDeletes) await batch.commit();
+          }
+        } catch {}
+
+        console.log('[Firestore Sync]: Đã lưu chứng chỉ duy nhất lên Firestore:', sid, certSummary);
       } catch (err) {
         console.warn('[Firestore Sync Cert Warning]:', err.message);
       }
@@ -4615,11 +4675,11 @@ class ApiClient {
 
   static async deleteStudentCert(studentId, certId) {
     const sid = String(studentId || '522H0045').trim().toUpperCase();
+    const cid = 'cert_' + sid;
     // 1. Cập nhật Cache tức thì (0ms) & broadcast realtime
     try {
-      const list = this.getCachedCerts(sid).filter(c => c.id !== certId);
-      this.setCachedCerts(sid, list);
-      window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [sid]: list } }));
+      this.setCachedCerts(sid, []);
+      window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [sid]: [] } }));
     } catch {}
 
     // Cập nhật lại cert trong live students cache
@@ -4627,8 +4687,10 @@ class ApiClient {
       const students = await this.getLiveStudents('hk1_2026_2027');
       const sIdx = students.findIndex(s => String(s.mssv || s.studentId || '').toUpperCase() === sid);
       if (sIdx !== -1) {
-        const remaining = this.getStudentCerts(sid).filter(c => c.id !== certId);
-        students[sIdx].cert = remaining.length > 0 ? `${remaining[0].name} ${remaining[0].score}` : null;
+        students[sIdx].cert = 'Chưa có';
+        students[sIdx].certificateDisplay = 'Chưa có';
+        students[sIdx].certName = '';
+        students[sIdx].certScore = '';
         this.saveLiveStudents(students);
       }
     } catch {}
@@ -4636,24 +4698,31 @@ class ApiClient {
     // 2. Broadcast Channel across tabs and pages
     try {
       const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'cert_deleted', studentId: sid, certId });
+      bc.postMessage({ type: 'cert_deleted', studentId: sid, certId: certId || cid });
       bc.close();
     } catch {}
 
     // 3. Xóa trên Cloud Firestore
     if (window.FirebaseService?.db) {
       try {
-        await window.FirebaseService.db.collection('tdtu_certificates').doc(certId).delete();
-        console.log('[Firestore Sync]: Đã xóa chứng chỉ trên Firestore:', certId);
+        if (certId) {
+          await window.FirebaseService.db.collection('tdtu_certificates').doc(certId).delete().catch(() => {});
+        }
+        await window.FirebaseService.db.collection('tdtu_certificates').doc(cid).delete().catch(() => {});
+        const snap = await window.FirebaseService.db.collection('tdtu_certificates').where('studentId', '==', sid).get();
+        if (snap && !snap.empty) {
+          const batch = window.FirebaseService.db.batch();
+          snap.forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+        console.log('[Firestore Sync]: Đã xóa chứng chỉ trên Firestore:', sid);
 
         // Cập nhật lại tdtu_students
-        const remaining = this.getStudentCerts(sid).filter(c => c.id !== certId);
-        const remSummary = remaining.length > 0 ? `${remaining[0].name} ${remaining[0].score}`.trim() : '';
         await window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
-          cert: remSummary,
-          certificateDisplay: remSummary,
-          certName: remaining[0]?.name || '',
-          certScore: remaining[0]?.score || '',
+          cert: 'Chưa có',
+          certificateDisplay: 'Chưa có',
+          certName: '',
+          certScore: '',
           updatedAt: new Date().toISOString()
         }, { merge: true });
       } catch (err) {
@@ -4664,7 +4733,7 @@ class ApiClient {
     // 4. Xóa trên Backend REST API (SQLite database)
     try {
       const token = this.getToken();
-      await fetch(`/api/certificates/${encodeURIComponent(certId)}`, {
+      await fetch(`/api/certificates/${encodeURIComponent(certId || cid)}`, {
         method: 'DELETE',
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -5158,44 +5227,7 @@ class ApiClient {
       }
     }
 
-    // 4. Gửi thông báo đến Giảng viên Admin & Doanh nghiệp về đơn ứng tuyển mới
-    try {
-      const notifItem = {
-        id: `notif_app_${studentId}_${Date.now()}`,
-        title: `Đơn ứng tuyển mới: ${studentId} - ${application.studentName}`,
-        subject: `Ứng tuyển: ${application.position} tại ${application.company}`,
-        content: `Sinh viên ${application.studentName} (${studentId}) vừa nộp đơn ứng tuyển vị trí ${application.position} tại ${application.company}. Đang chờ Doanh nghiệp xét duyệt tiếp nhận.`,
-        type: 'student_declaration_update',
-        priority: 'high',
-        targetAudience: 'all_lecturers',
-        targetAudienceLabel: 'Ứng tuyển DN',
-        targetStudentId: studentId,
-        senderRole: 'student',
-        senderName: application.studentName,
-        read: false,
-        createdAt: nowIso,
-        timestamp: timeStr,
-        time: timeStr,
-        metadata: {
-          isStudentDeclaration: true,
-          studentId,
-          studentName: application.studentName,
-          classId: application.classId,
-          major: application.major,
-          internshipStatus: 'interviewing',
-          statusLabel: 'Chờ DN xét duyệt',
-          companyName: application.company,
-          pendingCompany: application.company,
-          position: application.position,
-          cvDriveLink: application.cvLink,
-          supportNote: `Cover letter: ${application.coverLetter}`,
-          submittedAt: timeStr
-        }
-      };
-      if (this.createNotification) {
-        this.createNotification(notifItem).catch(() => {});
-      }
-    } catch {}
+    // 4. Khi sinh viên nộp đơn ứng tuyển: Đã lưu trực tiếp vào danh sách hồ sơ ứng tuyển (không gửi thông báo đến giảng viên)
 
     // 5. Phát sự kiện toàn cục để các tab cập nhật
     window.dispatchEvent(new CustomEvent('tdtu_application_submitted', { detail: application }));

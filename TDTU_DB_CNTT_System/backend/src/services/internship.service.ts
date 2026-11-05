@@ -392,18 +392,7 @@ export class InternshipService {
         submittedAt: now
       };
 
-      notificationService.createNotification({
-        title: shortTitle,
-        content: shortContent,
-        type: 'student_declaration_update',
-        priority: currentStatusKey === 'need_support' ? 'high' : 'normal',
-        targetAudience: 'all_lecturers',
-        targetStudentId: dto.studentId,
-        metadata: metadataPayload,
-        senderRole: 'student',
-        senderName: studentName,
-        senderEmail: studentEmail
-      });
+      // Theo quy định mới: Không gửi thông báo đến giảng viên khi sinh viên thay đổi hay cập nhật trạng thái
     } catch (notifErr) {
       console.warn('[InternshipService] Notification creation warning:', notifErr);
     }

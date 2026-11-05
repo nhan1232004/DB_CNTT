@@ -194,7 +194,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
 
       {/* Status Alert Banner - Hiển thị tương ứng theo đúng tình trạng khai báo của sinh viên trong kỳ */}
       {isEnrolledStudent && declaration && (() => {
-        const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase().normalize('NFC');
+        const declStatus = String(declaration?.internshipStatus || declaration?.status || '').trim().toLowerCase().normalize('NFC');
         const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase().normalize('NFC');
         const compNameLower = String(declaration?.companyName || '').trim().toLowerCase().normalize('NFC');
 
@@ -373,7 +373,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
         {/* Card 3: Tình trạng hồ sơ (Đồng bộ chính xác 100% với trạng thái đã khai báo) */}
         <div className="bg-white p-5 rounded-xl border border-[#e5e7eb] shadow-xs">
           {(() => {
-            const declStatus = String(declaration?.internshipStatus || '').trim().toLowerCase().normalize('NFC');
+            const declStatus = String(declaration?.internshipStatus || declaration?.status || '').trim().toLowerCase().normalize('NFC');
             const noCompOpt = String(declaration?.noCompanyOption || '').trim().toLowerCase().normalize('NFC');
             const compNameLower = String(declaration?.companyName || '').trim().toLowerCase().normalize('NFC');
 
