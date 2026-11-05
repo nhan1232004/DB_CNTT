@@ -51,12 +51,24 @@ class TabErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
+    this._retryInterval = null;
   }
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
     console.warn('[TDTU TabErrorBoundary caught]:', error, errorInfo);
+  }
+  componentDidMount() {
+    this._retryInterval = setInterval(() => {
+      if (this.state.hasError) {
+        // Tự động kiểm tra và phục hồi nếu do script tải bất đồng bộ chậm
+        this.setState({ hasError: false, error: null });
+      }
+    }, 2000);
+  }
+  componentWillUnmount() {
+    if (this._retryInterval) clearInterval(this._retryInterval);
   }
   componentDidUpdate(prevProps) {
     if (prevProps.activeTab !== this.props.activeTab && this.state.hasError) {
@@ -76,6 +88,11 @@ class TabErrorBoundary extends React.Component {
           <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
             Hệ thống đang nạp thông tin mới nhất. Bạn có thể nhấn thử lại hoặc chuyển sang mục khác bên thanh điều hướng.
           </p>
+          {this.state.error && (
+            <p className="text-[11px] text-red-500 font-mono bg-red-50 p-2 rounded-lg border border-red-100 text-left overflow-x-auto">
+              {String(this.state.error?.message || this.state.error)}
+            </p>
+          )}
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
@@ -278,6 +295,66 @@ const AppInner = () => {
     window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
   }, []);
 
+  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không
+  const isStudentEnrolledInSemester = React.useCallback((sid, semId) => {
+    if (!sid) return false;
+    const cleanSid = String(sid).trim().toUpperCase();
+    if (cleanSid === '52100999') return false; // Sinh viên ngoài kỳ mẫu
+
+    // 1. Kiểm tra danh sách đã nạp trong LocalStorage của học kỳ đó
+    try {
+      const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > 0) {
+          return arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
+        }
+      }
+    } catch {}
+
+    // 2. Học kỳ chính HK1 2026-2027
+    if (semId === 'hk1_2026_2027') {
+      try {
+        const liveRaw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
+        if (liveRaw) {
+          const liveArr = JSON.parse(liveRaw);
+          if (Array.isArray(liveArr) && liveArr.length > 0) {
+            return liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
+          }
+        }
+      } catch {}
+
+      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999') {
+        return true;
+      }
+    }
+
+    return false;
+  }, [currentUser]);
+
+  // Xác định học kỳ thực tế:
+  // - Giảng viên & Quản trị viên: Hiển thị đầy đủ thông tin sinh viên và thời gian của học kỳ được kích hoạt/chọn
+  // - Sinh viên: Chỉ khi sinh viên có trong danh sách kỳ đó thì mới hiện theo, không thì chỉ hiển thị kỳ hiện tại hoặc kỳ sinh viên có trong danh sách
+  const effectiveSemester = React.useMemo(() => {
+    const isStudent = currentUser?.role === 'student';
+    if (!isStudent) return activeSemester;
+
+    const sid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
+    if (!sid || sid === '52100999') return activeSemester;
+
+    if (isStudentEnrolledInSemester(sid, activeSemester)) {
+      return activeSemester;
+    }
+
+    const allSemesters = ['hk1_2026_2027', 'hk2_2025_2026', 'hk1_2025_2026'];
+    for (const s of allSemesters) {
+      if (isStudentEnrolledInSemester(sid, s)) {
+        return s;
+      }
+    }
+    return 'hk1_2026_2027';
+  }, [currentUser, activeSemester, isStudentEnrolledInSemester]);
+
   // Chống can thiệp URL & LocalStorage để chuyển đổi tài khoản hoặc vượt quyền trái phép
   React.useEffect(() => {
     const sanitizeUrl = () => {
@@ -359,7 +436,17 @@ const AppInner = () => {
 
     const handleSemesterEvt = (e) => {
       if (e?.detail?.semesterId) {
-        setActiveSemester(e.detail.semesterId);
+        const newSem = e.detail.semesterId;
+        const saved = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
+        const cur = currentUser || saved;
+        if (cur?.role === 'student') {
+          const sid = String(cur.studentId || cur.mssv || '').toUpperCase();
+          if (isStudentEnrolledInSemester(sid, newSem)) {
+            setActiveSemester(newSem);
+          }
+        } else {
+          setActiveSemester(newSem);
+        }
       }
     };
     window.addEventListener('tdtu_semester_changed', handleSemesterEvt);
@@ -403,7 +490,7 @@ const AppInner = () => {
         isStudentEnrolledInActiveSem = false;
       } else {
         try {
-          const raw = localStorage.getItem(`tdtu_imported_students_${activeSemester}`) || (activeSemester === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
+          const raw = localStorage.getItem(`tdtu_imported_students_${effectiveSemester}`) || (effectiveSemester === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
           if (raw) {
             const arr = JSON.parse(raw);
             if (Array.isArray(arr) && arr.length > 0) {
@@ -507,14 +594,14 @@ const AppInner = () => {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onLogout={handleLogout}
-        activeSemester={activeSemester}
+        activeSemester={effectiveSemester}
       />
 
       {/* 2. KHU VỰC NỘI DUNG CHÍNH (HEADER + SCROLLABLE BODY) */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <window.Navbar
           currentUser={currentUser}
-          activeSemester={activeSemester}
+          activeSemester={effectiveSemester}
           onSemesterChange={handleSemesterChange}
           onNavigateTab={setActiveTab}
         />
@@ -523,31 +610,48 @@ const AppInner = () => {
           <div className="w-full">
             <TabErrorBoundary activeTab={activeTab} onResetToDashboard={() => setActiveTab('dashboard')}>
               {activeTab === 'dashboard' && (
-                <window.DashboardPage
-                  activeSemester={activeSemester}
-                  onSemesterChange={handleSemesterChange}
-                  currentUser={currentUser}
-                  onNavigateTab={setActiveTab}
-                />
+                window.DashboardPage ? (
+                  <window.DashboardPage
+                    activeSemester={effectiveSemester}
+                    onSemesterChange={handleSemesterChange}
+                    currentUser={currentUser}
+                    onNavigateTab={setActiveTab}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Bảng điều khiển...</div>
+                )
               )}
 
               {activeTab === 'profile' && (
-                <window.ProfilePage
-                  currentUser={currentUser}
-                  onNavigateTab={setActiveTab}
-                  onSemesterChange={handleSemesterChange}
-                />
+                window.ProfilePage ? (
+                  <window.ProfilePage
+                    currentUser={currentUser}
+                    activeSemester={effectiveSemester}
+                    onNavigateTab={setActiveTab}
+                    onSemesterChange={handleSemesterChange}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Hồ sơ cá nhân...</div>
+                )
               )}
               
               {activeTab === 'declaration' && (
-                <window.DeclarationPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.DeclarationPage ? (
+                  <window.DeclarationPage
+                    currentUser={currentUser}
+                    activeSemester={effectiveSemester}
+                    onNavigateTab={setActiveTab}
+                  />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Khai báo thực tập...</div>
+                )
               )}
 
               {activeTab === 'students' && (
                 window.StudentsPage ? (
                   <window.StudentsPage
                     currentUser={currentUser}
-                    activeSemester={activeSemester}
+                    activeSemester={effectiveSemester}
                     onSemesterChange={handleSemesterChange}
                   />
                 ) : (
@@ -558,39 +662,74 @@ const AppInner = () => {
               )}
 
               {activeTab === 'certs' && currentUser?.role !== 'partner' && (
-                <window.CertificatesPage
-                  currentUser={currentUser}
-                  activeSemester={activeSemester}
-                  onSemesterChange={handleSemesterChange}
-                />
+                window.CertificatesPage ? (
+                  <window.CertificatesPage
+                    currentUser={currentUser}
+                    activeSemester={effectiveSemester}
+                    onSemesterChange={handleSemesterChange}
+                  />
+                ) : (
+                  <div className="p-12 text-center text-[#1f2937]">
+                    <div className="w-8 h-8 border-3 border-[#003087] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                    <p className="text-xs font-bold">Đang nạp dữ liệu chứng chỉ ngoại ngữ...</p>
+                  </div>
+                )
               )}
 
               {activeTab === 'bulletin' && (
-                <window.BulletinPage currentUser={currentUser} />
+                window.BulletinPage ? (
+                  <window.BulletinPage currentUser={currentUser} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Bảng tin & Tuyển dụng...</div>
+                )
               )}
 
               {activeTab === 'email_jd' && (
-                <window.EmailJdPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.EmailJdPage ? (
+                  <window.EmailJdPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Duyệt Email JD...</div>
+                )
               )}
 
               {activeTab === 'semesters' && (
-                <window.SemestersPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.SemestersPage ? (
+                  <window.SemestersPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Quản lý học kỳ...</div>
+                )
               )}
 
               {activeTab === 'import' && (
-                <window.ImportDataPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.ImportDataPage ? (
+                  <window.ImportDataPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Nhập file Excel...</div>
+                )
               )}
 
               {activeTab === 'export' && (
-                <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.DocumentsPage ? (
+                  <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Xuất báo cáo...</div>
+                )
               )}
 
               {activeTab === 'documents' && (
-                <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                window.DocumentsPage ? (
+                  <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Báo cáo & Quyết định...</div>
+                )
               )}
 
               {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
-                <window.AccountsPage currentUser={currentUser} />
+                window.AccountsPage ? (
+                  <window.AccountsPage currentUser={currentUser} />
+                ) : (
+                  <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Cài đặt hệ thống...</div>
+                )
               )}
             </TabErrorBoundary>
           </div>

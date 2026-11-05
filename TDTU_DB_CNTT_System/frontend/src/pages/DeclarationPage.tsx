@@ -7,7 +7,7 @@
 //   * Đang tìm / Chờ phỏng vấn (2 bước): 1. Trạng thái -> 2. Kế hoạch tìm kiếm & Xác nhận
 //   * Cần Khoa hỗ trợ (2 bước): 1. Trạng thái -> 2. Nguyện vọng & Yêu cầu Khoa hỗ trợ
 
-const DeclarationPage = ({ currentUser, onNavigateTab }) => {
+const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_2026_2027' }) => {
   // Chế độ xem: 'list' (Bảng danh sách hồ sơ đã nộp) hoặc 'form' (Biểu mẫu khai báo/cập nhật 3 bước)
   const [viewMode, setViewMode] = React.useState('list');
   const [currentStep, setCurrentStep] = React.useState(1);

@@ -578,15 +578,15 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                       {/* Thông tin Sinh viên */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-[#1f2937] ">
-                          {cert.studentName || 'Sinh viên TDTU'}
+                          {String(cert.studentName || 'Sinh viên TDTU')}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="font-mono text-[13.5px] font-bold text-[#003087] ">
-                            {cert.studentId}
+                            {String(cert.studentId || cert.mssv || '')}
                           </span>
                           {cert.className && (
                             <span className="text-[12.5px] text-[#4b5563] font-medium px-2 py-0.5 rounded bg-[#f1f5f9] ">
-                              Lớp {cert.className}
+                              Lớp {String(cert.className)}
                             </span>
                           )}
                         </div>
@@ -595,14 +595,14 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                       {/* Tên Chứng chỉ */}
                       <td className="py-3.5 px-4">
                         <span className={`px-3 py-1 rounded-lg text-[13.5px] font-bold border inline-block ${certColorClass}`}>
-                          {cert.name}
+                          {String(cert.name || 'Chứng chỉ')}
                         </span>
                       </td>
 
                       {/* Điểm số */}
                       <td className="py-3.5 px-4 text-center">
                         <span className="text-[16px] font-black text-[#1f2937] font-mono">
-                          {cert.score}
+                          {typeof cert.score === 'object' ? JSON.stringify(cert.score) : String(cert.score ?? '—')}
                         </span>
                       </td>
 
@@ -614,7 +614,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                             : 'bg-[#f8fafc] text-[#1f2937]   border border-[#e5e7eb] '
                         }`}>
                           <span>{isPass ? '' : ''}</span>
-                          <span>{cert.level || 'B1'}</span>
+                          <span>{String(cert.level || 'B1')}</span>
                         </span>
                       </td>
 
@@ -1724,20 +1724,62 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
 // =========================================================================
 // ROUTER CHÍNH CỦA TRANG CHỨNG CHỈ (PHÂN QUYỀN RBAC DUAL-VIEW)
 // =========================================================================
+class CertificatesErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.warn('[CertificatesErrorBoundary caught]:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 max-w-xl mx-auto my-8 bg-white border border-[#e5e7eb] rounded-2xl shadow-sm text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-[#ebf3ff] text-[#003087] mx-auto flex items-center justify-center font-bold">
+            <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-[17px] font-bold text-[#1f2937]">Đang tải dữ liệu chứng chỉ ngoại ngữ</h3>
+          <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
+            Hệ thống đang đồng bộ dữ liệu chứng chỉ mới nhất. Bạn có thể nhấn thử lại để làm mới giao diện.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[12px] font-bold transition shadow-xs cursor-pointer"
+            >
+              Thử lại mục này
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const CertificatesPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemesterChange }) => {
   const isLecturerOrAdmin = currentUser?.role === 'lecturer' || Boolean(currentUser?.isAdmin) || currentUser?.role === 'admin';
 
-  if (isLecturerOrAdmin) {
-    return (
-      <ScopeAllCertificatesView
-        currentUser={currentUser}
-        activeSemester={activeSemester}
-        onSemesterChange={onSemesterChange}
-      />
-    );
-  }
-
-  return <StudentPersonalCertificatesView currentUser={currentUser} activeSemester={activeSemester} />;
+  return (
+    <CertificatesErrorBoundary>
+      {isLecturerOrAdmin ? (
+        <ScopeAllCertificatesView
+          currentUser={currentUser}
+          activeSemester={activeSemester}
+          onSemesterChange={onSemesterChange}
+        />
+      ) : (
+        <StudentPersonalCertificatesView currentUser={currentUser} activeSemester={activeSemester} />
+      )}
+    </CertificatesErrorBoundary>
+  );
 };
 
 window.CertificatesPage = CertificatesPage;

@@ -3689,41 +3689,98 @@ class ApiClient {
   }
 
   // ==========================================
-  // Quản lý Mốc thời gian & Hạn chót học kỳ (Deadlines)
+  // Quản lý Mốc thời gian & Hạn chót học kỳ (Deadlines) theo từng học kỳ
   // ==========================================
-  static getSystemDeadlines() {
+  static getSystemDeadlines(semesterId: any = null) {
+    const sem = semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+    // 1. Thử lấy từ tdtu_system_deadlines_${sem}
     try {
-      const saved = localStorage.getItem('tdtu_system_deadlines');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.semesterName) {
-          parsed.semesterName = String(parsed.semesterName).replace(/2025[–-]2026/g, '2026–2027');
-        }
-        return parsed;
+      const savedSem = localStorage.getItem(`tdtu_system_deadlines_${sem}`);
+      if (savedSem) {
+        const parsed = JSON.parse(savedSem);
+        if (parsed) return parsed;
       }
     } catch {}
+
+    // 2. Thử lấy từ tdtu_semesters_list
+    try {
+      const rawList = localStorage.getItem('tdtu_semesters_list');
+      if (rawList) {
+        const list = JSON.parse(rawList);
+        if (Array.isArray(list)) {
+          const found = list.find(s => s.id === sem);
+          if (found) {
+            return {
+              ...found,
+              semesterName: found.name,
+              semesterId: found.id
+            };
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Fallback theo từng học kỳ cụ thể
+    if (sem === 'hk2_2025_2026') {
+      return {
+        id: 'hk2_2025_2026',
+        semesterId: 'hk2_2025_2026',
+        semesterName: 'Học kỳ 2 / 2025–2026',
+        name: 'Học kỳ 2 / 2025–2026',
+        academicYear: '2025–2026',
+        declarationDeadline: '2026-02-28',
+        certDeadline: '2026-03-15',
+        reviewDeadline: '2026-03-25',
+        reportDeadline: '2026-06-10',
+        totalStudents: 0
+      };
+    }
+
+    if (sem === 'hk1_2025_2026') {
+      return {
+        id: 'hk1_2025_2026',
+        semesterId: 'hk1_2025_2026',
+        semesterName: 'Học kỳ 1 / 2025–2026',
+        name: 'Học kỳ 1 / 2025–2026',
+        academicYear: '2025–2026',
+        declarationDeadline: '2025-09-30',
+        certDeadline: '2025-10-15',
+        reviewDeadline: '2025-10-20',
+        reportDeadline: '2026-01-05',
+        totalStudents: 0
+      };
+    }
+
     return {
-      semesterName: 'HK1 2026–2027',
+      id: 'hk1_2026_2027',
+      semesterId: 'hk1_2026_2027',
+      semesterName: 'Học kỳ 1 / 2026–2027',
+      name: 'Học kỳ 1 / 2026–2027',
+      academicYear: '2026–2027',
       declarationDeadline: '2026-09-30',
       certDeadline: '2026-10-15',
       reviewDeadline: '2026-10-20',
       reportDeadline: '2027-01-05',
+      totalStudents: 91,
       regulationNote: 'Sinh viên hoàn thành khai báo doanh nghiệp trước ngày 30/09/2026 để Khoa kịp thời thẩm định.'
     };
   }
 
-  static saveSystemDeadlines(deadlines) {
+  static saveSystemDeadlines(deadlines: any) {
     try {
-      localStorage.setItem('tdtu_system_deadlines', JSON.stringify(deadlines));
-      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: deadlines }));
+      const semId = deadlines.id || deadlines.semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+      const toSave = { ...deadlines, semesterId: semId, id: semId };
+      localStorage.setItem('tdtu_system_deadlines', JSON.stringify(toSave));
+      localStorage.setItem(`tdtu_system_deadlines_${semId}`, JSON.stringify(toSave));
+      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: toSave }));
     } catch {}
 
     // Đồng bộ ngay lập tức lên Firestore collection tdtu_system
     if (window.FirebaseService?.db) {
       try {
-        window.FirebaseService.db.collection('tdtu_system').doc('deadlines').set(deadlines, { merge: true })
-          .then(() => console.log('[Firestore Sync]: Đã lưu hạn chót học kỳ lên Firestore.'))
-          .catch(e => console.warn('[Firestore Sync Deadlines Warning]:', e.message));
+        const semId = deadlines.id || deadlines.semesterId || 'hk1_2026_2027';
+        window.FirebaseService.db.collection('tdtu_system').doc(`deadlines_${semId}`).set(deadlines, { merge: true }).catch(() => {});
+        window.FirebaseService.db.collection('tdtu_system').doc('deadlines').set(deadlines, { merge: true }).catch(() => {});
       } catch (err) {}
     }
     return { success: true, deadlines };
@@ -4416,10 +4473,12 @@ class ApiClient {
       }
       const studentMap = new Map();
       semStudents.forEach(s => {
-        studentMap.set(String(s.mssv || s.studentId).toUpperCase(), s);
+        if (!s) return;
+        studentMap.set(String(s.mssv || s.studentId || '').toUpperCase(), s);
       });
 
-      let semCerts = list.filter(c => {
+      let semCerts = (list || []).filter(c => {
+        if (!c) return false;
         const sid = String(c.studentId || c.mssv || '').toUpperCase();
         if (!studentMap.has(sid)) return false;
         const certSem = c.semester || 'hk1_2026_2027';
@@ -4429,8 +4488,10 @@ class ApiClient {
 
       // Bổ sung các chứng chỉ được khai báo trong thông tin sinh viên học kỳ đó (như cột cert / certName / certScore)
       semStudents.forEach(s => {
-        const sid = String(s.mssv || s.studentId).toUpperCase();
-        if (s.cert && s.cert !== 'Chưa có' && s.cert !== '—' && !semCerts.some(c => String(c.studentId || '').toUpperCase() === sid)) {
+        if (!s) return;
+        const sid = String(s.mssv || s.studentId || '').toUpperCase();
+        if (!sid) return;
+        if (s.cert && s.cert !== 'Chưa có' && s.cert !== '—' && !semCerts.some(c => String(c?.studentId || '').toUpperCase() === sid)) {
           const parts = String(s.cert).trim().split(/\s+/);
           const cName = s.certName || parts[0] || 'Chứng chỉ';
           const cScore = s.certScore || parts.slice(1).join(' ') || '';

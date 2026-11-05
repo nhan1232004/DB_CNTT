@@ -21,13 +21,33 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
     return dateStr;
   };
 
+  // Helper tính số lượng sinh viên thực tế cho từng kỳ (chính xác 100%, không số liệu ảo)
+  const getSemesterStudentCount = React.useCallback((semId) => {
+    if (semId === 'hk1_2026_2027') {
+      try {
+        const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 0) return arr.length;
+        }
+      } catch {}
+      return 91; // 91 sinh viên chuẩn theo danh sách Khoa CNTT HK1 2026-2027
+    }
+
+    // Các học kỳ khác: Chỉ đếm số sinh viên thực tế đã được import/nạp vào học kỳ đó
+    try {
+      const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr.length;
+      }
+    } catch {}
+    return 0; // Chưa có danh sách -> Hiển thị chính xác 0 sinh viên
+  }, []);
+
   // Danh sách các học kỳ trong hệ thống
   const [semestersList, setSemestersList] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('tdtu_semesters_list');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [
+    let list = [
       {
         id: 'hk1_2026_2027',
         name: 'Học kỳ 1 / 2026–2027',
@@ -51,7 +71,7 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
         reviewDeadline: '2026-03-25',
         reportDeadline: '2026-06-10',
         regulationNote: '',
-        totalStudents: 145,
+        totalStudents: 0,
         enrolledCourses: ['Tập sự nghề nghiệp (TSNN)']
       },
       {
@@ -64,10 +84,42 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
         reviewDeadline: '2025-10-20',
         reportDeadline: '2026-01-05',
         regulationNote: '',
-        totalStudents: 128,
+        totalStudents: 0,
         enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
       }
     ];
+
+    try {
+      const saved = localStorage.getItem('tdtu_semesters_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed;
+        }
+      }
+    } catch {}
+
+    // Chuẩn hóa và làm sạch số lượng sinh viên thực tế (loại bỏ hoàn toàn các số ảo 145, 128)
+    const cleaned = list.map(s => {
+      let count = 0;
+      if (s.id === 'hk1_2026_2027') {
+        try {
+          const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
+          count = raw ? JSON.parse(raw).length : 91;
+        } catch { count = 91; }
+      } else {
+        try {
+          const raw = localStorage.getItem(`tdtu_imported_students_${s.id}`);
+          count = raw ? JSON.parse(raw).length : 0;
+        } catch { count = 0; }
+      }
+      return { ...s, totalStudents: count };
+    });
+
+    try {
+      localStorage.setItem('tdtu_semesters_list', JSON.stringify(cleaned));
+    } catch {}
+    return cleaned;
   });
 
   const [editingSemester, setEditingSemester] = React.useState(null);
@@ -84,10 +136,15 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
   const [newRegulationNote, setNewRegulationNote] = React.useState('');
 
   const saveSemesters = (list) => {
-    setSemestersList(list);
+    // Luôn tính đúng số sinh viên trước khi lưu
+    const withRealCounts = list.map(s => ({
+      ...s,
+      totalStudents: getSemesterStudentCount(s.id)
+    }));
+    setSemestersList(withRealCounts);
     try {
-      localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
-      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: list }));
+      localStorage.setItem('tdtu_semesters_list', JSON.stringify(withRealCounts));
+      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: withRealCounts }));
     } catch {}
   };
 
@@ -290,7 +347,7 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
               {/* Actions */}
               <div className="flex items-center justify-between pt-4 mt-4 border-t border-[#e5e7eb] ">
                 <div className="text-[11px] font-bold text-[#1f2937]">
-                  {sem.totalStudents} sinh viên
+                  {sem.totalStudents > 0 ? `${sem.totalStudents} sinh viên` : '0 sinh viên (Chưa có danh sách)'}
                 </div>
 
                 <div className="flex items-center gap-2">

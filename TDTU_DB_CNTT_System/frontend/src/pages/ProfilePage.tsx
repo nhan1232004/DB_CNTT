@@ -2,7 +2,7 @@
 // Chuẩn hóa theo Figma Frame 03 (Student Hub):
 // Chứa đầy đủ: Thông tin học vụ, Link CV Google Drive, Thông tin DN thực tập, Stepper tiến trình, Lịch sử thực tập & Tra cứu chứng chỉ.
 
-const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
+const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemester = 'hk1_2026_2027' }) => {
   const studentId = currentUser?.studentId || '522H0045';
   const studentName = currentUser?.name || 'Nguyễn Minh Anh';
 
@@ -56,7 +56,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
       if (isInitial) setLoading(true);
       if (window.ApiClient) {
         if (window.ApiClient.getSystemDeadlines) {
-          setDeadlines(window.ApiClient.getSystemDeadlines());
+          setDeadlines(window.ApiClient.getSystemDeadlines(activeSemester));
         }
         if (window.ApiClient.getStudentCvLink) {
           setCvLink(window.ApiClient.getStudentCvLink(studentId));
@@ -84,7 +84,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange }) => {
           setInternshipHistory(window.ApiClient.getStudentInternshipHistory(studentId));
         }
         if (window.ApiClient.getLiveStudents) {
-          window.ApiClient.getLiveStudents('hk1_2026_2027').then(list => {
+          window.ApiClient.getLiveStudents(activeSemester).then(list => {
             if (Array.isArray(list) && isMountedRef.current) {
               const found = list.find(s => String(s.studentId || s.mssv || '').trim().toUpperCase() === String(studentId).trim().toUpperCase());
               if (found) setLiveStudentInfo(found);
