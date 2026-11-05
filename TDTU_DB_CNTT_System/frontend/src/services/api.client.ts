@@ -3279,44 +3279,6 @@ class ApiClient {
     };
   }
 
-    // 3. Đồng bộ xuống Backend SQLite qua /api/students/bulk-import
-    try {
-      const token = this.getToken();
-      await fetch('/api/students/bulk-import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ semester, mode, students: finalList })
-      });
-    } catch {}
-
-    // 4. Cập nhật số lượng sinh viên thực tế vào danh mục học kỳ và đồng bộ
-    try {
-      const currentSemesters = this.getSemesters();
-      const updatedSemesters = currentSemesters.map(s => {
-        if (s.id === semester) {
-          return { ...s, totalStudents: finalList.length };
-        }
-        return s;
-      });
-      this.saveSemesters(updatedSemesters);
-    } catch {}
-
-    // 5. Kích hoạt sự kiện toàn cục để UI Dashboard & Báo cáo cập nhật realtime
-    window.dispatchEvent(new CustomEvent('tdtu_data_updated', {
-      detail: { source: 'excel_import', semester, count: finalList.length }
-    }));
-
-    return {
-      success: true,
-      importedCount: incoming.length,
-      total: finalList.length,
-      semester
-    };
-  }
-
   static async importStudentsFromExcel(semester = 'hk1_2026_2027', studentList = [], mode = 'append') {
     return this.importStudentsExcel(semester, studentList, mode);
   }

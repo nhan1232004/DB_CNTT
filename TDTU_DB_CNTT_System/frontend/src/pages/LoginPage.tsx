@@ -123,9 +123,12 @@ const LoginPage = ({ onLoginSuccess }) => {
             );
             return;
           }
-          const apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, gUser.displayName, gUser.photoURL);
+          let apiRes = null;
+          if (window.ApiClient?.loginGoogleSso) {
+            apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, gUser.displayName, gUser.photoURL);
+          }
           const loggedInUser = apiRes?.user || (apiRes?.role ? apiRes : resolveUserFromEmail(cleanEmail, gUser.displayName));
-          const token = apiRes?.token || window.ApiClient.getToken();
+          const token = apiRes?.token || (window.ApiClient?.getToken ? window.ApiClient.getToken() : 'token_' + Date.now());
           onLoginSuccess(loggedInUser, token);
         }
       } catch (err) {
@@ -184,17 +187,20 @@ const LoginPage = ({ onLoginSuccess }) => {
         return;
       }
 
-      const apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, googleUser.displayName, googleUser.photoURL);
+      let apiRes = null;
+      if (window.ApiClient?.loginGoogleSso) {
+        apiRes = await window.ApiClient.loginGoogleSso(cleanEmail, googleUser.displayName, googleUser.photoURL);
+      }
       let loggedInUser = apiRes?.user || (apiRes?.role ? apiRes : null);
-      const token = apiRes?.token || window.ApiClient.getToken();
+      const token = apiRes?.token || (window.ApiClient?.getToken ? window.ApiClient.getToken() : 'token_' + Date.now());
 
       if (!loggedInUser || !loggedInUser.role) {
         loggedInUser = resolveUserFromEmail(cleanEmail, googleUser.displayName);
         if (googleUser.photoURL) loggedInUser.avatarUrl = googleUser.photoURL;
       }
 
-      window.ApiClient.setSavedUser(loggedInUser);
-      if (token) window.ApiClient.setToken(token);
+      window.ApiClient?.setSavedUser?.(loggedInUser);
+      if (token && window.ApiClient?.setToken) window.ApiClient.setToken(token);
       onLoginSuccess(loggedInUser, token);
     } catch (err) {
       console.warn('[Google SSO Warning]:', err);
