@@ -13,8 +13,8 @@ Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đ
 
 | STT | Họ và Tên | Email đăng nhập | Mật khẩu | Vai trò & Quyền hạn |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | **TS. Dương Hữu Phúc** | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` *(hoặc Google TDTU SSO)* | Quản trị viên Khoa CNTT (`isAdmin: true`, `RoleKey: thay_phuc`) — Toàn quyền hệ thống, cấu hình học kỳ, import/export, phân quyền Prime RBAC |
-| 2 | **TS. Phạm Văn C** | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Quản trị viên Khoa CNTT (`isAdmin: true`) — Toàn quyền quản trị & phê duyệt học vụ |
+| 1 | **GV. Dương Hữu Phúc** | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` *(hoặc Google TDTU SSO)* | Quản trị viên Khoa CNTT (`isAdmin: true`, `RoleKey: thay_phuc`) — Toàn quyền hệ thống, cấu hình học kỳ, import/export, phân quyền Prime RBAC |
+| 2 | **GV. Phạm Văn C** | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Quản trị viên Khoa CNTT (`isAdmin: true`) — Toàn quyền quản trị & phê duyệt học vụ |
 
 ---
 
@@ -22,9 +22,9 @@ Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đ
 
 | STT | Họ và Tên | Email đăng nhập | Mật khẩu | Vai trò & Quyền hạn |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | **ThS. Nguyễn Văn A** | `nguyenvana@tdtu.edu.vn` | `Gv@123456` | Giảng viên điều phối — Xem thống kê, quản lý biểu đồ, theo dõi danh sách & hồ sơ doanh nghiệp của SV, duyệt chứng chỉ, đăng thông báo |
-| 2 | **ThS. Trần Minh Lan** | `tranminhlan@tdtu.edu.vn` | `Gv@123456` | Giảng viên Bộ môn HTTT & Mạng — Theo dõi sinh viên, thẩm định hồ sơ & chứng chỉ |
-| 3 | **TS. Trần Văn B** | `tranvanb@tdtu.edu.vn` | `Gv@123456` | Giảng viên Bộ môn KHMT — Theo dõi sinh viên, thẩm định hồ sơ & chứng chỉ |
+| 1 | **GV. Nguyễn Văn A** | `nguyenvana@tdtu.edu.vn` | `Gv@123456` | Giảng viên điều phối — Xem thống kê, quản lý biểu đồ, theo dõi danh sách & hồ sơ doanh nghiệp của SV, duyệt chứng chỉ, đăng thông báo |
+| 2 | **GV. Trần Minh Lan** | `tranminhlan@tdtu.edu.vn` | `Gv@123456` | Giảng viên Bộ môn HTTT & Mạng — Theo dõi sinh viên, thẩm định hồ sơ & chứng chỉ |
+| 3 | **GV. Trần Văn B** | `tranvanb@tdtu.edu.vn` | `Gv@123456` | Giảng viên Bộ môn KHMT — Theo dõi sinh viên, thẩm định hồ sơ & chứng chỉ |
 
 ---
 

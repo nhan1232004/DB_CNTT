@@ -13,7 +13,7 @@
 - **Địa chỉ ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app
 - **Máy chủ phát triển cục bộ (Local Server):** `http://localhost:3000`
 - **Nhánh mã nguồn chính thức:** `522H0045`
-- **Phiên bản phát hành:** `v3.2.0 (Phiên bản Doanh nghiệp 100% TypeScript)`
+- **Phiên bản phát hành:** `v3.2.0 (Bản cập nhật hoàn thiện: 05/11/2026 · 100% TypeScript)`
 
 ---
 
@@ -110,20 +110,26 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
 
 ---
 
-## 3. NGĂN XẾP CÔNG NGHỆ (TECHNOLOGY STACK)
+## 3. NGĂN XẾP CÔNG NGHỆ CHÍNH XÁC (EXACT TECHNOLOGY STACK)
 
-| Phân hệ | Công nghệ sử dụng | Phiên bản | Mục đích sử dụng |
+> [!NOTE]
+> Hệ thống được thiết kế theo triết lý **Zero Bloatware & Pure Architecture**: Chỉ sử dụng đúng các công nghệ cốt lõi phục vụ bài toán nghiệp vụ, tuyệt đối không dùng thư viện ngoài dư thừa (không Express, không NestJS, không Redux, không ORM cồng kềnh, không Jest/Mocha).
+
+| Phân hệ / Tầng chức năng | Công nghệ sử dụng | Nguồn / Phân phối | Mục đích và vai trò thực tế trong hệ thống |
 | :--- | :--- | :---: | :--- |
-| **Backend Runtime** | Node.js Native | `v24.19.0` | Thực thi trực tiếp TypeScript bằng cờ `--experimental-strip-types`, không cần biên dịch trung gian |
-| **Ngôn ngữ chủ đạo** | TypeScript | `v5.5+` | Đồng nhất 100% types tại cả Backend, Frontend và Adapter Code |
-| **Cơ sở Dữ liệu Cục bộ** | SQLite (`node:sqlite`) | Embedded | Chế độ WAL (Write-Ahead Logging), hỗ trợ truy vấn bất đồng bộ tốc độ cao |
-| **Cơ sở Dữ liệu Đám mây** | Google Cloud Firestore | `v10.13.0` | Đồng bộ dữ liệu thời gian thực giữa các thiết bị của giảng viên và sinh viên |
-| **Frontend Framework** | React SPA (Functional) | `v18.3.1` | Khung giao diện người dùng theo kiến trúc Component-driven |
-| **Định dạng Giao diện** | Tailwind CSS Enterprise | CDN | Triển khai bộ nhận diện TDTU Design System: Navy `#003087`, Red `#dc2626`, White `#ffffff` |
-| **Xử lý Bảng tính Excel** | SheetJS (`xlsx`) | `v0.18.5` | Đọc, phân tích và kết xuất file Excel đa sheet (KTCN & TSNN) trực tiếp tại trình duyệt |
-| **Lưu trữ Đám mây** | Firebase Hosting | Serverless | Triển khai Frontend SPA trực tuyến 24/7 trên mạng lưới CDN toàn cầu |
-| **Kiểm thử Tự động** | Node.js Test Runner | Native | Bộ test suite 24 tests thực thi nhanh trong ~1.3s, không phụ thuộc Jest hay Mocha |
-| **Container hóa** | Docker & Docker Compose | Multi-stage | Đóng gói toàn bộ hệ thống để triển khai nhất quán trên mọi máy chủ |
+| **Backend Runtime** | Node.js (`v22+` / `v24+`) | Native Engine | Thực thi trực tiếp TypeScript bằng cờ `--experimental-strip-types`, HTTP server tích hợp sẵn qua module chuẩn `node:http`. Hoàn toàn không phụ thuộc Express/NestJS. |
+| **Ngôn ngữ chủ đạo** | TypeScript (`.ts` / `.tsx`) | `v5.5+` | Chuẩn hóa Type an toàn 100% cho cả Backend APIs, Frontend Views, Prime RBAC và Adapter Code. |
+| **Cơ sở dữ liệu cục bộ** | SQLite (`node:sqlite`) | Embedded Native | Sử dụng module `node:sqlite` tích hợp sẵn trong Node.js (DatabaseSync), chế độ WAL (Write-Ahead Logging), lưu trữ file `db_cntt.sqlite` tốc độ cao. |
+| **Cơ sở dữ liệu thời gian thực** | Google Cloud Firestore | `v10.13.0` Compat | Đồng bộ dữ liệu real-time qua listener `onSnapshot` giữa Giảng viên và Sinh viên (học kỳ, thông báo, khai báo nơi thực tập, chứng chỉ, đơn ứng tuyển JD). |
+| **Xác thực người dùng** | Google Workspace SSO & Firebase Auth | `v10.13.0` Compat | Xác thực Google SSO bảo mật cao, bắt buộc tên miền nội bộ `@tdtu.edu.vn` (Giảng viên) và `@student.tdtu.edu.vn` (Sinh viên). |
+| **Frontend Framework** | React 18 & ReactDOM 18 | CDN Production | Xây dựng giao diện Single Page Application (SPA) dạng Component-driven, quản lý State cục bộ linh hoạt. |
+| **Trình thông dịch Frontend** | Babel Standalone (`@babel/standalone`) | CDN Runtime | Thông dịch trực tiếp mã nguồn TSX/TypeScript tại trình duyệt với preset `tsx`, cho phép sửa code chạy ngay không cần bước build phức tạp (không cần Vite/Webpack). |
+| **Định dạng giao diện** | Tailwind CSS Enterprise | CDN | Bộ nhận diện chuẩn Khoa CNTT - ĐH Tôn Đức Thắng: Navy `#003087`, Red `#dc2626`, Dark Gray `#1f2937`, White `#ffffff`. |
+| **Xử lý Bảng tính Excel** | SheetJS (`xlsx`) | `v0.18.5` CDN | Phân tích file Excel (.xlsx, .xls, .csv), tự động nhận diện đa sheet môn học (KTCN & TSNN) và xuất báo cáo học vụ trực tiếp tại Client. |
+| **Đồng bộ đa Tab** | HTML5 BroadcastChannel API | Native Browser | Đồng bộ trạng thái tức thì giữa các tab trình duyệt (`tdtu_realtime_sync`). |
+| **Lưu trữ & Triển khai Web** | Firebase Hosting | Google Cloud | Triển khai Frontend SPA toàn cầu với chứng chỉ SSL tự động tại `https://dashboard-39cf8.web.app`. |
+| **Kiểm thử tự động** | Node.js Test Runner (`node --test`) | Native Runner | Bộ test suite 24 tests tự động hóa (Backend API, Prime RBAC, Reporting Adapter) chạy cực nhanh trong ~1.3s, không cần Jest/Mocha. |
+| **Mẫu kiến trúc mở rộng** | Chart Router & Adapter Pattern | In-House Architecture | Cơ chế cắm-và-chạy (Plug-and-Play) theo nguyên lý OCP, hỗ trợ thêm mới biểu đồ độc lập và chuẩn hóa đa định dạng dữ liệu (Schema V1 / Schema V2). |
 
 ---
 
@@ -298,10 +304,10 @@ Hệ thống áp dụng nghiêm ngặt cơ chế phân quyền Prime RBAC và ng
 
 | Nhóm Vai trò | Họ và Tên | Email đăng nhập (@tdtu.edu.vn / @student.tdtu.edu.vn) | Mật khẩu mặc định | Phạm vi thẩm quyền trên hệ thống |
 | :--- | :--- | :--- | :---: | :--- |
-| **1. Admin / BCN Khoa** | TS. Dương Hữu Phúc | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền hệ thống: quản lý học kỳ, cấu hình hạn chót, duyệt thông báo toàn trường, quản lý biểu đồ Dashboard, phân quyền Prime RBAC, in 6 biểu mẫu A4 |
-| **1. Admin phụ** | TS. Phạm Văn C | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền quản trị học vụ và xuất báo cáo |
-| **2. Giảng viên Cố vấn** | ThS. Nguyễn Văn A | `nguyenvana@tdtu.edu.vn` | `Lecturer@123456` | Quản lý 91 sinh viên, xem tiến độ và nơi thực tập SV khai báo, tra cứu chứng chỉ tiếng Anh, mở link CV, duyệt JD từ email, xuất 6 mẫu in A4 |
-| **2. Giảng viên Cố vấn** | ThS. Trần Minh Lan | `tranminhlan@tdtu.edu.vn` | `Lecturer@123456` | Thẩm định hồ sơ sinh viên theo chuyên ngành Hệ thống thông tin và Mạng |
+| **1. Admin / BCN Khoa** | GV. Dương Hữu Phúc | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền hệ thống: quản lý học kỳ, cấu hình hạn chót, duyệt thông báo toàn trường, quản lý biểu đồ Dashboard, phân quyền Prime RBAC, in 6 biểu mẫu A4 |
+| **1. Admin phụ** | GV. Phạm Văn C | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền quản trị học vụ và xuất báo cáo |
+| **2. Giảng viên Cố vấn** | GV. Nguyễn Văn A | `nguyenvana@tdtu.edu.vn` | `Lecturer@123456` | Quản lý 91 sinh viên, xem tiến độ và nơi thực tập SV khai báo, tra cứu chứng chỉ tiếng Anh, mở link CV, duyệt JD từ email, xuất 6 mẫu in A4 |
+| **2. Giảng viên Cố vấn** | GV. Trần Minh Lan | `tranminhlan@tdtu.edu.vn` | `Lecturer@123456` | Thẩm định hồ sơ sinh viên theo chuyên ngành Hệ thống thông tin và Mạng |
 | **3. Sinh viên trong kỳ** | Nguyễn Hữu Nhân | `522h0045@student.tdtu.edu.vn` | `Student@123456` | Sinh viên đủ điều kiện học song song 2 học phần KTCN và TSNN, khai báo nơi thực tập và tra cứu MST, nộp chứng chỉ B1, xem Cẩm nang |
 | **3. Sinh viên thực tế** | Võ Duy Trí | `51900839@student.tdtu.edu.vn` | `Student@123456` | Sinh viên thực tế thuộc tập dữ liệu 91 SV (Lớp 19050402 - Ngành HTTT) |
 | **3. Sinh viên cần hỗ trợ** | Nguyễn Minh Anh | `522h0001@student.tdtu.edu.vn` | `Student@123456` | Đã chọn nhánh "Cần Khoa hỗ trợ điều phối", gửi nguyện vọng và link CV |
@@ -459,6 +465,6 @@ Khi đưa hệ thống về vận hành trên hạ tầng server riêng của Kh
 
 - **Đơn vị chủ quản:** Khoa Công nghệ Thông tin — Trường Đại học Tôn Đức Thắng (TDTU)
 - **Chủ đề đề tài:** Hệ thống Quản lý Thực tập & Dashboard Hỗ trợ Ra Quyết định (DB_CNTT)
-- **Giảng viên hướng dẫn & Chỉ đạo kiến trúc:** TS. Dương Hữu Phúc
+- **Giảng viên hướng dẫn & Chỉ đạo kiến trúc:** GV. Dương Hữu Phúc
 - **Nhánh mã nguồn thực hiện:** `522H0045`
 - **Bản quyền mã nguồn:** © 2026 Khoa CNTT, Trường Đại học Tôn Đức Thắng. Mọi quyền được bảo lưu theo quy định sở hữu trí tuệ của nhà trường.

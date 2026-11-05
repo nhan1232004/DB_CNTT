@@ -1,5 +1,7 @@
 # HƯỚNG DẪN TẠO BIỂU ĐỒ MỚI (PLUG-AND-PLAY CHART PLUGIN)
 ## DÀNH CHO CÁC ĐỘI NHÓM KẾ THỪA VÀ PHÁT TRIỂN TIẾP THEO (2026 – 2031)
+### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
+*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 05/11/2026*
 
 ---
 

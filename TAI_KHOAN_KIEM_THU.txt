@@ -29,13 +29,13 @@ và phân quyền tài khoản (Ma trận Số nguyên tố Prime RBAC).
 1) Tài khoản Quản trị viên cấp cao (Thầy Dương Hữu Phúc - BCN Khoa CNTT):
    - Email    : duonghuuphuc@tdtu.edu.vn
    - Mật khẩu : Admin@123456   (hoặc Tdtu@2026 / Phuc@123456, hoặc đăng nhập trực tiếp qua Google TDTU SSO)
-   - Họ tên   : TS. Dương Hữu Phúc
+   - Họ tên   : GV. Dương Hữu Phúc
    - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true, RoleKey: thay_phuc)
 
 2) Tài khoản Admin phụ (BCN Khoa):
    - Email    : phamvanc@tdtu.edu.vn
    - Mật khẩu : Admin@123456   (hoặc Tdtu@2026)
-   - Họ tên   : TS. Phạm Văn C
+   - Họ tên   : GV. Phạm Văn C
    - Vai trò  : Quản trị viên Khoa CNTT (isAdmin: true)
 
 --------------------------------------------------------------------------------
@@ -48,19 +48,19 @@ ngoại ngữ, Đăng thông báo & tin tuyển dụng JD trên Bảng tin thự
 1) Giảng viên điều phối 1:
    - Email    : nguyenvana@tdtu.edu.vn
    - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
-   - Họ tên   : ThS. Nguyễn Văn A
+   - Họ tên   : GV. Nguyễn Văn A
    - Bộ môn   : Công nghệ Phần mềm
 
 2) Giảng viên điều phối 2:
    - Email    : tranminhlan@tdtu.edu.vn
    - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
-   - Họ tên   : ThS. Trần Minh Lan
+   - Họ tên   : GV. Trần Minh Lan
    - Bộ môn   : Hệ thống Thông tin & Mạng
 
 3) Giảng viên điều phối 3:
    - Email    : tranvanb@tdtu.edu.vn
    - Mật khẩu : Gv@123456      (hoặc Lecturer@123456 / Tdtu@2026)
-   - Họ tên   : TS. Trần Văn B
+   - Họ tên   : GV. Trần Văn B
    - Bộ môn   : Khoa học Máy tính
 
 --------------------------------------------------------------------------------

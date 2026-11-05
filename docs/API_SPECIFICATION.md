@@ -1,5 +1,6 @@
 # TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
+*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 05/11/2026*
 
 ---
 
@@ -7,6 +8,7 @@
 
 * **Base URL (Local):** `http://localhost:3000/api`
 * **Ứng dụng Cloud:** https://dashboard-39cf8.web.app
+* **Kiến trúc Server:** Node.js native (`node:http`, `node:sqlite`), thực thi TypeScript trực tiếp với `--experimental-strip-types`, không sử dụng Express hay framework trung gian.
 * **Định dạng dữ liệu:** `application/json; charset=utf-8`
 * **Tiêu đề xác thực (Authorization Header):**
   ```http
@@ -18,7 +20,7 @@
     "success": true,
     "message": "Thông báo kết quả thao tác",
     "data": {},
-    "timestamp": "2026-11-03T10:00:00.000Z"
+    "timestamp": "2026-11-05T10:00:00.000Z"
   }
   ```
 
@@ -49,7 +51,8 @@
 | `POST` | `/api/students` | Lecturer / Admin | Thêm mới sinh viên vào học kỳ chỉ định (`semester`) |
 | `PUT` | `/api/students/:studentId` | Lecturer / Admin | Cập nhật thông tin học vụ, GPA, doanh nghiệp hoặc trạng thái thực tập của sinh viên |
 | `DELETE` | `/api/students/:studentId` | Lecturer / Admin | Xóa hồ sơ sinh viên khỏi danh sách đợt thực tập |
-| `POST` | `/api/students/import` | Lecturer / Admin | Import hàng loạt danh sách sinh viên từ file Excel theo học kỳ (`replace` hoặc `append`) |
+| `POST` | `/api/students/bulk-import` | Lecturer / Admin | Import hàng loạt danh sách sinh viên từ dữ liệu JSON/Excel |
+| `DELETE` | `/api/students` | Lecturer / Admin | Xóa toàn bộ danh sách sinh viên (phục vụ reset/nạp mới) |
 
 ### 2.3. Phân hệ Khai báo Thực tập & Tra cứu MST (`/api/internship`)
 
@@ -58,6 +61,7 @@
 | `GET` | `/api/internship/company-lookup/:taxCode` | Public | Tra cứu tự động thông tin pháp lý doanh nghiệp qua Mã số thuế (MST) |
 | `POST` | `/api/internship/declare` | Student / Lecturer | Nộp hoặc cập nhật phiếu khai báo nơi thực tập (đồng bộ tự động MST, Vị trí, Mentor, SĐT Mentor, Địa chỉ sang hồ sơ sinh viên) |
 | `GET` | `/api/internship/declaration/:studentId` | Logged In | Xem danh sách phiếu khai báo nơi thực tập của sinh viên |
+| `DELETE` | `/api/internship/declaration/:studentId` | Logged In | Hủy phiếu khai báo nơi thực tập của sinh viên |
 
 ### 2.4. Phân hệ Bảng tin 2 Tầng & Bóc tách Email Forward (`/api/bulletin`)
 
@@ -66,6 +70,7 @@
 | `GET` | `/api/bulletin` | Logged In | Lấy danh sách bài đăng bảng tin (lọc `type=announcement` hoặc `type=recruitment_jd`) |
 | `POST` | `/api/bulletin` | Lecturer / Admin | Đăng thông báo học vụ (kích hoạt Popup thông báo góc dưới phải cho SV) hoặc tạo tin tuyển dụng |
 | `PUT` | `/api/bulletin/:id/status` | Lecturer / Admin | Phê duyệt 1-Click bản nháp JD sang trạng thái công khai (`published`) |
+| `DELETE` | `/api/bulletin/:id` | Lecturer / Admin | Xóa bài đăng hoặc bản nháp tin tuyển dụng JD |
 | `POST` | `/api/bulletin/parse-email` | Lecturer / Admin | Bóc tách tự động nội dung email forward của doanh nghiệp thành bản nháp JD |
 | `POST` | `/api/bulletin/apply` | Student | Sinh viên nộp hồ sơ ứng tuyển trực tuyến vào vị trí thực tập |
 | `GET` | `/api/bulletin/applications` | Lecturer / Admin | Giảng viên xem danh sách sinh viên đã nộp đơn ứng tuyển |
@@ -83,6 +88,11 @@
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/certificates/standards` | Logged In | Danh mục chứng chỉ ngoại ngữ chuẩn xét tốt nghiệp TDTU (**CERT-01**) |
 | `POST` | `/api/certificates/validate` | Logged In | Kiểm tra tính hợp lệ của chứng chỉ ngoại ngữ theo quy định TDTU |
+| `GET` | `/api/certificates` | Logged In | Lấy danh sách toàn bộ chứng chỉ sinh viên đã nộp |
+| `GET` | `/api/certificates/:studentId` | Logged In | Lấy chứng chỉ ngoại ngữ của sinh viên cụ thể (duy nhất 1 chứng chỉ hợp lệ) |
+| `POST` | `/api/certificates` | Logged In | Khai báo chứng chỉ tiếng Anh mới (tự động thay thế chứng chỉ cũ) |
+| `PUT` | `/api/certificates/:id` | Lecturer / Admin | Thẩm định hoặc cập nhật trạng thái chứng chỉ ngoại ngữ |
+| `DELETE` | `/api/certificates/:id` | Lecturer / Admin | Xóa chứng chỉ ngoại ngữ |
 
 ### 2.7. Phân hệ Báo cáo Hỗ trợ Ra Quyết định (`/api/dashboard`)
 
@@ -97,8 +107,8 @@
 | Phương thức | Đường dẫn | Quyền truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/notifications` | Logged In | Lấy danh sách thông báo phân quyền riêng tư theo tài khoản hiện tại |
-| `GET` | `/api/notifications/unread-count` | Logged In | Đếm số lượng thông báo chưa đọc của người dùng |
+| `POST` | `/api/notifications` | Logged In | Gửi thông báo học vụ đến nhóm đối tượng hoặc cá nhân |
+| `POST` | `/api/notifications/:id/read` | Logged In | Đánh dấu đã đọc một thông báo |
+| `POST` | `/api/notifications/mark-all-read` | Logged In | Đánh dấu đã đọc toàn bộ thông báo của người dùng |
+| `DELETE` | `/api/notifications/:id` | Lecturer / Admin | Xóa thông báo học vụ |
 | `GET` | `/api/notifications/audience-count` | Lecturer / Admin | Xem trước số lượng người nhận theo nhóm đối tượng (`targetGroup`) |
-| `POST` | `/api/notifications/broadcast` | Lecturer / Admin | Phát thông báo học vụ đến nhóm đối tượng hoặc cá nhân sinh viên (tích hợp bộ lọc Anti-Spam 20s) |
-| `PUT` | `/api/notifications/:id/read` | Logged In | Đánh dấu đã đọc một thông báo |
-| `PUT` | `/api/notifications/mark-all-read` | Logged In | Đánh dấu đã đọc toàn bộ thông báo của người dùng |

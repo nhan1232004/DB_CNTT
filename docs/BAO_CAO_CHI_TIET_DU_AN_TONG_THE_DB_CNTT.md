@@ -1,7 +1,7 @@
 # BÁO CÁO CHI TIẾT TỔNG THỂ DỰ ÁN HỆ THỐNG QUẢN LÝ THỰC TẬP (DB_CNTT)
 ### CỔNG THÔNG TIN THỰC TẬP & DASHBOARD RA QUYẾT ĐỊNH (KTCN & TSNN)
 **Khoa Công nghệ Thông tin — Trường Đại học Tôn Đức Thắng (TDTU)**  
-*Thời gian cập nhật: Ngày 03/11/2026 · Phiên bản: v3.2.0 (100% TypeScript Enterprise Release)*
+*Thời gian cập nhật: Ngày 05/11/2026 · Phiên bản: v3.2.0 (Bản hoàn thiện toàn diện · 100% TypeScript)*
 
 ---
 
@@ -10,6 +10,10 @@
 * **Tên hệ thống:** Hệ thống Quản lý Thực tập & Dashboard Hỗ trợ Ra Quyết định Khoa Công nghệ Thông tin (TDTU Internship Portal & Decision Support Dashboard — Viết tắt: **DB_CNTT**).
 * **Đơn vị chủ quản:** Khoa Công nghệ Thông tin, Trường Đại học Tôn Đức Thắng (TDTU).
 * **Ngôn ngữ lập trình chủ đạo:** **100% TypeScript (`.ts` & `.tsx`)** xuyên suốt cả Backend, Frontend và Gói minh chứng kiến trúc Adapter.
+* **Công nghệ sử dụng chính xác (Zero Bloatware):**
+  - **Backend:** Node.js (v22+ / v24+) native, chạy trực tiếp TypeScript với cờ `--experimental-strip-types`, HTTP server tích hợp `node:http`, CSDL cục bộ `node:sqlite` (DatabaseSync, WAL mode), test runner tích hợp `node:test`. Hoàn toàn không sử dụng Express, NestJS, ORM cồng kềnh hay Jest/Mocha.
+  - **Frontend:** React 18 & ReactDOM 18 (CDN), Babel Standalone (runtime TSX transpiler), Tailwind CSS (CDN với TDTU design tokens), SheetJS (`xlsx` v0.18.5 cho xử lý Excel client-side).
+  - **Đám mây & Real-time:** Google Firebase Hosting (triển khai toàn cầu), Firebase Auth (Google SSO `@tdtu.edu.vn`), Cloud Firestore (đồng bộ dữ liệu đa thiết bị tức thì qua `onSnapshot`), BroadcastChannel API (đồng bộ liên tab).
 * **Phạm vi học phần quản lý:**
   1. **Kiến tập công nghiệp (KTCN):** 160 giờ thực hành doanh nghiệp.
   2. **Tập sự nghề nghiệp (TSNN):** 320 giờ thực tập chuyên sâu tại doanh nghiệp.
@@ -31,8 +35,9 @@ flowchart TD
     P4["Giai đoạn 4: Reporting Microservice, Chart Router & Adapter<br/>✓ ĐÃ HOÀN TẤT 100%"]
     P5["Giai đoạn 5: Đồng bộ GPA, Print Center A4 & TDTU Design System<br/>✓ ĐÃ HOÀN TẤT 100%"]
     P6["Giai đoạn 6: Chuẩn hóa 100% TypeScript, Đồng bộ Real-time & Popup 150%<br/>✓ ĐÃ HOÀN TẤT 100%"]
+    P7["Giai đoạn 7: Dynamic Semesters, Single Certificate & Clean UI<br/>✓ ĐÃ HOÀN TẤT 100%"]
 
-    P1 --> P2 --> P3 --> P4 --> P5 --> P6
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7
 ```
 
 ### Chi tiết tiến độ từng giai đoạn:
@@ -55,12 +60,18 @@ flowchart TD
    - Tích hợp bộ dữ liệu thực tế 91 sinh viên với đầy đủ GPA thang 10 & 4, xếp loại học lực, lớp, ngành.
    - Xây dựng Trung tâm In ấn (Print Center) với 6 mẫu biểu mẫu A4 chuẩn thể thức hành chính Nhà nước (Nghị định 30/2020/NĐ-CP).
    - Thiết kế lại toàn bộ giao diện tuân thủ quy chuẩn TDTU Design System: loại bỏ emoji, chuyển cột Chi tiết sang menu 3 chấm sổ xuống `···`.
-6. **Giai đoạn 6 (Chuẩn hóa 100% TypeScript, Đồng bộ Hồ sơ Doanh nghiệp, Lọc Học kỳ & Popup 150% - Cập nhật 03/11/2026):**
-   - **Chuẩn hóa 100% TypeScript (`.ts` & `.tsx`):** Chuyển đổi hoàn toàn Frontend sang 22 tệp `.ts`/`.tsx` vận hành trên Babel 8 TSX Runtime (`ignoreExtensions: true` & `runtime: 'classic'`), xóa toàn bộ các bản sao `.js`/`.jsx` và hơn 30.000 dòng mã thừa.
-   - **Đồng bộ Real-time Hồ sơ Doanh nghiệp (Sinh viên ↔ Giảng viên):** Khi sinh viên khai báo nơi thực tập, toàn bộ thông tin doanh nghiệp (Tên công ty, Mã số thuế, Địa chỉ, Người đại diện, Vị trí thực tập, Cán bộ hướng dẫn Mentor, SĐT Mentor) được đồng bộ tức thì vào hồ sơ sinh viên phía Giảng viên (`StudentsPage.tsx`, `DeclarationPage.tsx`, `api.client.ts`, `students.service.ts`).
-   - **Quản lý Danh sách Sinh viên theo Học kỳ Chặt chẽ:** Khắc phục triệt để việc danh sách sinh viên của HK1 2026-2027 hiển thị tràn sang các học kỳ khác; lọc chính xác theo khóa học kỳ (`hk1_2026_2027`, `hk2_2026_2027`, `hk3_2026_2027`).
-   - **Popup Thông báo Real-time góc dưới bên phải cho Sinh viên:** Khi Giảng viên đăng thông báo học vụ mới, sinh viên đăng nhập vào hệ thống sẽ nhận ngay một Popup thông báo nổi ở góc dưới bên phải màn hình (`App.tsx`).
-   - **Phóng to Bảng Thông tin Popup 150% & Phân quyền Giao diện:** Phóng đại kích thước và phông chữ của các hộp thoại chi tiết (Hồ sơ sinh viên, Thẩm định chứng chỉ, Phiếu khai báo) lên **150%** giúp dễ quan sát và thao tác; ẩn nút "Quản lý biểu đồ" đối với Sinh viên; ẩn nút đăng nhập nhanh của vai trò Doanh nghiệp.
+6. **Giai đoạn 6 (Chuẩn hóa 100% TypeScript, Đồng bộ Hồ sơ Doanh nghiệp, Lọc Học kỳ & Popup 150%):**
+   - **Chuẩn hóa 100% TypeScript (`.ts` & `.tsx`):** Chuyển đổi hoàn toàn Frontend sang 22 tệp `.ts`/`.tsx` vận hành trên Babel TSX Runtime, xóa toàn bộ các bản sao `.js`/`.jsx` và mã thừa.
+   - **Đồng bộ Real-time Hồ sơ Doanh nghiệp (Sinh viên ↔ Giảng viên):** Toàn bộ thông tin doanh nghiệp (Tên công ty, Mã số thuế, Địa chỉ, Người đại diện, Vị trí thực tập, Mentor, SĐT Mentor) được đồng bộ tức thì vào hồ sơ sinh viên phía Giảng viên.
+   - **Quản lý Danh sách Sinh viên theo Học kỳ Chặt chẽ:** Khắc phục triệt để việc danh sách sinh viên hiển thị tràn sang các học kỳ khác.
+   - **Popup Thông báo Real-time & Phóng to 150%:** Popup thông báo nổi góc dưới phải cho sinh viên khi có thông báo mới; phóng đại kích thước và phông chữ các hộp thoại chi tiết lên **150%** giúp dễ quan sát và thao tác.
+7. **Giai đoạn 7 (Quản lý Học kỳ Linh hoạt, Chuẩn hóa Chứng chỉ Đơn & Quy trình Ứng tuyển JD Thực tế - Cập nhật 05/11/2026):**
+   - **Đồng bộ Học kỳ Động (Dynamic Semesters Registry):** Hệ thống quản trị học kỳ linh hoạt (HK1, HK2 2026–2027, v.v.), đồng bộ thời gian thực qua Firestore `tdtu_system/semesters` và BroadcastChannel tới tất cả dropdown (Navbar, Sinh viên, Chứng chỉ, Nhập/Xuất Excel). Tự động cập nhật sĩ số sinh viên thực tế khi nạp file.
+   - **Cô lập Hạn chót Sinh viên theo Học kỳ Đang học:** Hạn chót đếm ngược bên sinh viên hiển thị đúng theo học kỳ mà sinh viên tham gia, không bị ảnh hưởng sai khi giảng viên kích hoạt học kỳ khác.
+   - **Quy định 1 Sinh viên = 1 Chứng chỉ Tiếng Anh Duy nhất:** Mỗi sinh viên chỉ lưu duy nhất 1 hồ sơ chứng chỉ; khi khai báo chứng chỉ mới, hệ thống tự động ghi đè và thay thế chứng chỉ cũ đồng bộ cả bên sinh viên và giảng viên. Tắt thông báo spam tới giảng viên khi sinh viên cập nhật.
+   - **Dọn Sạch Dữ liệu Mẫu & Quy trình Ứng tuyển JD 2 Bước:** Xóa sạch toàn bộ dữ liệu mẫu trong Bảng tin và Duyệt JD; sinh viên ứng tuyển qua Popup form chuyên nghiệp (chọn CV hồ sơ hoặc link mới + Cover Letter); Giảng viên/Doanh nghiệp phê duyệt `[✓ Tiếp nhận]` hoặc `[✕ Từ chối]`; tự động cập nhật trạng thái "Đã có nơi TT" theo thời gian thực; huy hiệu tab phản ánh đúng số lượng đơn nộp thực tế.
+   - **Chuẩn hóa Danh xưng Giảng viên:** Thống nhất hiển thị danh xưng `GV. [Họ tên]` (ví dụ: `GV. Dương Hữu Phúc`), chuẩn hóa chữ cái đại diện.
+   - **Tinh chỉnh Cô đọng Giao diện UI (Clean & Focus):** Rút gọn nội dung chữ trên 15 trang/thành phần, xoá các banner giải thích rườm rà, đưa giao diện về trạng thái súc tích, chuyên nghiệp.
 
 ---
 
@@ -70,12 +81,12 @@ flowchart TD
 2. **Bảng điều khiển Ra quyết định (`DashboardPage.tsx`):** Thống kê KPI theo học kỳ, hiển thị biểu đồ từ Chart Router; chỉ cho phép Giảng viên/Admin sử dụng chức năng "Quản lý biểu đồ" (ẩn đối với Sinh viên).
 3. **Quản lý & Thẩm định Sinh viên (`StudentsPage.tsx`):** Lọc chính xác theo từng học kỳ; popup Hồ sơ sinh viên phóng to 150% hiển thị đầy đủ 4 tab (*Cá nhân & Học tập*, *Doanh nghiệp & Tiến độ*, *Chứng chỉ*, *Lịch sử khai báo*) với đầy đủ thông tin MST, Vị trí, Mentor, SĐT Mentor, Địa chỉ công ty.
 4. **Khai báo Nơi Thực tập & Đối soát MST (`DeclarationPage.tsx`):** Khai báo 1 hoặc 2 môn (KTCN/TSNN), tự động tra cứu MST và đồng bộ toàn bộ trường thông tin doanh nghiệp sang hồ sơ giảng viên xem; popup chi tiết phóng to 150%.
-5. **Chứng chỉ Ngoại ngữ Chuẩn TDTU (`CertificatesPage.tsx`):** Nộp và hậu kiểm chứng chỉ TOEIC, IELTS, TOEFL, VSTEP, Aptis, Ngoại ngữ 2 & Giấy cam kết; popup thẩm định phóng to 150%.
-6. **Bảng tin Tuyển dụng & Thông báo 2 Tầng (`BulletinPage.tsx`):** Đăng thông báo học vụ (kích hoạt popup góc dưới phải cho sinh viên) và đăng cơ hội thực tập doanh nghiệp.
-7. **Bóc tách Email JD Tự động (`EmailJdPage.tsx`):** Phân tích nội dung email forward từ doanh nghiệp thành bản nháp JD và duyệt công khai 1-Click.
+5. **Chứng chỉ Ngoại ngữ Chuẩn TDTU (`CertificatesPage.tsx`):** Chuẩn hóa chính sách 1 sinh viên = 1 chứng chỉ ngoại ngữ duy nhất; khi khai báo mới sẽ tự động ghi đè thay thế chứng chỉ cũ đồng bộ cả bên sinh viên và giảng viên; tắt thông báo spam tới giảng viên khi sinh viên cập nhật; popup thẩm định phóng to 150%.
+6. **Bảng tin Tuyển dụng & Đơn Ứng tuyển (`BulletinPage.tsx`):** Xóa sạch toàn bộ dữ liệu mẫu; đăng thông báo học vụ; sinh viên nộp đơn ứng tuyển qua Popup form (chọn CV hoặc link mới + Cover letter); quy trình phê duyệt tiếp nhận thực tập 2 bước (`[✓ Tiếp nhận]` / `[✕ Từ chối]`) tự động chuyển trạng thái "Đã có nơi TT" theo thời gian thực; huy hiệu hiển thị số lượng đơn nộp thực tế.
+7. **Bóc tách Email JD Tự động (`EmailJdPage.tsx`):** Danh sách email sạch, phân tích nội dung email forward từ doanh nghiệp thành bản nháp JD và duyệt công khai 1-Click.
 8. **Trung tâm In ấn A4 & Bộ 6 Biểu mẫu (`DocumentsPage.tsx`):** Xem trước và in ấn A4 chuẩn Nghị định 30/2020/NĐ-CP cho 6 mẫu báo cáo/biểu mẫu của Giảng viên và Khoa.
-9. **Quản lý Kế hoạch Học kỳ (`SemestersPage.tsx`):** Cấu hình đợt thực tập, mốc thời gian và danh sách sinh viên theo từng học kỳ.
-10. **Nhập Dữ liệu Excel Đầu kỳ (`ImportDataPage.tsx`):** Đọc file Excel đa sheet (KTCN & TSNN), xem trước dữ liệu GPA và nạp vào đúng học kỳ được chọn.
+9. **Quản lý Kế hoạch Học kỳ Động (`SemestersPage.tsx`):** Quản trị học kỳ linh hoạt, đồng bộ thời gian thực qua Firestore `tdtu_system/semesters` và BroadcastChannel tới toàn bộ các trang; cô lập hạn chót sinh viên theo đúng học kỳ tham gia.
+10. **Nhập Dữ liệu Excel Đầu kỳ (`ImportDataPage.tsx`):** Đọc file Excel đa sheet (KTCN & TSNN), tự động đồng bộ danh sách học kỳ động, cập nhật sĩ số sinh viên thực tế và nạp vào đúng học kỳ được chọn.
 11. **Kết xuất Báo cáo Excel (`ExportDataPage.tsx`):** Xuất danh sách tổng hợp, sinh viên cần hỗ trợ và báo cáo phân bổ doanh nghiệp ra file `.xlsx`.
 12. **Hồ sơ Cá nhân Sinh viên (`ProfilePage.tsx`):** Quản lý thông tin liên lạc, CV, kỹ năng và GPA cá nhân.
 13. **Cẩm nang & Quy chế Học phần (`HandbookPage.tsx`):** Tra cứu quy định 160h KTCN / 320h TSNN và hướng dẫn dành cho sinh viên.
