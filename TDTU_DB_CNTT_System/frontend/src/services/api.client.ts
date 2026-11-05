@@ -133,12 +133,11 @@ class ApiClient {
 
   static _purgeOldTestStudents() {
     try {
-      // Dọn dẹp triệt để dữ liệu rác của 523H0077
+      // 1. Dọn dẹp triệt để dữ liệu rác của các tài khoản test cũ
       const purgeKeys = [
-        'tdtu_decl_523H0077', 'tdtu_decl_523h0077',
-        'tdtu_certs_523H0077', 'tdtu_certs_523h0077',
-        'tdtu_cv_523H0077', 'tdtu_cv_523h0077',
-        'tdtu_internship_history_523H0077', 'tdtu_internship_history_523h0077'
+        'tdtu_decl_523H0077', 'tdtu_decl_523h0077', 'tdtu_certs_523H0077', 'tdtu_certs_523h0077',
+        'tdtu_cv_523H0077', 'tdtu_cv_523h0077', 'tdtu_internship_history_523H0077', 'tdtu_internship_history_523h0077',
+        'tdtu_decl_52100999', 'tdtu_certs_52100999', 'tdtu_cv_52100999'
       ];
       purgeKeys.forEach(k => {
         try { localStorage.removeItem(k); } catch {}
@@ -152,22 +151,48 @@ class ApiClient {
         this._cvCache.delete('523h0077');
       }
 
-      if (!localStorage.getItem('tdtu_mock_data_purged_clean_v10')) {
+      // 2. Đồng bộ và làm sạch dữ liệu thống nhất cho mọi tài khoản và thiết bị (v112)
+      const UNIFORM_VERSION = 'tdtu_clean_sync_v112_all_devices';
+      if (!localStorage.getItem(UNIFORM_VERSION)) {
         localStorage.removeItem('tdtu_live_students');
         localStorage.removeItem('tdtu_live_students_v2');
         localStorage.removeItem('tdtu_live_students_v3');
         localStorage.removeItem('tdtu_live_students_clean');
-        localStorage.removeItem('tdtu_imported_students_hk1_2026_2027');
-        localStorage.removeItem('tdtu_imported_students_hk2_2025_2026');
-        localStorage.removeItem('tdtu_imported_students_hk1_2025_2026');
+
+        localStorage.removeItem('tdtu_announcements');
+        localStorage.removeItem('tdtu_notifications');
         localStorage.removeItem(this.notificationKey);
-        // Dọn sạch toàn bộ dữ liệu mẫu khai báo, chứng chỉ, cv của các tài khoản test cũ
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('tdtu_certs_') || key.startsWith('tdtu_cv_') || key.startsWith('tdtu_decl_') || key.startsWith('tdtu_internship_history_')) {
-            localStorage.removeItem(key);
+        localStorage.removeItem('tdtu_email_forwarded_jds');
+        localStorage.removeItem('tdtu_jd_queue');
+
+        try {
+          const rawJds = localStorage.getItem('tdtu_published_jds');
+          if (rawJds) {
+            const jds = JSON.parse(rawJds);
+            if (Array.isArray(jds)) {
+              localStorage.setItem('tdtu_published_jds', JSON.stringify(jds.filter(j => j && !String(j.id).startsWith('post-jd-'))));
+            }
           }
-        });
-        localStorage.setItem('tdtu_mock_data_purged_clean_v10', 'true');
+        } catch {}
+
+        try {
+          const rawApps = localStorage.getItem('tdtu_applications');
+          if (rawApps) {
+            const apps = JSON.parse(rawApps);
+            if (Array.isArray(apps)) {
+              localStorage.setItem('tdtu_applications', JSON.stringify(apps.filter(a => a && a.jdId && !String(a.jdId).startsWith('post-jd-') && a.studentId !== '523H0077' && a.studentId !== '52100999')));
+            }
+          }
+        } catch {}
+
+        // Đảm bảo tdtu_semesters_list có đầy đủ tất cả học kỳ chính thức
+        try {
+          const fullSemList = this.getSemesters();
+          localStorage.setItem('tdtu_semesters_list', JSON.stringify(fullSemList));
+        } catch {}
+
+        localStorage.setItem(UNIFORM_VERSION, 'true');
+        console.log('[TDTU Portal]: Đã đồng bộ và làm sạch dữ liệu thống nhất toàn diện giữa tất cả thiết bị (v112).');
       }
     } catch {}
   }
@@ -405,14 +430,21 @@ class ApiClient {
             list = data.list;
           }
           if (Array.isArray(list) && list.length > 0) {
-            localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
-            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list, semesters: list } }));
+            const existingIds = new Set(list.map((s: any) => s.id));
+            const merged = [...list];
+            for (const def of this.DEFAULT_SEMESTERS_REGISTRY) {
+              if (!existingIds.has(def.id)) {
+                merged.push(def);
+              }
+            }
+            localStorage.setItem('tdtu_semesters_list', JSON.stringify(merged));
+            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: merged, semesters: merged } }));
             try {
               const bc = new BroadcastChannel('tdtu_realtime_sync');
-              bc.postMessage({ type: 'semesters_updated', list });
+              bc.postMessage({ type: 'semesters_updated', list: merged });
               bc.close();
             } catch {}
-            console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', list.length);
+            console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', merged.length);
           }
         }
       }, err => {
@@ -430,7 +462,8 @@ class ApiClient {
           ]);
           snapshot.forEach(doc => {
             const n = { id: doc.id, ...doc.data() };
-            if (n && n.id && !seenIds.has(n.id) && !deletedSet.has(String(n.id))) {
+            const isMock = String(doc.id).startsWith('notif-sample-') || String(doc.id).startsWith('mock-');
+            if (n && n.id && !isMock && !seenIds.has(n.id) && !deletedSet.has(String(n.id))) {
               seenIds.add(n.id);
               notes.push(n);
             }
@@ -693,8 +726,11 @@ class ApiClient {
         if (!snapshot.empty) {
           const notes = [];
           snapshot.forEach(doc => {
-            if (doc && doc.id && !deletedSet.has(String(doc.id))) {
-              notes.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            const id = doc.id;
+            const isMock = String(id).startsWith('post-anc-') || String(id).startsWith('sample-') || String(data?.title || '').includes('Chào mừng sinh viên K22') || String(data?.title || '').includes('mẫu');
+            if (!isMock && !deletedSet.has(String(id))) {
+              notes.push({ id, ...data });
             }
           });
           notes.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
@@ -3874,7 +3910,23 @@ class ApiClient {
       const raw = localStorage.getItem('tdtu_semesters_list');
       if (raw) {
         const list = JSON.parse(raw);
-        if (Array.isArray(list) && list.length > 0) return list;
+        if (Array.isArray(list) && list.length > 0) {
+          const existingIds = new Set(list.map((s: any) => s.id));
+          let modified = false;
+          const merged = [...list];
+          for (const def of this.DEFAULT_SEMESTERS_REGISTRY) {
+            if (!existingIds.has(def.id)) {
+              merged.push(def);
+              modified = true;
+            }
+          }
+          if (modified) {
+            try {
+              localStorage.setItem('tdtu_semesters_list', JSON.stringify(merged));
+            } catch {}
+          }
+          return merged;
+        }
       }
     } catch {}
     return this.DEFAULT_SEMESTERS_REGISTRY;

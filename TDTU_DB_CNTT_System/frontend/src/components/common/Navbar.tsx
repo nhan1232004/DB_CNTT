@@ -74,42 +74,17 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     return false;
   }, [currentUser]);
 
-  // Đối với Sinh viên: CHỈ hiển thị các học kỳ mà sinh viên có tên trong danh sách
-  // Đối với Giảng viên / Quản trị viên: Hiển thị toàn bộ danh sách học kỳ
+  // Danh sách học kỳ cho Dropdown
   const availableSemesters = React.useMemo(() => {
-    if (!isStudent) return semesters;
-    const sid = currentUser?.studentId || currentUser?.mssv;
-    const enrolled = semesters.filter(sem => isStudentEnrolledInSemester(sid, sem.id));
-    if (enrolled.length === 0) {
-      const defSem = semesters.find(s => s.id === 'hk1_2026_2027') || semesters[0];
-      return defSem ? [defSem] : [];
-    }
-    return enrolled;
-  }, [semesters, isStudent, currentUser, isStudentEnrolledInSemester]);
+    return semesters;
+  }, [semesters]);
 
   // Xác định học kỳ thực tế hiển thị trên thanh điều hướng
   const displaySemester = React.useMemo(() => {
-    if (!isStudent) {
-      return availableSemesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || availableSemesters[0] || semesters[0];
-    }
-    // Đối với SV: nếu activeSemester nằm trong danh sách kỳ SV có tên thì hiện theo
-    const match = availableSemesters.find(s => s.id === activeSemester);
-    if (match) return match;
-    // Ngược lại chỉ hiển thị kỳ mà sinh viên có tên trong danh sách
-    return availableSemesters[0] || semesters.find(s => s.id === 'hk1_2026_2027') || semesters[0];
-  }, [isStudent, availableSemesters, activeSemester, semesters]);
+    return semesters.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || semesters[0];
+  }, [activeSemester, semesters]);
 
   const displaySemesterId = displaySemester?.id || 'hk1_2026_2027';
-
-  // Tự động chuyển về học kỳ hợp lệ nếu học kỳ đang chọn không thuộc các kỳ sinh viên có tên
-  React.useEffect(() => {
-    if (isStudent && availableSemesters.length > 0) {
-      const isCurrentInAvailable = availableSemesters.some(s => s.id === activeSemester);
-      if (!isCurrentInAvailable && onSemesterChange) {
-        onSemesterChange(displaySemesterId);
-      }
-    }
-  }, [isStudent, availableSemesters, activeSemester, displaySemesterId, onSemesterChange]);
 
   React.useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -123,10 +98,13 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
 
   const computeDeadline = React.useCallback(() => {
     try {
-      // Đối với Sinh viên: Luôn luôn cố định học kỳ mà sinh viên thực tế đang theo học (displaySemesterId),
-      // hoàn toàn không bị ảnh hưởng khi Giảng viên chuyển sang hoặc kích hoạt học kỳ khác.
-      const semToUse = isStudent ? (displaySemesterId || 'hk1_2026_2027') : (activeSemester || 'hk1_2026_2027');
-      const dl = window.ApiClient?.getSystemDeadlines ? window.ApiClient.getSystemDeadlines(semToUse) : null;
+      const sid = currentUser?.studentId || currentUser?.mssv;
+      const isEnrolledInActive = !isStudent || isStudentEnrolledInSemester(sid, activeSemester);
+      if (isStudent && !isEnrolledInActive) {
+        setDeadlineText('Hạn chót: Ngoài kỳ');
+        return;
+      }
+      const dl = window.ApiClient?.getSystemDeadlines ? window.ApiClient.getSystemDeadlines(activeSemester) : null;
       const targetDateStr = dl?.declarationDeadline || dl?.certDeadline || '2026-12-24';
       const targetTime = new Date(targetDateStr).getTime();
       const nowTime = new Date().getTime();
@@ -138,6 +116,10 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       } else {
         setDeadlineText('Hạn chót: Đã kết thúc');
       }
+    } catch {
+      setDeadlineText('Hạn chót: 24/12/2026');
+    }
+  }, [currentUser, isStudent, activeSemester, isStudentEnrolledInSemester]);
     } catch {
       setDeadlineText('Hạn chót: Đang cập nhật');
     }
@@ -404,7 +386,13 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
                     </div>
                     {availableSemesters.map(sem => {
                       const isSelected = displaySemesterId === sem.id;
-                      const label = `${sem.name || sem.id} ${sem.isActive && !String(sem.name || '').includes('Hiện tại') ? '(Hiện tại)' : ''}`.trim();
+                      const isStudentInSem = !isStudent || isStudentEnrolledInSemester(currentUser?.studentId || currentUser?.mssv, sem.id);
+                      let label = `${sem.name || sem.id}`;
+                      if (sem.isActive && !String(sem.name || '').includes('Hiện tại')) {
+                        label += isStudent && !isStudentInSem ? ' (Hiện tại - Ngoài kỳ)' : ' (Hiện tại)';
+                      } else if (isStudent && !isStudentInSem) {
+                        label += ' (Ngoài kỳ)';
+                      }
                       return (
                         <button
                           key={sem.id}

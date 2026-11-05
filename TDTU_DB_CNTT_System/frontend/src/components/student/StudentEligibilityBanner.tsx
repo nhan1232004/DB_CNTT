@@ -5,13 +5,76 @@
 //    + Nếu chưa xác nhận có doanh nghiệp: Chỉ hiển thị 1 khung "Sinh viên đủ điều kiện thực tập".
 //    + Nếu đã xác nhận có doanh nghiệp (has_company): Ẩn khung "Đủ điều kiện thực tập", chỉ hiển thị 1 khung "Đã có nơi thực tập".
 
-const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onNavigateTab }) => {
+const StudentEligibilityBanner = ({ currentUser, declaration, studentRecord, onNavigateTab, activeSemester }) => {
   if (!currentUser || currentUser.role !== 'student') return null;
 
   const studentId = (currentUser.studentId || currentUser.mssv || '522H0045').toUpperCase();
-  // Đối với sinh viên ngoài kỳ / không có trong danh sách đăng ký: Ẩn hoàn toàn banner điều kiện thực tập
+  const sem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+
+  // Kiểm tra sinh viên có trong học kỳ đang được kích hoạt hay không
+  let isEnrolledInActiveSem = true;
   if (currentUser.isEnrolledThisSemester === false || studentId === '52100999' || studentId === '523H0077') {
-    return null;
+    isEnrolledInActiveSem = false;
+  } else {
+    try {
+      const raw = localStorage.getItem(`tdtu_imported_students_${sem}`) || (sem === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > 0) {
+          isEnrolledInActiveSem = arr.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === studentId);
+        } else if (sem !== 'hk1_2026_2027') {
+          isEnrolledInActiveSem = false;
+        }
+      } else if (sem !== 'hk1_2026_2027') {
+        isEnrolledInActiveSem = false;
+      }
+    } catch {
+      isEnrolledInActiveSem = false;
+    }
+  }
+
+  // Trường hợp: Sinh viên ngoài kỳ (học kỳ được kích hoạt không có tên sinh viên này)
+  if (!isEnrolledInActiveSem) {
+    const semNameMap = {
+      hk2_2026_2027: 'Học kỳ 2 / 2026–2027',
+      hk1_2026_2027: 'Học kỳ 1 / 2026–2027',
+      hk2_2025_2026: 'Học kỳ 2 / 2025–2026',
+      hk1_2025_2026: 'Học kỳ 1 / 2025–2026'
+    };
+    const semDisplayName = semNameMap[sem] || sem;
+    return (
+      <div className="bg-[#fffbeb] rounded-xl p-5 border border-[#fde68a] border-l-4 border-l-[#d97706] shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white text-[#d97706] flex items-center justify-center font-bold shrink-0 border border-[#fde68a]">
+              <svg className="w-5 h-5 text-[#d97706]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="font-bold text-[17px] text-[#b45309]">
+                  Tài khoản ngoài kỳ học hiện hành · {semDisplayName}
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
+                  Sinh viên ngoài kỳ
+                </span>
+              </div>
+              <p className="text-[12.5px] text-[#1f2937] mt-1 text-justify leading-relaxed">
+                Mã số SV: <strong className="font-mono text-[#003087]">{studentId}</strong> · <strong>{currentUser?.name}</strong>. Học kỳ đang kích hoạt là <strong>{semDisplayName}</strong>. Bạn không có tên trong danh sách đợt thực tập này nên hệ thống đang chạy ở chế độ <strong>Sinh viên ngoài kỳ</strong> (giới hạn các chức năng Khai báo thực tập, Nộp chứng chỉ ngoại ngữ và Ứng tuyển JD).
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateTab && onNavigateTab('bulletin')}
+            className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white font-bold text-[12px] rounded-lg shadow-xs transition cursor-pointer shrink-0 whitespace-nowrap"
+          >
+            Xem Bảng tin & Tuyển dụng
+          </button>
+        </div>
+      </div>
+    );
   }
   const enrolledCourses = (() => {
     if (studentRecord) {

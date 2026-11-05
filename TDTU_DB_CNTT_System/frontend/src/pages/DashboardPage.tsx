@@ -727,13 +727,14 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
         </div>
       </div>
 
-      {/* 2. DÀNH CHO SINH VIÊN TRONG KỲ: BANNER ĐIỀU KIỆN & TÌNH TRẠNG THỰC TẬP */}
-      {isStudent && isEnrolledStudent && window.StudentEligibilityBanner && (
+      {/* 2. DÀNH CHO SINH VIÊN: BANNER ĐIỀU KIỆN / THÔNG BÁO NGOÀI KỲ */}
+      {isStudent && window.StudentEligibilityBanner && (
         <window.StudentEligibilityBanner
           currentUser={currentUser}
           declaration={declaration}
           studentRecord={myStudentRecord}
           onNavigateTab={onNavigateTab}
+          activeSemester={activeSemester}
         />
       )}
 

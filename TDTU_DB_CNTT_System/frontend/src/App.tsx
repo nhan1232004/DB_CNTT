@@ -439,17 +439,7 @@ const AppInner = () => {
 
     const handleSemesterEvt = (e) => {
       if (e?.detail?.semesterId) {
-        const newSem = e.detail.semesterId;
-        const saved = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
-        const cur = currentUser || saved;
-        if (cur?.role === 'student') {
-          const sid = String(cur.studentId || cur.mssv || '').toUpperCase();
-          if (isStudentEnrolledInSemester(sid, newSem)) {
-            setActiveSemester(newSem);
-          }
-        } else {
-          setActiveSemester(newSem);
-        }
+        setActiveSemester(e.detail.semesterId);
       }
     };
     window.addEventListener('tdtu_semester_changed', handleSemesterEvt);
@@ -484,7 +474,7 @@ const AppInner = () => {
       return;
     }
 
-    // Kiểm tra sinh viên có tên trong danh sách kỳ đang chọn không
+    // Kiểm tra sinh viên có tên trong danh sách kỳ học đang được kích hoạt hay không
     const isStudent = currentUser.role === 'student';
     let isStudentEnrolledInActiveSem = true;
     if (isStudent) {
@@ -492,21 +482,11 @@ const AppInner = () => {
       if (sid === '52100999' || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
         isStudentEnrolledInActiveSem = false;
       } else {
-        try {
-          const raw = localStorage.getItem(`tdtu_imported_students_${effectiveSemester}`) || (effectiveSemester === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
-          if (raw) {
-            const arr = JSON.parse(raw);
-            if (Array.isArray(arr) && arr.length > 0) {
-              isStudentEnrolledInActiveSem = arr.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
-            }
-          }
-        } catch {
-          isStudentEnrolledInActiveSem = false;
-        }
+        isStudentEnrolledInActiveSem = isStudentEnrolledInSemester(sid, activeSemester);
       }
     }
 
-    // Sinh viên không có trong danh sách kỳ đang chọn: chỉ xem được dashboard, profile và bulletin
+    // Sinh viên không có trong danh sách kỳ đang kích hoạt: chuyển thành SV ngoài kỳ, chỉ xem được dashboard, profile và bulletin
     if (isStudent && (!isStudentEnrolledInActiveSem || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
       if (!['dashboard', 'profile', 'bulletin'].includes(activeTab)) {
         setActiveTab('dashboard');
@@ -597,14 +577,14 @@ const AppInner = () => {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         onLogout={handleLogout}
-        activeSemester={effectiveSemester}
+        activeSemester={activeSemester}
       />
 
       {/* 2. KHU VỰC NỘI DUNG CHÍNH (HEADER + SCROLLABLE BODY) */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <window.Navbar
           currentUser={currentUser}
-          activeSemester={effectiveSemester}
+          activeSemester={activeSemester}
           onSemesterChange={handleSemesterChange}
           onNavigateTab={setActiveTab}
         />
@@ -615,7 +595,7 @@ const AppInner = () => {
               {activeTab === 'dashboard' && (
                 window.DashboardPage ? (
                   <window.DashboardPage
-                    activeSemester={effectiveSemester}
+                    activeSemester={activeSemester}
                     onSemesterChange={handleSemesterChange}
                     currentUser={currentUser}
                     onNavigateTab={setActiveTab}

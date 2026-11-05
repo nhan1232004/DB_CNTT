@@ -275,6 +275,22 @@
       if (user.isEnrolledThisSemester === false || user.isEnrolled === false || sid === '52100999') {
         return 'sv_ngoai_ky';
       }
+      try {
+        const activeSem = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+        // Nếu giảng viên kích hoạt học kỳ khác, sinh viên không thuộc kỳ đó sẽ chuyển sang sv_ngoai_ky
+        const rawImported = localStorage.getItem(`tdtu_imported_students_${activeSem}`);
+        if (rawImported) {
+          const list = JSON.parse(rawImported);
+          if (Array.isArray(list) && list.length > 0) {
+            const hasStudent = list.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
+            if (!hasStudent) return 'sv_ngoai_ky';
+          } else if (activeSem !== 'hk1_2026_2027') {
+            return 'sv_ngoai_ky';
+          }
+        } else if (activeSem !== 'hk1_2026_2027') {
+          return 'sv_ngoai_ky';
+        }
+      } catch {}
       return 'sv_trong_ky';
     }
     if (user.role === 'partner') {

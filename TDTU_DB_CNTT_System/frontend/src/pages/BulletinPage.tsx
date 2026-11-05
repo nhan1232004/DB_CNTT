@@ -18,12 +18,17 @@ const BulletinPage = ({ currentUser }) => {
     if (cleanSid === '52100999') return false;
     if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
     try {
-      const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
+      const sem = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+      const raw = localStorage.getItem(`tdtu_imported_students_${sem}`) || (sem === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr) && arr.length > 0) {
           return arr.some((s: any) => String(s.mssv || s.studentId).toUpperCase() === cleanSid);
+        } else if (sem !== 'hk1_2026_2027') {
+          return false;
         }
+      } else if (sem !== 'hk1_2026_2027') {
+        return false;
       }
     } catch {}
     return true;
@@ -54,7 +59,7 @@ const BulletinPage = ({ currentUser }) => {
   const [submittingApply, setSubmittingApply] = React.useState(false);
 
   // Danh sách đơn ứng tuyển (Applications)
-  const [applications, setApplications] = React.useState([]);
+  const [applications, setApplications] = React.useState(() => window.ApiClient?.getApplications ? window.ApiClient.getApplications() : []);
   const [appStatusFilter, setAppStatusFilter] = React.useState('all');
   const [viewingAppDetail, setViewingAppDetail] = React.useState(null);
 
@@ -64,8 +69,8 @@ const BulletinPage = ({ currentUser }) => {
   const [parsingEmail, setParsingEmail] = React.useState(false);
 
   // Dữ liệu Bảng tin JD, Hàng đợi Duyệt & Thông báo Giảng viên
-  const [publishedJds, setPublishedJds] = React.useState([]);
-  const [reviewQueue, setReviewQueue] = React.useState([]);
+  const [publishedJds, setPublishedJds] = React.useState(() => window.ApiClient?.getPublishedJds ? window.ApiClient.getPublishedJds() : []);
+  const [reviewQueue, setReviewQueue] = React.useState(() => window.ApiClient?.getJdReviewQueue ? window.ApiClient.getJdReviewQueue() : []);
   const [announcements, setAnnouncements] = React.useState([]);
   const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
 

@@ -57,7 +57,10 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
   };
 
   const roleBadgeLabel = () => {
-    if (isStudent) return currentUser?.studentId || 'Sinh viên';
+    if (isStudent) {
+      if (roleKey === 'sv_ngoai_ky') return 'Sinh viên (Ngoài kỳ)';
+      return currentUser?.studentId ? `${currentUser.studentId} · Trong kỳ` : 'Sinh viên trong kỳ';
+    }
     if (isAdmin || roleKey === 'thay_phuc') return 'Quản trị viên';
     if (isPartner) return 'Đối tác DN';
     return 'Giảng viên';
