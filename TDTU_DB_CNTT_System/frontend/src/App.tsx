@@ -342,31 +342,8 @@ const AppInner = () => {
     return false;
   }, [currentUser]);
 
-  // Xác định học kỳ thực tế:
-  // - Giảng viên & Quản trị viên: Hiển thị đầy đủ thông tin sinh viên và thời gian của học kỳ được kích hoạt/chọn
-  // - Sinh viên: Chỉ khi sinh viên có trong danh sách kỳ đó thì mới hiện theo, không thì chỉ hiển thị kỳ hiện tại hoặc kỳ sinh viên có trong danh sách
-  const effectiveSemester = React.useMemo(() => {
-    const isStudent = currentUser?.role === 'student';
-    if (!isStudent) return activeSemester;
-
-    const sid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
-    if (!sid || sid === '52100999') return activeSemester;
-
-    if (isStudentEnrolledInSemester(sid, activeSemester)) {
-      return activeSemester;
-    }
-
-    const semList = window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [];
-    const allSemesters = (Array.isArray(semList) && semList.length > 0)
-      ? semList.map(s => s.id)
-      : ['hk2_2026_2027', 'hk1_2026_2027', 'hk2_2025_2026', 'hk1_2025_2026'];
-    for (const s of allSemesters) {
-      if (isStudentEnrolledInSemester(sid, s)) {
-        return s;
-      }
-    }
-    return 'hk1_2026_2027';
-  }, [currentUser, activeSemester, isStudentEnrolledInSemester]);
+  // Xác định học kỳ thực tế: Luôn đồng bộ chuẩn theo học kỳ activeSemester đang được chọn trên thanh điều hướng
+  const effectiveSemester = activeSemester || 'hk1_2026_2027';
 
   // Chống can thiệp URL & LocalStorage để chuyển đổi tài khoản hoặc vượt quyền trái phép
   React.useEffect(() => {

@@ -330,7 +330,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       console.warn('Cannot fetch remote declaration, using fallback draft:', err);
     }
 
-    if (decl) {
+    if (decl && (!decl.semester || decl.semester === targetSem)) {
       setIsEditingExisting(true);
       setServerDeclaration(decl);
       let hist = [];
@@ -416,9 +416,38 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       return;
     }
 
-    // Khôi phục bản nháp nếu chưa có hồ sơ nộp
+    // Nếu học kỳ đang chọn sinh viên CHƯA nộp khai báo: XÓA SẠCH toàn bộ form và hồ sơ cũ
+    setIsEditingExisting(false);
+    setServerDeclaration(null);
+    setDeclarationHistory([]);
+    setInternshipStatus('has_company');
+    setTaxCode('');
+    setCompanyInfo({
+      name: '',
+      address: '',
+      representative: '',
+      taxDepartment: '',
+      status: '',
+      updatedAt: '',
+      orgType: '',
+    });
+    setContactPerson('');
+    setContactPhone('');
+    setPosition('');
+    setDesiredPosition('');
+    setDepartment('');
+    setSupportReason('Chưa tìm được doanh nghiệp phù hợp với định hướng');
+    setDesiredLocation('');
+    setPendingCompany('');
+    setInterviewProgress('');
+    setSupportNote('');
+    setTaxConfirmed(false);
+    setFinalConfirmed(false);
+    setSavedDraft(null);
+
+    // Khôi phục bản nháp nếu có bản nháp của đúng học kỳ này
     try {
-      const raw = localStorage.getItem('tdtu_decl_draft_' + studentId);
+      const raw = localStorage.getItem(`tdtu_decl_draft_${targetSem}_${studentId}`) || (targetSem === 'hk1_2026_2027' ? localStorage.getItem('tdtu_decl_draft_' + studentId) : null);
       if (raw) {
         const d = JSON.parse(raw);
         setSavedDraft(d);
@@ -443,7 +472,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (d.savedAt) setLastSavedTime(d.savedAt);
       }
     } catch {}
-  }, [studentId]);
+  }, [studentId, activeSemester]);
 
   const viewModeRef = React.useRef(viewMode);
   React.useEffect(() => {
@@ -533,7 +562,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         try { bc.close(); } catch {}
       }
     };
-  }, [loadExistingOrDraft, studentId]);
+  }, [loadExistingOrDraft, studentId, activeSemester]);
 
   // Navigation handlers
   const handleNextStep = () => {
@@ -1110,19 +1139,26 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         interviewCommitment,
         supportCommitment,
         savedAt: new Date().toLocaleTimeString('vi-VN'),
+        semester: activeSemester || 'hk1_2026_2027'
       };
-      localStorage.setItem('tdtu_decl_draft_' + studentId, JSON.stringify(draft));
+      const targetSem = activeSemester || 'hk1_2026_2027';
+      localStorage.setItem(`tdtu_decl_draft_${targetSem}_${studentId}`, JSON.stringify(draft));
+      if (targetSem === 'hk1_2026_2027') {
+        localStorage.setItem('tdtu_decl_draft_' + studentId, JSON.stringify(draft));
+      }
       setLastSavedTime(draft.savedAt);
       setSavedDraft(draft);
     } catch {}
   };
 
-  // Chuẩn bị danh sách hồ sơ cho Bảng (Table records)
+  // Chuẩn bị danh sách hồ sơ cho Bảng (Table records) - Đúng học kỳ đang chọn
   const activeDeclarationList = React.useMemo(() => {
     const list = [];
-    if (serverDeclaration || (companyInfo.name && isEditingExisting)) {
+    const targetSem = activeSemester || 'hk1_2026_2027';
+    const isMatchingSem = serverDeclaration && (!serverDeclaration.semester || serverDeclaration.semester === targetSem);
+    if (isMatchingSem) {
       list.push({
-        id: serverDeclaration?.id || `dec-${studentId}`,
+        id: serverDeclaration?.id || `dec-${studentId}-${targetSem}`,
         stt: 1,
         isCurrent: true,
         courseCode: isDualCourse ? 'KTCN-TSNN' : selectedCourses.includes('TSNN') ? 'TSNN' : 'KTCN',
@@ -1158,7 +1194,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
           return 'Đang tìm kiếm / Chờ PV';
         })(),
         submissionTime: actualSubmissionTime || new Date().toLocaleString('vi-VN'),
-        receiptId: `KBTT-${studentId}-20261`,
+        receiptId: `KBTT-${studentId}-${targetSem}`,
         cvDriveLink: cvDriveLink || serverDeclaration?.cvDriveLink || '',
         supportReason: supportReason || serverDeclaration?.supportReason || '',
         desiredLocation: desiredLocation || serverDeclaration?.desiredLocation || '',
@@ -1169,7 +1205,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       });
     }
     return list;
-  }, [serverDeclaration, companyInfo, isEditingExisting, isDualCourse, selectedCourses, courseDisplay, internshipStatus, statusLabel, studentId, taxCode, contactPerson, contactPhone, position, desiredPosition, actualSubmissionTime, cvDriveLink, supportReason, desiredLocation, supportNote, pendingCompany]);
+  }, [serverDeclaration, companyInfo, isEditingExisting, isDualCourse, selectedCourses, courseDisplay, internshipStatus, statusLabel, studentId, taxCode, contactPerson, contactPhone, position, desiredPosition, actualSubmissionTime, cvDriveLink, supportReason, desiredLocation, supportNote, pendingCompany, activeSemester]);
 
   if (!canRead) {
     return (
@@ -1264,7 +1300,11 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold tracking-wider text-sky-200 uppercase">
-              <span>Học kỳ HK1 2026–2027 · Khoa CNTT - ĐH Tôn Đức Thắng</span>
+              <span>{(() => {
+                const sems = window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [];
+                const found = sems.find((s: any) => s.id === activeSemester);
+                return found?.name || (activeSemester === 'hk2_2026_2027' ? 'Học kỳ 2 / 2026–2027' : 'Học kỳ 1 / 2026–2027');
+              })()} · Khoa CNTT - ĐH Tôn Đức Thắng</span>
             </div>
             <h2 className="text-xl md:text-2xl font-black">
               Sinh viên: {studentName} ({studentId})

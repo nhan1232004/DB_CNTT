@@ -62,13 +62,20 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
           setCvLink(window.ApiClient.getStudentCvLink(studentId));
         }
         if (window.ApiClient.getStudentDeclaration) {
-          const local = window.ApiClient.getStudentDeclaration(studentId);
-          if (local) setDeclaration(local);
+          const local = window.ApiClient.getStudentDeclaration(studentId, activeSemester);
+          if (local && (!local.semester || local.semester === activeSemester)) {
+            setDeclaration(local);
+          } else {
+            setDeclaration(null);
+          }
         }
         if (window.ApiClient.getDeclaration) {
-          window.ApiClient.getDeclaration(studentId).then(remoteDecl => {
-            if (remoteDecl && isMountedRef.current) {
-              setDeclaration(prev => ({ ...prev, ...remoteDecl }));
+          window.ApiClient.getDeclaration(studentId, activeSemester).then(remoteDecl => {
+            const d = remoteDecl?.data || remoteDecl;
+            if (d && (!d.semester || d.semester === activeSemester) && isMountedRef.current) {
+              setDeclaration(d);
+            } else if (isMountedRef.current) {
+              setDeclaration(null);
             }
           }).catch(() => {});
         }

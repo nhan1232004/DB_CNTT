@@ -215,14 +215,18 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
       }
 
       if (isStudent && window.ApiClient) {
-        const cached = window.ApiClient.getStudentDeclaration ? window.ApiClient.getStudentDeclaration(studentId) : null;
-        if (cached) setDeclaration(cached);
+        const cached = window.ApiClient.getStudentDeclaration ? window.ApiClient.getStudentDeclaration(studentId, activeSemester) : null;
+        if (cached && (!cached.semester || cached.semester === activeSemester)) {
+          setDeclaration(cached);
+        } else {
+          setDeclaration(null);
+        }
         if (window.ApiClient.getDeclaration) {
-          window.ApiClient.getDeclaration(studentId).then(fresh => {
+          window.ApiClient.getDeclaration(studentId, activeSemester).then(fresh => {
             const d = fresh?.data || fresh;
-            if (d && (d.internshipStatus || d.companyName)) {
+            if (d && (d.internshipStatus || d.companyName) && (!d.semester || d.semester === activeSemester)) {
               setDeclaration(d);
-            } else if (!cached) {
+            } else if (!cached || (cached.semester && cached.semester !== activeSemester)) {
               setDeclaration(null);
             }
           }).catch(() => {});
