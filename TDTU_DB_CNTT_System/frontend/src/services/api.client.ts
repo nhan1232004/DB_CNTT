@@ -577,15 +577,30 @@ class ApiClient {
           snapshot.forEach(doc => {
             const data = doc.data();
             if (doc.id && data) {
-              const sid = String(doc.id).trim().toUpperCase();
-              localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(data));
-              localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
+              let declSem = data.semester;
+              let sid = String(data.studentId || data.mssv || '').trim().toUpperCase();
+              if (doc.id.includes('_')) {
+                const parts = doc.id.split('_');
+                if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                  declSem = parts.slice(0, parts.length - 1).join('_');
+                  if (!sid) sid = parts[parts.length - 1].trim().toUpperCase();
+                }
+              }
+              if (!sid) sid = String(doc.id).trim().toUpperCase();
+              if (!declSem) declSem = 'hk1_2026_2027';
+
+              localStorage.setItem(`tdtu_decl_${declSem}_${sid}`, JSON.stringify(data));
+              if (declSem === 'hk1_2026_2027') {
+                localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(data));
+                localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
+              }
               if (data.cvDriveLink) {
                 ApiClient.setCachedCv(sid, data.cvDriveLink);
               }
 
-              // Auto-enrichment: Cập nhật trực tiếp vào live students memory cache
-              if (Array.isArray(cachedStuds) && cachedStuds.length > 0) {
+              // Auto-enrichment: Chỉ cập nhật vào live students memory cache nếu học kỳ khớp với học kỳ active hiện tại
+              const curSem = ApiClient.getActiveSemester ? ApiClient.getActiveSemester() : 'hk1_2026_2027';
+              if (declSem === curSem && Array.isArray(cachedStuds) && cachedStuds.length > 0) {
                 const sIdx = cachedStuds.findIndex(s => String(s.mssv || s.studentId || s.id || '').toUpperCase() === sid);
                 if (sIdx !== -1) {
                   const s = cachedStuds[sIdx];
@@ -1978,16 +1993,40 @@ class ApiClient {
         if (declSnap && !declSnap.empty) {
           declSnap.forEach(d => {
             const dData = d.data();
-            const dSid = String(d.id || dData.studentId || '').trim().toUpperCase();
-            if (dSid) firestoreDecls.set(dSid, dData);
+            let dSem = dData?.semester;
+            let dSid = String(dData?.studentId || dData?.mssv || '').trim().toUpperCase();
+            if (d.id.includes('_')) {
+              const parts = d.id.split('_');
+              if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                dSem = parts.slice(0, parts.length - 1).join('_');
+                if (!dSid) dSid = parts[parts.length - 1].trim().toUpperCase();
+              }
+            }
+            if (!dSid) dSid = String(d.id).trim().toUpperCase();
+            if (!dSem) dSem = 'hk1_2026_2027';
+
+            // Chỉ đưa hồ sơ khai báo vào map nếu đúng thuộc học kỳ đang truy vấn
+            if (dSem === semester && dSid) {
+              firestoreDecls.set(dSid, dData);
+            }
           });
         }
 
         if (certSnap && !certSnap.empty) {
           certSnap.forEach(c => {
             const cData = c.data();
-            const cSid = String(cData.studentId || '').trim().toUpperCase();
-            if (cSid && !firestoreCerts.has(cSid)) {
+            let cSem = cData?.semester;
+            let cSid = String(cData.studentId || c.id || '').trim().toUpperCase();
+            if (c.id.includes('_')) {
+              const parts = c.id.split('_');
+              if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                cSem = parts.slice(0, parts.length - 1).join('_');
+                if (!cSid) cSid = parts[parts.length - 1].trim().toUpperCase();
+              }
+            }
+            if (!cSem) cSem = 'hk1_2026_2027';
+
+            if (cSem === semester && cSid && !firestoreCerts.has(cSid)) {
               firestoreCerts.set(cSid, cData);
             }
           });
@@ -2001,12 +2040,26 @@ class ApiClient {
         const sid = String(s.studentId || s.mssv || s.id || '').trim().toUpperCase();
         if (!sid) return s;
 
-        let decl = firestoreDecls.get(sid) || s.declarationData;
+        let decl = firestoreDecls.get(sid);
+        if (!decl && s.declarationData) {
+          const sDeclSem = s.declarationData.semester || s.semester || 'hk1_2026_2027';
+          if (sDeclSem === semester) {
+            decl = s.declarationData;
+          }
+        }
         if (!decl) {
           try {
-            const raw = localStorage.getItem('tdtu_decl_' + sid);
-            if (raw) {
-              decl = JSON.parse(raw);
+            const rawSem = localStorage.getItem(`tdtu_decl_${semester}_${sid}`);
+            if (rawSem) {
+              decl = JSON.parse(rawSem);
+            } else if (semester === 'hk1_2026_2027') {
+              const raw = localStorage.getItem('tdtu_decl_' + sid);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (!parsed.semester || parsed.semester === semester) {
+                  decl = parsed;
+                }
+              }
             }
           } catch {}
         }
@@ -2014,7 +2067,9 @@ class ApiClient {
         const certObj = firestoreCerts.get(sid);
         const certDisplay = certObj ? `${certObj.name || certObj.certType || 'Chứng chỉ'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert);
 
-        const compCandidate = decl?.companyName || s.companyName || (s.company !== 'Chưa có' ? s.company : '');
+        // Chỉ chấp nhận tên công ty từ s nếu s thuộc đúng học kỳ đang xem
+        const isCurrentSemStudent = (s.semester || 'hk1_2026_2027') === semester;
+        const compCandidate = decl?.companyName || (isCurrentSemStudent ? (s.companyName || (s.company !== 'Chưa có' ? s.company : '')) : '');
         const hasRealComp = Boolean(
           compCandidate && compCandidate !== 'Chưa có' && compCandidate !== '—' && compCandidate !== '-' &&
           compCandidate !== 'null' && compCandidate !== 'undefined' &&
@@ -3663,18 +3718,23 @@ class ApiClient {
           if (declaration.foreignLanguage && declaration.foreignScore) {
             students[idx].cert = `${declaration.foreignLanguage} ${declaration.foreignScore}`;
           }
-          students[idx].declarationData = declaration;
+          students[idx].declarationData = { ...declaration, semester: targetSem };
           this.saveLiveStudents(students, targetSem);
           try {
             localStorage.setItem('tdtu_imported_students_' + targetSem, JSON.stringify(students));
+            localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify({ ...declaration, semester: targetSem }));
+            if (targetSem === 'hk1_2026_2027') {
+              localStorage.setItem('tdtu_decl_' + sid, JSON.stringify({ ...declaration, semester: targetSem }));
+            }
           } catch {}
           if (window.FirebaseService?.db) {
             try {
               window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(students[idx], { merge: true });
               if (targetSem === 'hk1_2026_2027') {
                 window.FirebaseService.db.collection('tdtu_students').doc(sid).set(students[idx], { merge: true });
+                window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true });
               }
-              window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(declaration, { merge: true });
+              window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true });
             } catch {}
           }
         }
@@ -3683,7 +3743,11 @@ class ApiClient {
       // Đồng bộ trực tiếp lên Firebase Firestore nếu có db
       if (window.FirebaseService?.db) {
         try {
-          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(declaration, { merge: true });
+          const targetSem = semester || this.getActiveSemester() || 'hk1_2026_2027';
+          window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true });
+          }
         } catch {}
       }
 
@@ -3706,39 +3770,65 @@ class ApiClient {
     return res || { success: true, data: { declaration } };
   }
 
-  static async getDeclaration(studentId) {
+  static async getDeclaration(studentId, semester = null) {
     const sid = String(studentId || '').trim().toUpperCase();
+    const targetSem = semester || (this.getActiveSemester ? this.getActiveSemester() : 'hk1_2026_2027');
     try {
-      const res = await this.request(`/api/internship/declaration/${sid}`);
+      const res = await this.request(`/api/internship/declaration/${sid}?semester=${targetSem}`);
       if (res) {
         const d = res?.data || res;
-        try { localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d)); } catch {}
+        try {
+          localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify(d));
+          if (targetSem === 'hk1_2026_2027') {
+            localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d));
+          }
+        } catch {}
         return { ...d, data: d };
       }
     } catch {}
 
     try {
-      const saved = localStorage.getItem('tdtu_decl_' + sid);
-      if (saved) {
-        const d = JSON.parse(saved);
+      const savedSem = localStorage.getItem(`tdtu_decl_${targetSem}_${sid}`);
+      if (savedSem) {
+        const d = JSON.parse(savedSem);
         return { ...d, data: d };
+      }
+      if (targetSem === 'hk1_2026_2027') {
+        const saved = localStorage.getItem('tdtu_decl_' + sid);
+        if (saved) {
+          const d = JSON.parse(saved);
+          if (!d.semester || d.semester === targetSem) {
+            return { ...d, data: d };
+          }
+        }
       }
     } catch {}
 
     if (window.FirebaseService?.db) {
       try {
-        const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
-        if (doc.exists) {
-          const d = doc.data();
-          try { localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d)); } catch {}
+        // Thử doc theo semester trước
+        const semDoc = await window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).get();
+        if (semDoc.exists) {
+          const d = semDoc.data();
+          try { localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify(d)); } catch {}
           return { ...d, data: d };
+        }
+        if (targetSem === 'hk1_2026_2027') {
+          const doc = await window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get();
+          if (doc.exists) {
+            const d = doc.data();
+            if (!d.semester || d.semester === 'hk1_2026_2027') {
+              try { localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(d)); } catch {}
+              return { ...d, data: d };
+            }
+          }
         }
       } catch {}
     }
 
     // Fallback từ live students
     try {
-      const fallback = this.getStudentDeclaration(sid);
+      const fallback = this.getStudentDeclaration(sid, targetSem);
       if (fallback) return { ...fallback, data: fallback };
     } catch {}
 
@@ -4195,45 +4285,58 @@ class ApiClient {
     return null;
   }
 
-  static getStudentDeclaration(studentId = '522H0045') {
+  static getStudentDeclaration(studentId = '522H0045', semester = null) {
     try {
       const sid = String(studentId || '').trim().toUpperCase();
+      const targetSem = semester || (this.getActiveSemester ? this.getActiveSemester() : 'hk1_2026_2027');
       const enrolled = this.getStudentEnrolledCourse(sid);
-      const saved = localStorage.getItem('tdtu_decl_' + sid) || localStorage.getItem('tdtu_decl_' + studentId);
+
+      // 1. Kiểm tra key theo học kỳ
+      let saved = localStorage.getItem(`tdtu_decl_${targetSem}_${sid}`);
+      if (!saved && targetSem === 'hk1_2026_2027') {
+        saved = localStorage.getItem('tdtu_decl_' + sid) || localStorage.getItem('tdtu_decl_' + studentId);
+      }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
-          const isComp = parsed.internshipStatus === 'has_company';
-          const isWait = parsed.internshipStatus === 'interviewing' || parsed.noCompanyOption === 'self';
-          const isSupp = parsed.internshipStatus === 'need_support' || parsed.noCompanyOption === 'faculty';
-          const statusLabel = isComp
-            ? 'Đã có nơi thực tập'
-            : (isWait ? 'Đang tìm / Chờ phỏng vấn' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa khai báo'));
+          // Bỏ qua nếu là declaration của học kỳ khác
+          if (parsed.semester && parsed.semester !== targetSem) {
+            // Không thuộc học kỳ này
+          } else {
+            const isComp = parsed.internshipStatus === 'has_company';
+            const isWait = parsed.internshipStatus === 'interviewing' || parsed.noCompanyOption === 'self';
+            const isSupp = parsed.internshipStatus === 'need_support' || parsed.noCompanyOption === 'faculty';
+            const statusLabel = isComp
+              ? 'Đã có nơi thực tập'
+              : (isWait ? 'Đang tìm / Chờ phỏng vấn' : (isSupp ? 'Cần Khoa hỗ trợ' : 'Chưa khai báo'));
 
-          return {
-            ...parsed,
-            studentId: sid,
-            statusLabel: parsed.statusLabel || statusLabel,
-            internshipStatus: parsed.internshipStatus || (isComp ? 'has_company' : (isWait ? 'interviewing' : 'need_support')),
-            selectedCourses: enrolled?.courses || parsed.selectedCourses || ['KTCN'],
-            confirmedAt: parsed.confirmedAt || parsed.submittedAt || new Date().toLocaleDateString('vi-VN')
-          };
+            return {
+              ...parsed,
+              studentId: sid,
+              semester: targetSem,
+              statusLabel: parsed.statusLabel || statusLabel,
+              internshipStatus: parsed.internshipStatus || (isComp ? 'has_company' : (isWait ? 'interviewing' : 'need_support')),
+              selectedCourses: enrolled?.courses || parsed.selectedCourses || ['KTCN'],
+              confirmedAt: parsed.confirmedAt || parsed.submittedAt || new Date().toLocaleDateString('vi-VN')
+            };
+          }
         }
       }
 
-      // Fallback: tìm trong live students cache
-      const cached = localStorage.getItem(this.liveStudentsKey) || localStorage.getItem('tdtu_imported_students_hk1_2026_2027');
+      // Fallback: tìm trong live students cache của đúng targetSem
+      const cached = localStorage.getItem('tdtu_imported_students_' + targetSem) || (targetSem === 'hk1_2026_2027' ? localStorage.getItem(this.liveStudentsKey) : null);
       if (cached) {
         const arr = JSON.parse(cached);
         if (Array.isArray(arr)) {
           const found = arr.find(s => String(s.mssv || s.studentId || '').toUpperCase() === sid);
-          if (found?.declarationData) {
+          if (found?.declarationData && (found.declarationData.semester || targetSem) === targetSem) {
             return {
               ...found.declarationData,
-              studentId: sid
+              studentId: sid,
+              semester: targetSem
             };
           }
-          if (found && (found.company || found.status)) {
+          if (found && (found.company || found.status) && (found.semester || 'hk1_2026_2027') === targetSem) {
             const hasRealComp = Boolean(
               found.company && found.company !== 'Chưa có' && found.company !== '—' &&
               !found.company.includes('hỗ trợ') && !found.company.includes('chờ') && !found.company.includes('Khoa CNTT')
@@ -4243,6 +4346,7 @@ class ApiClient {
             if (hasRealComp || isWait || isSupp) {
               return {
                 studentId: sid,
+                semester: targetSem,
                 companyName: found.company || '',
                 position: found.position || '',
                 contactPerson: found.contactPerson || found.mentorName || '',

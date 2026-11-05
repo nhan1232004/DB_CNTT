@@ -378,11 +378,11 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         return true;
       });
 
-      // 1. Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên
+      // 1. Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên theo đúng học kỳ
       let allCerts = [];
       if (window.ApiClient?.fetchAllCertificates) {
         try {
-          allCerts = await window.ApiClient.fetchAllCertificates();
+          allCerts = await window.ApiClient.fetchAllCertificates(activeSemester);
         } catch {}
       }
       const certsByStudent = new Map();
@@ -396,7 +396,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         }
       }
 
-      // 2. Quét toàn bộ khai báo từ Cloud Firestore để đồng bộ giữa Sinh viên và Giảng viên
+      // 2. Quét toàn bộ khai báo từ Cloud Firestore để đồng bộ giữa Sinh viên và Giảng viên (Đúng học kỳ)
       const declMap = new Map();
       const firestoreStudentsMap = new Map();
       if (window.FirebaseService?.db) {
@@ -405,8 +405,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           if (declSnap && !declSnap.empty) {
             declSnap.forEach((doc: any) => {
               const data = doc.data();
-              const dsid = String(doc.id || data.studentId || '').trim().toUpperCase();
-              if (dsid) declMap.set(dsid, data);
+              let dSem = data?.semester;
+              let dsid = String(data?.studentId || data?.mssv || '').trim().toUpperCase();
+              if (doc.id.includes('_')) {
+                const parts = doc.id.split('_');
+                if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                  dSem = parts.slice(0, parts.length - 1).join('_');
+                  if (!dsid) dsid = parts[parts.length - 1].trim().toUpperCase();
+                }
+              }
+              if (!dsid) dsid = String(doc.id).trim().toUpperCase();
+              if (!dSem) dSem = 'hk1_2026_2027';
+
+              if (dSem === activeSemester && dsid) {
+                declMap.set(dsid, data);
+              }
             });
           }
         } catch (e) {
@@ -418,8 +431,21 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           if (stSnap && !stSnap.empty) {
             stSnap.forEach((doc: any) => {
               const data = doc.data();
-              const dsid = String(doc.id || data.studentId || data.mssv || '').trim().toUpperCase();
-              if (dsid) firestoreStudentsMap.set(dsid, data);
+              let sSem = data?.semester;
+              let dsid = String(data?.studentId || data?.mssv || '').trim().toUpperCase();
+              if (doc.id.includes('_')) {
+                const parts = doc.id.split('_');
+                if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                  sSem = parts.slice(0, parts.length - 1).join('_');
+                  if (!dsid) dsid = parts[parts.length - 1].trim().toUpperCase();
+                }
+              }
+              if (!dsid) dsid = String(doc.id).trim().toUpperCase();
+              if (!sSem) sSem = 'hk1_2026_2027';
+
+              if (sSem === activeSemester && dsid) {
+                firestoreStudentsMap.set(dsid, data);
+              }
             });
           }
         } catch (e) {
@@ -436,19 +462,33 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           ? studentCertsList.map((c: any) => `${c.name || 'CC'} ${c.score || ''}`.trim()).join(' · ')
           : (certObj ? `${certObj.name || 'CC'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert));
 
-        // ƯU TIÊN SỐ 1: Khai báo mới nhất từ localStorage hoặc Cloud Firestore
+        // ƯU TIÊN SỐ 1: Khai báo mới nhất từ localStorage hoặc Cloud Firestore (đúng học kỳ)
         let clientDecl = null;
         try {
-          const raw = localStorage.getItem('tdtu_decl_' + sid);
-          if (raw) clientDecl = JSON.parse(raw);
+          const rawSem = localStorage.getItem(`tdtu_decl_${activeSemester}_${sid}`);
+          if (rawSem) {
+            clientDecl = JSON.parse(rawSem);
+          } else if (activeSemester === 'hk1_2026_2027') {
+            const raw = localStorage.getItem('tdtu_decl_' + sid);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (!parsed.semester || parsed.semester === activeSemester) {
+                clientDecl = parsed;
+              }
+            }
+          }
         } catch {}
         const firestoreDecl = declMap.get(sid);
         const fsStudent = firestoreStudentsMap.get(sid);
-        let decl = clientDecl || firestoreDecl || fsStudent?.declarationData;
+        let decl = clientDecl || firestoreDecl || (fsStudent?.semester === activeSemester ? fsStudent?.declarationData : null);
 
         const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
 
-        const companyCandidate = decl?.companyName || (isRealCompany(fsStudent?.companyName) ? fsStudent?.companyName : (isRealCompany(fsStudent?.company) ? fsStudent?.company : '')) || (isRealCompany(s.companyName) ? s.companyName : (isRealCompany(s.company) ? s.company : ''));
+        const isCurrentSemStudent = (s.semester || 'hk1_2026_2027') === activeSemester;
+        const companyCandidate = decl?.companyName || (isCurrentSemStudent ? (
+          (isRealCompany(fsStudent?.companyName) ? fsStudent?.companyName : (isRealCompany(fsStudent?.company) ? fsStudent?.company : '')) ||
+          (isRealCompany(s.companyName) ? s.companyName : (isRealCompany(s.company) ? s.company : ''))
+        ) : '');
         const hasValidCompany = isRealCompany(companyCandidate);
 
         const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();

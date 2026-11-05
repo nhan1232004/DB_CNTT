@@ -317,12 +317,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
   // 2. Khôi phục hồ sơ đã nộp từ Server hoặc localStorage
   const loadExistingOrDraft = React.useCallback(async () => {
     let decl = null;
+    const targetSem = activeSemester || (window.ApiClient?.getActiveSemester ? window.ApiClient.getActiveSemester() : 'hk1_2026_2027');
     try {
       if (window.ApiClient?.getStudentDeclaration) {
-        decl = window.ApiClient.getStudentDeclaration(studentId);
+        decl = window.ApiClient.getStudentDeclaration(studentId, targetSem);
       }
       if (!decl && window.ApiClient?.getDeclaration) {
-        const res = await window.ApiClient.getDeclaration(studentId);
+        const res = await window.ApiClient.getDeclaration(studentId, targetSem);
         decl = res?.data || res;
       }
     } catch (err) {
@@ -623,12 +624,17 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         pendingCompany: pendingCompany.trim(),
         interviewProgress: interviewProgress.trim(),
         supportNote: supportNote.trim(),
-        isConfirmed: true
+        isConfirmed: true,
+        semester: activeSemester || 'hk1_2026_2027'
       };
 
       const sid = String(studentId || '').trim().toUpperCase();
+      const targetSem = activeSemester || 'hk1_2026_2027';
       try {
-        localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify(payload));
+        if (targetSem === 'hk1_2026_2027') {
+          localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        }
         localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
 
         const updateCachedList = (key: string) => {
@@ -644,22 +650,25 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                 list[idx].status = 'Đang chờ PV/KQPV';
                 list[idx].noCompanyOption = 'self';
                 list[idx].declarationData = payload;
+                list[idx].semester = targetSem;
                 list[idx].updated = new Date().toLocaleDateString('vi-VN');
                 localStorage.setItem(key, JSON.stringify(list));
               }
             }
           }
         };
-        updateCachedList('tdtu_imported_students_' + (activeSemester || 'hk1_2026_2027'));
-        if (activeSemester === 'hk1_2026_2027') {
+        updateCachedList('tdtu_imported_students_' + targetSem);
+        if (targetSem === 'hk1_2026_2027') {
           updateCachedList('tdtu_live_students');
         }
       } catch {}
 
       if (window.FirebaseService?.db) {
         try {
-          const targetSem = activeSemester || 'hk1_2026_2027';
-          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set(payload, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          }
           const studentUpdateData = {
             company: payload.companyName,
             companyName: payload.companyName,
@@ -911,12 +920,17 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         position,
         department,
         supportNote,
-        isConfirmed: finalConfirmed
+        isConfirmed: finalConfirmed,
+        semester: activeSemester || 'hk1_2026_2027'
       };
 
       const sid = String(studentId || '').trim().toUpperCase();
+      const targetSem = activeSemester || 'hk1_2026_2027';
       try {
-        localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify(payload));
+        if (targetSem === 'hk1_2026_2027') {
+          localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(payload));
+        }
         localStorage.setItem('tdtu_decl_last_sync', String(Date.now()));
 
         const updateCachedList = (key: string) => {
@@ -943,22 +957,25 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                   list[idx].hasChangedFromSupport = 1;
                 }
                 list[idx].declarationData = payload;
+                list[idx].semester = targetSem;
                 list[idx].updated = new Date().toLocaleDateString('vi-VN');
                 localStorage.setItem(key, JSON.stringify(list));
               }
             }
           }
         };
-        updateCachedList('tdtu_imported_students_' + (activeSemester || 'hk1_2026_2027'));
-        if (activeSemester === 'hk1_2026_2027') {
+        updateCachedList('tdtu_imported_students_' + targetSem);
+        if (targetSem === 'hk1_2026_2027') {
           updateCachedList('tdtu_live_students');
         }
       } catch {}
 
       if (window.FirebaseService?.db) {
         try {
-          const targetSem = activeSemester || 'hk1_2026_2027';
-          window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set(payload, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
+          }
           const studentUpdateData = {
             company: payload.companyName,
             companyName: payload.companyName,
