@@ -718,7 +718,7 @@ const AppInner = () => {
 
               {activeTab === 'export' && (
                 window.DocumentsPage ? (
-                  <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                  <window.DocumentsPage currentUser={currentUser} activeSemester={activeSemester} onNavigateTab={setActiveTab} />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Xuất báo cáo...</div>
                 )
@@ -726,7 +726,7 @@ const AppInner = () => {
 
               {activeTab === 'documents' && (
                 window.DocumentsPage ? (
-                  <window.DocumentsPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                  <window.DocumentsPage currentUser={currentUser} activeSemester={activeSemester} onNavigateTab={setActiveTab} />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Báo cáo & Quyết định...</div>
                 )

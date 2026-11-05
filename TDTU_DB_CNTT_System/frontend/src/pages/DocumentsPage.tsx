@@ -4,9 +4,11 @@
 
 interface DocumentsPageProps {
   currentUser?: any;
+  activeSemester?: string;
+  onNavigateTab?: (tab: string) => void;
 }
 
-const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
+const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser, activeSemester = 'hk1_2026_2027', onNavigateTab }) => {
   // Chế độ làm việc: 'print_center' (Trung tâm In ấn Biểu mẫu Giảng viên) | 'table' (Quản lý dữ liệu sinh viên & Xuất Excel)
   const [viewMode, setViewMode] = React.useState('print_center');
 
@@ -43,10 +45,12 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
       setIsLoading(true);
       let rawList = [];
 
+      const targetSem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+
       // 1. Fetch from live API
       if (window.ApiClient && window.ApiClient.getStudents) {
         try {
-          const res = await window.ApiClient.getStudents({ semester: 'hk1_2026_2027' });
+          const res = await window.ApiClient.getStudents({ semester: targetSem });
           rawList = res?.data?.items || res?.items || res?.students || (Array.isArray(res) ? res : []);
         } catch (apiErr) {
           console.warn('[DocumentsPage] ApiClient.getStudents error, falling back:', apiErr);
@@ -56,7 +60,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
       // 2. Fallback to getLiveStudents if empty
       if ((!rawList || rawList.length === 0) && window.ApiClient && window.ApiClient.getLiveStudents) {
         try {
-          const fallback = await window.ApiClient.getLiveStudents('hk1_2026_2027');
+          const fallback = await window.ApiClient.getLiveStudents(targetSem);
           if (Array.isArray(fallback) && fallback.length > 0) {
             rawList = fallback;
           }
@@ -239,7 +243,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ currentUser }) => {
         try { bc.close(); } catch {}
       }
     };
-  }, [currentUser]);
+  }, [currentUser, activeSemester]);
 
   // Toggle selection
   const handleToggleSelect = (id) => {

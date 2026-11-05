@@ -241,7 +241,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         // Ưu tiên 1: Tìm trong danh sách sinh viên thực tế (getLiveStudents)
         if (window.ApiClient?.getLiveStudents) {
           try {
-            const list = await window.ApiClient.getLiveStudents('hk1_2026_2027');
+            const list = await window.ApiClient.getLiveStudents(activeSemester || 'hk1_2026_2027');
             const found = (list || []).find((s: any) => String(s.mssv || s.studentId || s.id || '').trim().toUpperCase() === normSid);
             if (found) {
               const extracted = extractCoursesFromRecord(found);
@@ -650,21 +650,29 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
             }
           }
         };
-        updateCachedList('tdtu_imported_students_hk1_2026_2027');
-        updateCachedList('tdtu_live_students');
+        updateCachedList('tdtu_imported_students_' + (activeSemester || 'hk1_2026_2027'));
+        if (activeSemester === 'hk1_2026_2027') {
+          updateCachedList('tdtu_live_students');
+        }
       } catch {}
 
       if (window.FirebaseService?.db) {
         try {
+          const targetSem = activeSemester || 'hk1_2026_2027';
           window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
-          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+          const studentUpdateData = {
             company: payload.companyName,
             companyName: payload.companyName,
             position: payload.position,
             status: 'Đang chờ PV/KQPV',
             noCompanyOption: 'self',
+            semester: targetSem,
             updated: new Date().toLocaleDateString('vi-VN')
-          }, { merge: true });
+          };
+          window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(studentUpdateData, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
+          }
         } catch {}
       }
 
@@ -772,21 +780,29 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
             }
           }
         };
-        updateCachedList('tdtu_imported_students_hk1_2026_2027');
-        updateCachedList('tdtu_live_students');
+        updateCachedList('tdtu_imported_students_' + (activeSemester || 'hk1_2026_2027'));
+        if (activeSemester === 'hk1_2026_2027') {
+          updateCachedList('tdtu_live_students');
+        }
       } catch {}
 
       if (window.FirebaseService?.db) {
         try {
+          const targetSem = activeSemester || 'hk1_2026_2027';
           window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
-          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+          const studentUpdateData = {
             company: payload.companyName,
             companyName: payload.companyName,
             position: payload.position,
             status: 'Cần Khoa hỗ trợ',
             noCompanyOption: 'faculty',
+            semester: targetSem,
             updated: new Date().toLocaleDateString('vi-VN')
-          }, { merge: true });
+          };
+          window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(studentUpdateData, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
+          }
         } catch {}
       }
 
@@ -933,14 +949,17 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
             }
           }
         };
-        updateCachedList('tdtu_imported_students_hk1_2026_2027');
-        updateCachedList('tdtu_live_students');
+        updateCachedList('tdtu_imported_students_' + (activeSemester || 'hk1_2026_2027'));
+        if (activeSemester === 'hk1_2026_2027') {
+          updateCachedList('tdtu_live_students');
+        }
       } catch {}
 
       if (window.FirebaseService?.db) {
         try {
+          const targetSem = activeSemester || 'hk1_2026_2027';
           window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set(payload, { merge: true });
-          window.FirebaseService.db.collection('tdtu_students').doc(sid).set({
+          const studentUpdateData = {
             company: payload.companyName,
             companyName: payload.companyName,
             taxCode: payload.taxCode,
@@ -956,8 +975,13 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
             noCompanyOption: null,
             hasChangedFromSupport: wasFacultySupport ? 1 : (serverDeclaration?.hasChangedFromSupport || 0),
             declarationData: payload,
+            semester: targetSem,
             updated: new Date().toLocaleDateString('vi-VN')
-          }, { merge: true });
+          };
+          window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(studentUpdateData, { merge: true });
+          if (targetSem === 'hk1_2026_2027') {
+            window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
+          }
         } catch {}
       }
 
