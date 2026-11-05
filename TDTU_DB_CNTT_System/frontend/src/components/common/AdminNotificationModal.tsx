@@ -20,7 +20,7 @@ const MAJOR_OPTIONS = [
   'Mạng máy tính và Truyền thông dữ liệu'
 ];
 
-const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSent }) => {
+const AdminNotificationModal = ({ isOpen, onClose, currentUser, activeSemester, onNotificationSent }) => {
   const [activeTab, setActiveTab] = React.useState('compose'); // 'compose' | 'history'
   const [targetAudience, setTargetAudience] = React.useState('all');
   const [targetMajor, setTargetMajor] = React.useState('Kỹ thuật phần mềm');
@@ -109,6 +109,7 @@ const AdminNotificationModal = ({ isOpen, onClose, currentUser, onNotificationSe
         content: content.trim(),
         priority,
         type,
+        semesterId: activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027',
         targetAudience,
         targetMajor: targetAudience === 'students_by_major' ? targetMajor : undefined,
         targetStudentId: targetAudience === 'specific_student' ? targetStudentId.trim().toUpperCase() : undefined,

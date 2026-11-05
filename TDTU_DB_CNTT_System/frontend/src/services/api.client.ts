@@ -430,10 +430,12 @@ class ApiClient {
             list = data.list;
           }
           if (Array.isArray(list) && list.length > 0) {
-            const existingIds = new Set(list.map((s: any) => s.id));
-            const merged = [...list];
+            const deletedIds = new Set(this.getDeletedSemesterIds());
+            const filtered = list.filter((s: any) => s && s.id && !deletedIds.has(String(s.id)));
+            const existingIds = new Set(filtered.map((s: any) => s.id));
+            const merged = [...filtered];
             for (const def of this.DEFAULT_SEMESTERS_REGISTRY) {
-              if (!existingIds.has(def.id)) {
+              if (!existingIds.has(def.id) && !deletedIds.has(String(def.id))) {
                 merged.push(def);
               }
             }
@@ -450,6 +452,18 @@ class ApiClient {
       }, err => {
         console.info('[Firestore Sync note - Semesters]: Chế độ bộ nhớ cục bộ.', err.message);
       });
+
+      // 1.3.2 Lắng nghe danh sách học kỳ đã xóa thời gian thực (tdtu_system/deleted_semesters)
+      db.collection('tdtu_system').doc('deleted_semesters').onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (Array.isArray(data?.ids)) {
+            const currentDeleted = new Set(this.getDeletedSemesterIds());
+            data.ids.forEach((id: any) => currentDeleted.add(String(id)));
+            localStorage.setItem('tdtu_deleted_semesters', JSON.stringify([...currentDeleted]));
+          }
+        }
+      }, () => {});
 
       // 1.4 Lắng nghe thông báo học vụ thời gian thực (tdtu_notifications)
       db.collection('tdtu_notifications').onSnapshot(snapshot => {
@@ -1399,6 +1413,7 @@ class ApiClient {
       content: payload.content,
       type: payload.type || 'announcement',
       priority: payload.priority || 'normal',
+      semesterId: payload.semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027',
       targetAudience: payload.targetAudience || 'all',
       targetMajor: payload.targetMajor,
       targetStudentId: payload.targetStudentId,
@@ -3905,22 +3920,81 @@ class ApiClient {
     }
   ];
 
+  static getDeletedSemesterIds(): string[] {
+    try {
+      const raw = localStorage.getItem('tdtu_deleted_semesters');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr.map(String);
+      }
+    } catch {}
+    return [];
+  }
+
+  static addDeletedSemesterId(id: string) {
+    if (!id) return;
+    const sId = String(id).trim();
+    const list = this.getDeletedSemesterIds();
+    if (!list.includes(sId)) {
+      list.push(sId);
+      try {
+        localStorage.setItem('tdtu_deleted_semesters', JSON.stringify(list));
+      } catch {}
+    }
+    if (window.FirebaseService?.db) {
+      try {
+        window.FirebaseService.db.collection('tdtu_system').doc('deleted_semesters').set({
+          ids: list,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      } catch {}
+    }
+  }
+
+  static deleteSemester(id: string) {
+    if (!id) return [];
+    const sId = String(id).trim();
+    this.addDeletedSemesterId(sId);
+
+    const current = this.getSemesters();
+    const updated = current.filter((s: any) => String(s.id) !== sId);
+    this.saveSemesters(updated);
+
+    try {
+      localStorage.removeItem(`tdtu_imported_students_${sId}`);
+      localStorage.removeItem(`tdtu_system_deadlines_${sId}`);
+    } catch {}
+
+    try {
+      const active = localStorage.getItem('tdtu_active_semester');
+      if (active === sId) {
+        localStorage.setItem('tdtu_active_semester', 'hk1_2026_2027');
+        window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: 'hk1_2026_2027' } }));
+      }
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: updated, semesters: updated } }));
+    return updated;
+  }
+
   static getSemesters() {
+    const deletedIds = new Set(this.getDeletedSemesterIds());
     try {
       const raw = localStorage.getItem('tdtu_semesters_list');
       if (raw) {
         const list = JSON.parse(raw);
         if (Array.isArray(list) && list.length > 0) {
-          const existingIds = new Set(list.map((s: any) => s.id));
+          const filtered = list.filter((s: any) => s && s.id && !deletedIds.has(String(s.id)));
+          const existingIds = new Set(filtered.map((s: any) => s.id));
           let modified = false;
-          const merged = [...list];
+          const merged = [...filtered];
           for (const def of this.DEFAULT_SEMESTERS_REGISTRY) {
-            if (!existingIds.has(def.id)) {
+            if (!existingIds.has(def.id) && !deletedIds.has(String(def.id))) {
               merged.push(def);
               modified = true;
             }
           }
-          if (modified) {
+          if (modified || filtered.length !== list.length) {
             try {
               localStorage.setItem('tdtu_semesters_list', JSON.stringify(merged));
             } catch {}
@@ -3929,7 +4003,7 @@ class ApiClient {
         }
       }
     } catch {}
-    return this.DEFAULT_SEMESTERS_REGISTRY;
+    return this.DEFAULT_SEMESTERS_REGISTRY.filter((s: any) => !deletedIds.has(String(s.id)));
   }
 
   static saveSemesters(list: any[]) {
@@ -5657,6 +5731,7 @@ class ApiClient {
     const item = {
       ...announcement,
       id,
+      semesterId: announcement.semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027',
       date: new Date().toLocaleDateString('vi-VN'),
       createdAt: new Date().toISOString()
     };

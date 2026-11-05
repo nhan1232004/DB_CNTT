@@ -1,7 +1,7 @@
 // SemestersPage.jsx - Quản lý Học kỳ & Hạn chót Học vụ Component
 // Chức năng 9 theo Ma trận Phân quyền Nguyên tố (Thầy Phúc: 2310, Giảng viên: 22, SV ngoài kỳ: 22, SV trong kỳ: 1)
 
-const SemestersPage = ({ currentUser, onNavigateTab }) => {
+const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }) => {
   const roleKey = window.PrimeRbac?.getUserRoleKey?.(currentUser) || 'thay_phuc';
   const mask = window.PrimeRbac?.getFeatureMask?.(currentUser, 'semesters') || 2310;
 
@@ -47,79 +47,75 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
 
   // Danh sách các học kỳ trong hệ thống
   const [semestersList, setSemestersList] = React.useState(() => {
-    let list = [
-      {
-        id: 'hk2_2026_2027',
-        name: 'Học kỳ 2 / 2026–2027',
-        academicYear: '2026–2027',
-        isActive: false,
-        declarationDeadline: '2026-11-30',
-        certDeadline: '2026-12-15',
-        reviewDeadline: '2026-12-25',
-        reportDeadline: '2027-02-10',
-        regulationNote: '',
-        totalStudents: 0,
-        enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
-      },
-      {
-        id: 'hk1_2026_2027',
-        name: 'Học kỳ 1 / 2026–2027',
-        academicYear: '2026–2027',
-        isActive: true,
-        declarationDeadline: '2026-09-30',
-        certDeadline: '2026-10-15',
-        reviewDeadline: '2026-10-20',
-        reportDeadline: '2027-01-05',
-        regulationNote: '',
-        totalStudents: 82,
-        enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
-      },
-      {
-        id: 'hk2_2025_2026',
-        name: 'Học kỳ 2 / 2025–2026',
-        academicYear: '2025–2026',
-        isActive: false,
-        declarationDeadline: '2026-02-28',
-        certDeadline: '2026-03-15',
-        reviewDeadline: '2026-03-25',
-        reportDeadline: '2026-06-10',
-        regulationNote: '',
-        totalStudents: 0,
-        enrolledCourses: ['Tập sự nghề nghiệp (TSNN)']
-      },
-      {
-        id: 'hk1_2025_2026',
-        name: 'Học kỳ 1 / 2025–2026',
-        academicYear: '2025–2026',
-        isActive: false,
-        declarationDeadline: '2025-09-30',
-        certDeadline: '2025-10-15',
-        reviewDeadline: '2025-10-20',
-        reportDeadline: '2026-01-05',
-        regulationNote: '',
-        totalStudents: 0,
-        enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
-      }
-    ];
-
-    try {
-      const saved = localStorage.getItem('tdtu_semesters_list');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          list = parsed;
+    let list = window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [];
+    if (!Array.isArray(list) || list.length === 0) {
+      list = [
+        {
+          id: 'hk2_2026_2027',
+          name: 'Học kỳ 2 / 2026–2027',
+          academicYear: '2026–2027',
+          isActive: false,
+          declarationDeadline: '2026-11-30',
+          certDeadline: '2026-12-15',
+          reviewDeadline: '2026-12-25',
+          reportDeadline: '2027-02-10',
+          regulationNote: '',
+          totalStudents: 0,
+          enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+        },
+        {
+          id: 'hk1_2026_2027',
+          name: 'Học kỳ 1 / 2026–2027',
+          academicYear: '2026–2027',
+          isActive: true,
+          declarationDeadline: '2026-09-30',
+          certDeadline: '2026-10-15',
+          reviewDeadline: '2026-10-20',
+          reportDeadline: '2027-01-05',
+          regulationNote: '',
+          totalStudents: 82,
+          enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
+        },
+        {
+          id: 'hk2_2025_2026',
+          name: 'Học kỳ 2 / 2025–2026',
+          academicYear: '2025–2026',
+          isActive: false,
+          declarationDeadline: '2026-02-28',
+          certDeadline: '2026-03-15',
+          reviewDeadline: '2026-03-25',
+          reportDeadline: '2026-06-10',
+          regulationNote: '',
+          totalStudents: 0,
+          enrolledCourses: ['Tập sự nghề nghiệp (TSNN)']
+        },
+        {
+          id: 'hk1_2025_2026',
+          name: 'Học kỳ 1 / 2025–2026',
+          academicYear: '2025–2026',
+          isActive: false,
+          declarationDeadline: '2025-09-30',
+          certDeadline: '2025-10-15',
+          reviewDeadline: '2025-10-20',
+          reportDeadline: '2026-01-05',
+          regulationNote: '',
+          totalStudents: 0,
+          enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
         }
-      }
-    } catch {}
+      ];
+    }
 
-    // Chuẩn hóa và làm sạch số lượng sinh viên thực tế (loại bỏ hoàn toàn các số ảo 145, 128)
-    const cleaned = list.map(s => {
+    const delIds = new Set(window.ApiClient?.getDeletedSemesterIds ? window.ApiClient.getDeletedSemesterIds() : []);
+    const filteredList = list.filter(s => s && s.id && !delIds.has(String(s.id)));
+
+    // Chuẩn hóa và làm sạch số lượng sinh viên thực tế (loại bỏ hoàn toàn các số ảo)
+    const cleaned = filteredList.map(s => {
       let count = 0;
       if (s.id === 'hk1_2026_2027') {
         try {
           const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-          count = raw ? JSON.parse(raw).length : 91;
-        } catch { count = 91; }
+          count = raw ? JSON.parse(raw).length : 82;
+        } catch { count = 82; }
       } else {
         try {
           const raw = localStorage.getItem(`tdtu_imported_students_${s.id}`);
@@ -224,9 +220,24 @@ const SemestersPage = ({ currentUser, onNavigateTab }) => {
       return;
     }
     if (!confirm('Bạn có chắc chắn muốn xóa học kỳ này?')) return;
-    const updated = semestersList.filter(s => s.id !== id);
-    saveSemesters(updated);
-    showToast(' Đã xóa học kỳ thành công.');
+    if (window.ApiClient?.deleteSemester) {
+      window.ApiClient.deleteSemester(id);
+    } else {
+      const updated = semestersList.filter(s => s.id !== id);
+      saveSemesters(updated);
+    }
+    setSemestersList(prev => prev.filter(s => s.id !== id));
+
+    try {
+      const curActive = localStorage.getItem('tdtu_active_semester');
+      if (curActive === id) {
+        localStorage.setItem('tdtu_active_semester', 'hk1_2026_2027');
+        if (onSemesterChange) onSemesterChange('hk1_2026_2027');
+        window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: 'hk1_2026_2027' } }));
+      }
+    } catch {}
+
+    showToast('✓ Đã xóa học kỳ thành công.');
   };
 
   // Lưu chỉnh sửa học kỳ

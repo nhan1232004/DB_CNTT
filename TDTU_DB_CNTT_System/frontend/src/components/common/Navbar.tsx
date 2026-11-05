@@ -121,19 +121,28 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     }
   }, [currentUser, isStudent, activeSemester, isStudentEnrolledInSemester]);
 
-  const loadNotifications = async () => {
+  const loadNotifications = React.useCallback(async () => {
     try {
+      let list = [];
       if (window.ApiClient?.fetchNotifications) {
-        const list = await window.ApiClient.fetchNotifications(currentUser);
-        setNotifications(list || []);
+        list = await window.ApiClient.fetchNotifications(currentUser);
       } else if (window.ApiClient?.getNotifications) {
-        const list = window.ApiClient.getNotifications(currentUser);
-        setNotifications(list || []);
+        list = window.ApiClient.getNotifications(currentUser);
+      }
+      if (Array.isArray(list)) {
+        const curSem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+        const semFiltered = list.filter(n => {
+          if (!n) return false;
+          const s = n.semesterId || n.semester;
+          if (s) return s === curSem;
+          return curSem === 'hk1_2026_2027';
+        });
+        setNotifications(semFiltered);
       }
     } catch (e) {
       console.warn('Error loading notifications:', e);
     }
-  };
+  }, [currentUser, activeSemester]);
 
   React.useEffect(() => {
     loadNotifications();
@@ -205,6 +214,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
         setSemesters(window.ApiClient.getSemesters());
       }
       computeDeadline();
+      loadNotifications();
     };
 
     const handleDeadlinesUpdated = (e) => {
@@ -217,6 +227,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
         }
       }
       computeDeadline();
+      loadNotifications();
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -241,7 +252,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
       window.removeEventListener('tdtu_semester_changed', handleDeadlinesUpdated);
       window.removeEventListener('tdtu_deadlines_updated', handleDeadlinesUpdated);
     };
-  }, [currentUser, computeDeadline]);
+  }, [currentUser, computeDeadline, loadNotifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const readCount = notifications.filter(n => n.read).length;

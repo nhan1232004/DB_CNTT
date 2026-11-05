@@ -181,30 +181,25 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       setLoading(true);
       const sem = targetSemester || currentSemester || 'hk1_2026_2027';
       let loadedStudentCount = 0;
-      if (window.ApiClient?.getStudents) {
+
+      if (sem === 'hk1_2026_2027') {
         try {
-          const res = await window.ApiClient.getStudents({ semester: sem });
-          const list = res?.items || res?.data?.items || res?.students || (Array.isArray(res) ? res : []);
-          if (Array.isArray(list) && list.length > 0) loadedStudentCount = list.length;
-        } catch {}
-      }
-      if (loadedStudentCount === 0 && window.ApiClient?.getLiveStudents) {
-        try {
-          const students = await window.ApiClient.getLiveStudents(sem);
-          if (Array.isArray(students) && students.length > 0) loadedStudentCount = students.length;
-        } catch {}
-      }
-      if (loadedStudentCount === 0) {
-        try {
-          const raw = localStorage.getItem('tdtu_imported_students_' + sem) || localStorage.getItem('tdtu_live_students_clean');
+          const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
           if (raw) {
             const arr = JSON.parse(raw);
             if (Array.isArray(arr) && arr.length > 0) loadedStudentCount = arr.length;
           }
         } catch {}
-      }
-      if (loadedStudentCount === 0) {
-        loadedStudentCount = 91; // Danh sách chuẩn toàn khoa
+        if (loadedStudentCount === 0) loadedStudentCount = 82;
+      } else {
+        // Đối với học kỳ khác: Cách ly tuyệt đối, chỉ lấy đúng danh sách sinh viên đã nạp cho học kỳ đó
+        try {
+          const raw = localStorage.getItem('tdtu_imported_students_' + sem);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) loadedStudentCount = arr.length;
+          }
+        } catch {}
       }
       setTotalEnrolledStudents(loadedStudentCount);
 
@@ -319,17 +314,17 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const studentIdsWithCert = new Set(validCerts.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
   const certSubmittedStudentCount = studentIdsWithCert.size;
   
-  // Tổng sinh viên thực tế toàn khoa theo học kỳ (tránh bị fallback về 0 khiến thẻ báo 0 SV)
+  // Tổng sinh viên thực tế toàn khoa theo học kỳ (tránh bị fallback ảo sang học kỳ khác)
   let effectiveTotalStudents = totalEnrolledStudents;
-  if (effectiveTotalStudents <= certSubmittedStudentCount) {
+  if (effectiveTotalStudents <= certSubmittedStudentCount && currentSemester === 'hk1_2026_2027') {
     try {
-      const raw = localStorage.getItem('tdtu_imported_students_' + (currentSemester || 'hk1_2026_2027')) || localStorage.getItem('tdtu_live_students_clean');
+      const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr) && arr.length > certSubmittedStudentCount) effectiveTotalStudents = arr.length;
       }
     } catch {}
-    if (effectiveTotalStudents <= certSubmittedStudentCount) effectiveTotalStudents = 91; // 91 sinh viên chuẩn theo danh sách Khoa CNTT
+    if (effectiveTotalStudents <= certSubmittedStudentCount) effectiveTotalStudents = 82;
   }
   const totalEffectiveStudents = effectiveTotalStudents;
   const unsubmittedCount = Math.max(0, totalEffectiveStudents - certSubmittedStudentCount);
@@ -357,6 +352,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const handleSemesterSelect = (e) => {
     const s = e.target.value;
     setCurrentSemester(s);
+    loadData(s);
     if (onSemesterChange) onSemesterChange(s);
     try { localStorage.setItem('tdtu_active_semester', s); } catch {}
     window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: s } }));
@@ -440,7 +436,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
             {unsubmittedCount} <span className="text-sm font-semibold text-[#dc2626]">sinh viên</span>
           </div>
           <div className="text-[11.5px] text-[#64748b] font-medium">
-            {unsubmittedCount}/{totalEffectiveStudents} SV chưa nộp minh chứng
+            {totalEffectiveStudents > 0 ? `${unsubmittedCount}/${totalEffectiveStudents} SV chưa nộp minh chứng` : 'Chưa có danh sách sinh viên nạp vào học kỳ này'}
           </div>
         </div>
 

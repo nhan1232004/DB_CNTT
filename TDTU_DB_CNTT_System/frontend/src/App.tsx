@@ -153,6 +153,11 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
             const aId = a.id || a.title;
             const dismissed = localStorage.getItem(`tdtu_dismissed_ann_${studentId}_${aId}`);
             if (dismissed) return false;
+            // Cách ly thông báo theo học kỳ đang chọn
+            const curSem = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+            const aSem = a.semesterId || a.semester;
+            if (aSem && aSem !== curSem) return false;
+            if (!aSem && curSem !== 'hk1_2026_2027') return false;
             // Lọc phân luồng theo nhóm đối tượng
             const aud = a.targetAudience;
             if (!aud || aud === 'all' || aud === 'all_students') return true;
@@ -666,7 +671,12 @@ const AppInner = () => {
 
               {activeTab === 'bulletin' && (
                 window.BulletinPage ? (
-                  <window.BulletinPage currentUser={currentUser} />
+                  <window.BulletinPage
+                    currentUser={currentUser}
+                    activeSemester={effectiveSemester}
+                    onSemesterChange={handleSemesterChange}
+                    onNavigateTab={setActiveTab}
+                  />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Bảng tin & Tuyển dụng...</div>
                 )
@@ -682,7 +692,12 @@ const AppInner = () => {
 
               {activeTab === 'semesters' && (
                 window.SemestersPage ? (
-                  <window.SemestersPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                  <window.SemestersPage
+                    currentUser={currentUser}
+                    activeSemester={activeSemester}
+                    onSemesterChange={handleSemesterChange}
+                    onNavigateTab={setActiveTab}
+                  />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Quản lý học kỳ...</div>
                 )
@@ -690,7 +705,12 @@ const AppInner = () => {
 
               {activeTab === 'import' && (
                 window.ImportDataPage ? (
-                  <window.ImportDataPage currentUser={currentUser} onNavigateTab={setActiveTab} />
+                  <window.ImportDataPage
+                    currentUser={currentUser}
+                    activeSemester={activeSemester}
+                    onSemesterChange={handleSemesterChange}
+                    onNavigateTab={setActiveTab}
+                  />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Nhập file Excel...</div>
                 )

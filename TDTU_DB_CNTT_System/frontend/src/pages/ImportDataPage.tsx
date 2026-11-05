@@ -8,10 +8,12 @@
 
 interface ImportDataPageProps {
   currentUser?: any;
+  activeSemester?: string;
+  onSemesterChange?: (semId: string) => void;
   onNavigateTab?: (tab: string) => void;
 }
 
-const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigateTab }) => {
+const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }) => {
   const { useState, useMemo, useEffect } = (window as any).React || (typeof React !== 'undefined' ? (React as any) : {});
   const roleKey = (window as any).PrimeRbac?.getUserRoleKey?.(currentUser) || 'thay_phuc';
   const mask = (window as any).PrimeRbac?.getFeatureMask?.(currentUser, 'import') || 26;
@@ -19,7 +21,13 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, onNavigate
   const canRead = (window as any).PrimeRbac?.hasPrimePermission(mask, 2);
   const canImport = (window as any).PrimeRbac?.hasPrimePermission(mask, 13);
 
-  const [selectedSemester, setSelectedSemester] = useState<string>('hk1_2026_2027');
+  const [selectedSemester, setSelectedSemester] = useState<string>(activeSemester || 'hk1_2026_2027');
+
+  useEffect(() => {
+    if (activeSemester && activeSemester !== selectedSemester) {
+      setSelectedSemester(activeSemester);
+    }
+  }, [activeSemester]);
   const [semestersList, setSemestersList] = useState<any[]>(() => {
     return (window as any).ApiClient?.getSemesters ? (window as any).ApiClient.getSemesters() : [
       { id: 'hk2_2026_2027', name: 'Học kỳ 2 / 2026–2027' },

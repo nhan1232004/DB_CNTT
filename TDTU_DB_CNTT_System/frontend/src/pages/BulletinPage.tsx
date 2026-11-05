@@ -5,7 +5,7 @@
 // 4. Bố cục: Cân đối, chuẩn doanh nghiệp, văn bản mô tả căn đều (justify)
 // 5. Tuyệt đối không dùng Emoji, sử dụng SVG vector chuyên nghiệp
 
-const BulletinPage = ({ currentUser }) => {
+const BulletinPage = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }) => {
   const isStudent = currentUser?.role === 'student';
   const isAdmin = Boolean(currentUser?.isAdmin);
   const isLecturer = currentUser?.role === 'lecturer';
@@ -147,6 +147,12 @@ const BulletinPage = ({ currentUser }) => {
           const sId = String(item.id);
           if (deletedNotifs.has(sId) || deletedAncs.has(sId)) continue;
 
+          // Phân luồng và cách ly thông báo theo học kỳ đang chọn
+          const sem = item.semesterId || item.semester;
+          const curSem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+          if (sem && sem !== curSem) continue;
+          if (!sem && curSem !== 'hk1_2026_2027') continue;
+
           // Chuẩn hóa tiêu đề để chống trùng lặp giữa thông báo bảng tin & thông báo hệ thống
           const normTitle = String(item.title || item.subject || '').trim().toLowerCase().replace(/^\[.*?\]\s*/, '');
           if (seenIds.has(sId) || (normTitle && seenTitles.has(normTitle))) {
@@ -216,6 +222,7 @@ const BulletinPage = ({ currentUser }) => {
     window.addEventListener('tdtu_application_submitted', handleApps);
     window.addEventListener('tdtu_application_approved', handleApps);
     window.addEventListener('tdtu_application_rejected', handleApps);
+    window.addEventListener('tdtu_semester_changed', loadData);
     window.addEventListener('storage', handleStorage);
     window.addEventListener('focus', handleStorage);
     return () => {
@@ -229,11 +236,12 @@ const BulletinPage = ({ currentUser }) => {
       window.removeEventListener('tdtu_application_submitted', handleApps);
       window.removeEventListener('tdtu_application_approved', handleApps);
       window.removeEventListener('tdtu_application_rejected', handleApps);
+      window.removeEventListener('tdtu_semester_changed', loadData);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('focus', handleStorage);
       if (bc) { try { bc.close(); } catch {} }
     };
-  }, [currentUser]);
+  }, [currentUser, activeSemester]);
 
   // Mở Popup Form xác nhận Ứng tuyển vị trí thực tập
   const handleOpenApplyModal = (jd) => {
@@ -479,6 +487,7 @@ const BulletinPage = ({ currentUser }) => {
       if (window.ApiClient?.createLecturerAnnouncement) {
         await window.ApiClient.createLecturerAnnouncement({
           ...newAnnouncement,
+          semesterId: activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027',
           author: currentUser?.name || 'Giảng viên Khoa CNTT',
           authorRole: currentUser?.department || (isAdmin ? 'Ban Quản trị Khoa CNTT' : 'Giảng viên Hướng dẫn')
         });
@@ -1750,6 +1759,7 @@ const BulletinPage = ({ currentUser }) => {
           isOpen={showBroadcastModal}
           onClose={() => setShowBroadcastModal(false)}
           currentUser={currentUser}
+          activeSemester={activeSemester}
           onNotificationSent={() => {
             if (window.ApiClient) {
               setAnnouncements(window.ApiClient.getLecturerAnnouncements());
