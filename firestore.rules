@@ -1,17 +1,82 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{collectionName}/{docId} {
-      allow read, delete: if true;
-      // Chặn vĩnh viễn các document ID mẫu của hệ thống cũ để các tab trình duyệt cũ không thể re-seed
-      allow create, update: if !(
-        docId in [
-          'cert_1', 'cert_2', 'cert_3', 'cert_4', 'cert_5',
-          'jd_01', 'jd_02', 'jd_03', 'jd_04', 'jd_05', 'jd_06', 'jd_07', 'jd_08', 'jd_09', 'jd_10', 'jd_11', 'jd_12',
-          'q_01', 'q_02', 'q_03',
-          'anc_01', 'anc_02', 'anc_03'
-        ]
-      );
+
+    // ==========================================
+    // HELPER FUNCTIONS (P0 Security Rules)
+    // ==========================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isTdtuUser() {
+      return isAuthenticated() && 
+        (request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$') || 
+         request.auth.token.email.matches('.*@student\\.tdtu\\.edu\\.vn$'));
+    }
+
+    function isLecturer() {
+      return isAuthenticated() && request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$');
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && (request.auth.uid == userId || request.auth.token.email == userId);
+    }
+
+    // 1. Hồ sơ người dùng hệ thống
+    match /tdtu_users/{userId} {
+      allow read: if isTdtuUser();
+      allow write: if isLecturer() || isOwner(userId);
+    }
+
+    // 2. Danh sách sinh viên thực tập (Bảo mật PII & GPA)
+    match /tdtu_students/{studentId} {
+      allow read: if isLecturer() || (isTdtuUser() && request.auth.token.email.matches('(?i)^' + studentId + '@.*'));
+      allow write: if isLecturer();
+    }
+
+    // 3. Khai báo nơi thực tập
+    match /tdtu_declarations/{declId} {
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser();
+      allow delete: if isLecturer();
+    }
+
+    // 4. Chứng chỉ ngoại ngữ
+    match /tdtu_certificates/{certId} {
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser();
+      allow delete: if isLecturer();
+    }
+
+    // 5. Bảng tin tuyển dụng & Thông báo chung
+    match /tdtu_bulletin/{postId} {
+      allow read: if isTdtuUser();
+      allow write: if isLecturer();
+    }
+
+    // 6. Đơn ứng tuyển JD
+    match /tdtu_applications/{appId} {
+      allow read: if isTdtuUser();
+      allow create: if isTdtuUser();
+      allow update, delete: if isLecturer();
+    }
+
+    // 7. Thông báo học vụ
+    match /tdtu_notifications/{notifId} {
+      allow read: if isTdtuUser();
+      allow write: if isTdtuUser();
+    }
+
+    // 8. Cấu hình hệ thống & Học kỳ
+    match /tdtu_system/{configDoc} {
+      allow read: if isTdtuUser();
+      allow write: if isLecturer();
+    }
+
+    // Mặc định: Chặn toàn bộ các collection / document không nằm trong danh mục trên
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

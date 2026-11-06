@@ -4,9 +4,17 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const DEFAULT_SECRET = 'TDTU_IT_FACULTY_INTERNSHIP_SECRET_2026_KEY_SECURE_HMAC';
+
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_SECRET || process.env.JWT_SECRET.length < 32) {
+    throw new Error('FATAL SECURITY ERROR: Yêu cầu biến môi trường JWT_SECRET riêng biệt (tối thiểu 32 ký tự) khi chạy Production.');
+  }
+}
+
 export const ENV = {
   PORT: Number(process.env.PORT || 3000),
-  JWT_SECRET: process.env.JWT_SECRET || 'TDTU_IT_FACULTY_INTERNSHIP_SECRET_2026_KEY_SECURE_HMAC',
+  JWT_SECRET: process.env.JWT_SECRET || DEFAULT_SECRET,
   JWT_EXPIRES_IN_DAYS: 7,
   ALLOWED_LECTURER_DOMAINS: ['@tdtu.edu.vn'],
   ALLOWED_STUDENT_DOMAINS: ['@student.tdtu.edu.vn'],

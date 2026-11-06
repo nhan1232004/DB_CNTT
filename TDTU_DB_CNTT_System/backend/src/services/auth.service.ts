@@ -86,7 +86,34 @@ export class AuthService {
     return { token, user: claims as UserClaims };
   }
 
+  verifyFirebaseIdToken(idToken: string, expectedEmail: string): void {
+    try {
+      const parts = (idToken || '').split('.');
+      if (parts.length !== 3) {
+        throw new Error('Định dạng Token không hợp lệ');
+      }
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+      if (payload.exp && Date.now() >= payload.exp * 1000) {
+        throw new Error('Firebase ID Token đã hết hạn');
+      }
+      if (payload.email && payload.email.toLowerCase() !== expectedEmail.toLowerCase()) {
+        throw new Error('Email trong Token không khớp với email đăng nhập');
+      }
+      if (payload.aud && payload.aud !== 'dashboard-39cf8') {
+        throw new Error('Token không thuộc dự án TDTU');
+      }
+    } catch (err: any) {
+      throw new Error(`Xác thực Firebase Token thất bại: ${err?.message || 'Token không hợp lệ'}`);
+    }
+  }
+
   loginWithFirebase(email: string, firebaseUid?: string, idToken?: string, name?: string): { token: string; user: UserClaims } {
+    if (process.env.NODE_ENV === 'production' && !idToken) {
+      throw new Error('Yêu cầu Firebase idToken hợp lệ trên môi trường Production');
+    }
+    if (idToken) {
+      this.verifyFirebaseIdToken(idToken, email);
+    }
     return this.loginWithGoogle(email, name);
   }
 

@@ -37,6 +37,17 @@ export const checkEligibilityHandler: RouteHandler = (req, res) => {
 export const getStudentDetailHandler: RouteHandler = (req, res) => {
   try {
     const { studentId } = req.params;
+    if (!studentId) {
+      sendError(res, 400, 'MSSV là bắt buộc', 'STUDENT_ID_REQUIRED');
+      return;
+    }
+    // P0 Security: Sinh viên chỉ có quyền xem hồ sơ của chính mình
+    if (req.user?.role === 'student' && !req.user?.isAdmin) {
+      if (req.user?.studentId && req.user.studentId.toUpperCase() !== String(studentId).toUpperCase()) {
+        sendError(res, 403, 'Sinh viên chỉ có quyền truy cập hồ sơ của chính mình', 'FORBIDDEN_PROFILE');
+        return;
+      }
+    }
     const student = studentsService.getStudentById(studentId);
     if (!student) {
       sendError(res, 404, `Không tìm thấy sinh viên có MSSV: ${studentId}`, 'STUDENT_NOT_FOUND');

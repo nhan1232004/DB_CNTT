@@ -129,12 +129,12 @@ Dashoard_TSNN-main/
    http://localhost:3000
    ```
 
-### 4.2. Chạy Bộ Kiểm thử Tự động (24/24 Automated Tests)
-Để xác minh toàn bộ logic nghiệp vụ Backend API, phân quyền Prime RBAC, tra cứu MST, chống spam thông báo và kiến trúc Chart Router / Adapter V1-V2:
+### 4.2. Chạy Bộ Kiểm thử Tự động (28/28 Automated Tests)
+Để xác minh toàn bộ logic nghiệp vụ Backend API, phân quyền Prime RBAC, tra cứu MST, chống spam thông báo, bộ test an ninh P0 và kiến trúc Chart Router / Adapter V1-V2:
 ```powershell
 npm test
 ```
-*Kết quả:* **24/24 Tests Pass (100%)** (`6 API tests` + `3 Prime RBAC tests` + `15 Adapter & Chart Router tests`). Thời gian chạy ~1.3s không cần cài Jest/Mocha.
+*Kết quả:* **28/28 Tests Pass (100%)** (`10 API & P0 Security tests` + `3 Prime RBAC tests` + `15 Adapter & Chart Router tests`). Thời gian chạy ~1.3s không cần cài Jest/Mocha.
 
 ### 4.3. Triển khai Lên Firebase Hosting (Production)
 ```powershell

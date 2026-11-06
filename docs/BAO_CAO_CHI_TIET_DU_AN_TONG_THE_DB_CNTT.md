@@ -128,9 +128,9 @@ Toàn bộ các thư mục tạm thời, tệp bản sao `.js`/`.jsx` và mã ng
 
 1. **Kiểm thử Biên dịch & Thực thi Giao diện TypeScript (`.ts` / `.tsx`):**
    - **22/22 tệp `.ts` và `.tsx`** của Frontend biên dịch và khởi chạy thành công 100% qua Babel 8 TSX Runtime (`0` lỗi cú pháp, `0` lỗi runtime).
-2. **Kiểm thử Tự động Backend, Prime RBAC & Adapter (`npm test`):**
-   - **24/24 bài kiểm thử tự động đạt 100% Pass**:
-     - `api.test.ts` (6/6 Pass): API Summary, Tra cứu MST, Bảng tin 2 tầng, Widget Registry & Chart Router, Anti-Spam Notification, Admin Broadcast.
+2. **Kiểm thử Tự động Backend, Prime RBAC, Security P0 & Adapter (`npm test`):**
+   - **28/28 bài kiểm thử tự động đạt 100% Pass**:
+     - `api.test.ts` (10/10 Pass): API Summary, Tra cứu MST, Bảng tin, Widget Registry & Chart Router, Anti-Spam Notification, Admin Broadcast, P0 Token 401 Unauthorized, P0 Anti-Mock-JWT 401, P0 Chặn Sinh viên quyền Admin 403, P0 Phân quyền Prime RBAC qua HTTP Router.
      - `prime-rbac.test.ts` (3/3 Pass): Ma trận phân quyền số nguyên tố, Phép nhân/chia cấp/thu hồi quyền, Giải mã mặt nạ quyền.
      - `demo.test.ts` (15/15 Pass): Đối chiếu kiến trúc With Router vs No Router, Chuẩn hóa Adapter Schema V1 & V2, Xử lý lỗi Upstream 502/504.
 3. **Môi trường hoạt động hiện tại:**

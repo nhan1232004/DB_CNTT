@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25_.ts_%2F_.tsx-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-v10_Hosting_%26_Auth-FFCA28?logo=firebase)](https://firebase.google.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![Automated Tests](https://img.shields.io/badge/Automated_Tests-24%2F24_Passed-16a34a)](#)
+[![Automated Tests](https://img.shields.io/badge/Automated_Tests-28%2F28_Passed-16a34a)](#)
 [![Git Branch](https://img.shields.io/badge/Git_Branch-522H0045-003087)](#)
 
 - **Địa chỉ ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app
@@ -405,26 +405,30 @@ Sau khi tạo xong file, biểu đồ mới sẽ ngay lập tức xuất hiện 
 
 ## 9. BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITES)
 
-Hệ thống tích hợp sẵn 24 bài kiểm thử tự động (Unit Tests và Integration Tests) chạy trực tiếp qua Node.js native test runner:
+Hệ thống tích hợp sẵn 28 bài kiểm thử tự động (Unit Tests, Security Tests và Integration Tests) chạy trực tiếp qua Node.js native test runner:
 
 ```bash
 npm test
 ```
 
-### Kết quả kiểm thử thực tế (24/24 Tests Passed):
+### Kết quả kiểm thử thực tế (28/28 Tests Passed):
 - **Phân hệ Reporting Adapter Demo (15 tests):**
   - Kiểm tra widget discovery và tra cứu registry.
   - Kiểm tra tính đồng nhất dữ liệu giữa Schema V1 và Schema V2 khi đi qua Adapter.
   - Kiểm tra khả năng tái sử dụng Adapter cho cả hai loại biểu đồ Pie và Bar.
   - Kiểm tra cơ chế xử lý mã lỗi: 404 Not Found, 502 Bad Gateway khi upstream sai định dạng, 503 Service Unavailable, và 504 Gateway Timeout.
   - Kiểm tra sự tương đồng về kết quả Chart JSON giữa mô hình Có Router và Không Router.
-- **Phân hệ Backend API Core (6 tests):**
+- **Phân hệ Backend API Core & Security P0 (10 tests):**
   - Test 1: API Summary thống kê tổng quan đợt thực tập.
   - Test 2: API Tra cứu pháp lý Mã số thuế doanh nghiệp (MST VNG `0303882213`).
   - Test 3: API Bảng tin tuyển dụng và thông báo học vụ.
   - Test 4: API Widget Registry và Chart Router dispatch.
   - Test 5: API Notification Anti-Spam (Bỏ qua thông báo trùng lặp trong 20 giây).
   - Test 6: API Notification Admin Broadcast và xem trước số lượng người nhận.
+  - Test 7: **P0 Security** - Từ chối truy cập 401 khi không có Token (Unauthorized trên `/api/students`, `DELETE /api/students`, `/api/certificates`).
+  - Test 8: **P0 Security** - Chặn triệt để token giả mạo `mock_jwt_` và raw Base64 unverified (401).
+  - Test 9: **P0 Security** - Chặn sinh viên truy cập chức năng Admin (403 Forbidden).
+  - Test 10: **P0 Security** - Phân quyền Prime RBAC thực thi qua HTTP Router (403 với sinh viên, 200 với giảng viên).
 - **Phân hệ Phân quyền Prime RBAC (3 tests):**
   - Test 1: Kiểm tra khớp 100% ma trận số nguyên tố chuẩn của BCN Khoa CNTT.
   - Test 2: Phép toán Cấp quyền (Nhân số nguyên tố) và Gỡ quyền (Chia số nguyên tố).

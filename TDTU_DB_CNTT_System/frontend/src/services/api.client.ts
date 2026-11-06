@@ -3760,11 +3760,18 @@ class ApiClient {
         });
       } catch {}
 
-      // Broadcast across tabs
+      // Phát sự kiện trong cùng tab (Zero-latency instant update không cần F5)
+      try {
+        window.dispatchEvent(new CustomEvent('tdtu_declaration_updated', { detail: { studentId: sid, data: declaration } }));
+        window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId: sid, data: declaration } }));
+        window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'declaration', studentId: sid } }));
+      } catch {}
+
+      // Broadcast across tabs (Đồng bộ đa tab an toàn không reload)
       try {
         const bc = new BroadcastChannel('tdtu_realtime_sync');
         bc.postMessage({ type: 'declaration_updated', studentId: sid, data: declaration });
-        bc.close();
+        setTimeout(() => { try { bc.close(); } catch {} }, 300);
       } catch {}
     }
     return res || { success: true, data: { declaration } };
@@ -5133,6 +5140,7 @@ class ApiClient {
       const list = [item];
       this.setCachedCerts(sid, list);
       window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: { [sid]: list } }));
+      window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'certificates', studentId: sid } }));
     } catch {}
 
     // Cập nhật chứng chỉ vào live students cache
@@ -5149,11 +5157,11 @@ class ApiClient {
       }
     } catch {}
 
-    // 2. Broadcast Channel across tabs and pages
+    // 2. Broadcast Channel across tabs and pages (Safe flush)
     try {
       const bc = new BroadcastChannel('tdtu_realtime_sync');
       bc.postMessage({ type: 'cert_updated', studentId: sid, cert: item });
-      bc.close();
+      setTimeout(() => { try { bc.close(); } catch {} }, 300);
     } catch {}
 
     // 3. Ghi trực tiếp lên Cloud Firestore (Ghi đè cert_${sid} và dọn sạch doc thừa của SV này)
