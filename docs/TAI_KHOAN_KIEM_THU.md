@@ -44,3 +44,23 @@ Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đ
 | STT | Họ và Tên | MSSV | Email đăng nhập | Mật khẩu | Quyền hạn |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **Nguyễn Văn Ngoài Kỳ** | `52100999` | `52100999@student.tdtu.edu.vn` | `Sv@123456` *(hoặc `52100999`)* | Chưa có trong danh sách đăng ký học phần kỳ hiện tại — Chỉ được xem Cẩm nang Thực tập & Bảng tin, khóa tính năng gửi phiếu khai báo |
+
+---
+
+## 5. Hướng Dẫn Kiểm Thử Kịch Bản Cô Lập Học Kỳ & Đồng Bộ Real-Time
+
+### Kịch bản 1: Kiểm thử Cô lập Khai báo Thực tập theo Học kỳ (Sinh viên)
+1. Đăng nhập tài khoản sinh viên `522h0045@student.tdtu.edu.vn` (Mật khẩu: `Sv@123456`).
+2. Tại Học kỳ 1 (`HK1 2026–2027`): Khai báo đơn vị thực tập (ví dụ: FPT Software, MST `0101248141`). Hệ thống ghi nhận trạng thái đã khai báo.
+3. Chuyển sang Học kỳ 2 (`HK2 2026–2027`) từ dropdown học kỳ trên Header:
+   - Giao diện form khai báo tự động làm mới hoàn toàn.
+   - Trạng thái hiển thị: "Chưa khai báo", danh sách khai báo rỗng, không bị đọng thông tin của HK1.
+4. Chuyển lại Học kỳ 1:
+   - Toàn bộ thông tin thực tập của HK1 được khôi phục nguyên vẹn, chứng minh cơ chế cô lập dữ liệu theo học kỳ hoạt động chính xác 100%.
+
+### Kịch bản 2: Kiểm thử Đồng bộ Hai Chiều Sinh viên ↔ Giảng viên (Real-Time < 500ms)
+1. Mở song song hai cửa sổ trình duyệt:
+   - Cửa sổ A: Đăng nhập Sinh viên `522h0045@student.tdtu.edu.vn`.
+   - Cửa sổ B: Đăng nhập Giảng viên `duonghuuphuc@tdtu.edu.vn`, mở trang **Quản lý Sinh viên** (`/students`).
+2. Ở Cửa sổ A: Sinh viên gửi hoặc cập nhật phiếu khai báo nơi thực tập.
+3. Ở Cửa sổ B: Danh sách và popup hồ sơ sinh viên phía Giảng viên tự động cập nhật ngay lập tức mà không cần tải lại trang (nhờ Cloud Firestore listener và BroadcastChannel).

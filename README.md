@@ -13,7 +13,7 @@
 - **Địa chỉ ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app
 - **Máy chủ phát triển cục bộ (Local Server):** `http://localhost:3000`
 - **Nhánh mã nguồn chính thức:** `522H0045`
-- **Phiên bản phát hành:** `v3.2.0 (Bản cập nhật hoàn thiện: 05/11/2026 · 100% TypeScript)`
+- **Phiên bản phát hành:** `v3.2.0 (Bản cập nhật hoàn thiện: 06/11/2026 · 100% TypeScript · UI/UX Nâng tầm & Cô lập Học kỳ)`
 
 ---
 
@@ -108,6 +108,13 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
 6. **Khả năng Cách ly Lỗi Giao diện (TabErrorBoundary):**
    - Vùng nội dung giao diện được bảo vệ bởi bộ đệm `TabErrorBoundary`. Nếu một tab gặp sự cố tạm thời khi tải dữ liệu mạng, thanh menu Sidebar và Navbar vẫn hoạt động 100%, tuyệt đối không gây sập ứng dụng hoặc hủy phiên đăng nhập của người dùng.
 
+7. **Cô lập Dữ liệu Khai báo Thực tập theo Học kỳ (Semester Scoped Isolation):**
+   - Triệt tiêu hoàn toàn lỗi chồng chéo dữ liệu giữa các học kỳ đào tạo. Khi sinh viên đăng ký thực tập ở Học kỳ 1 nhưng chuyển sang Học kỳ 2, giao diện tự động khởi tạo form khai báo mới tinh (trạng thái "Chưa khai báo", danh sách rỗng), không bị lưu đọng thông tin của kỳ trước. Dữ liệu được cô lập theo bộ khóa cục bộ `tdtu_decl_${activeSemester}_${studentId}` và bảo toàn nguyên vẹn khi quay lại Học kỳ 1.
+
+8. **Giao diện Hiện đại "Một tầm cao mới" & Cơ chế Cache-Buster Động:**
+   - Hệ thống giao diện React 18 được trau chuốt chuẩn mực doanh nghiệp với hiệu ứng hover mượt mà, glassmorphism, bảng màu TDTU nhận diện thương hiệu cao cấp.
+   - Cơ chế Cache-Busting theo phiên bản phát hành (`?v=20261106_v119_ui_enhancements`) trên toàn bộ 21 TypeScript script tags giúp trình duyệt người dùng tự động cập nhật ngay lập tức mà không bao giờ bị kẹt mã nguồn cũ.
+
 ---
 
 ## 3. NGĂN XẾP CÔNG NGHỆ CHÍNH XÁC (EXACT TECHNOLOGY STACK)
@@ -123,7 +130,7 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
 | **Cơ sở dữ liệu thời gian thực** | Google Cloud Firestore | `v10.13.0` Compat | Đồng bộ dữ liệu real-time qua listener `onSnapshot` giữa Giảng viên và Sinh viên (học kỳ, thông báo, khai báo nơi thực tập, chứng chỉ, đơn ứng tuyển JD). |
 | **Xác thực người dùng** | Google Workspace SSO & Firebase Auth | `v10.13.0` Compat | Xác thực Google SSO bảo mật cao, bắt buộc tên miền nội bộ `@tdtu.edu.vn` (Giảng viên) và `@student.tdtu.edu.vn` (Sinh viên). |
 | **Frontend Framework** | React 18 & ReactDOM 18 | CDN Production | Xây dựng giao diện Single Page Application (SPA) dạng Component-driven, quản lý State cục bộ linh hoạt. |
-| **Trình thông dịch Frontend** | Babel Standalone (`@babel/standalone`) | CDN Runtime | Thông dịch trực tiếp mã nguồn TSX/TypeScript tại trình duyệt với preset `tsx`, cho phép sửa code chạy ngay không cần bước build phức tạp (không cần Vite/Webpack). |
+| **Trình thông dịch Frontend** | Babel Standalone (`@babel/standalone`) | CDN Runtime | Thông dịch trực tiếp mã nguồn TSX/TypeScript tại trình duyệt với preset `tsx`, tích hợp tham số Cache-Buster (`v20261106_v119`) giúp cập nhật giao diện lập tức không bị đọng cache. |
 | **Định dạng giao diện** | Tailwind CSS Enterprise | CDN | Bộ nhận diện chuẩn Khoa CNTT - ĐH Tôn Đức Thắng: Navy `#003087`, Red `#dc2626`, Dark Gray `#1f2937`, White `#ffffff`. |
 | **Xử lý Bảng tính Excel** | SheetJS (`xlsx`) | `v0.18.5` CDN | Phân tích file Excel (.xlsx, .xls, .csv), tự động nhận diện đa sheet môn học (KTCN & TSNN) và xuất báo cáo học vụ trực tiếp tại Client. |
 | **Đồng bộ đa Tab** | HTML5 BroadcastChannel API | Native Browser | Đồng bộ trạng thái tức thì giữa các tab trình duyệt (`tdtu_realtime_sync`). |

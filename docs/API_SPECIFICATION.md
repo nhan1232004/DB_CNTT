@@ -1,6 +1,6 @@
 # TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 05/11/2026*
+*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 06/11/2026*
 
 ---
 
@@ -60,7 +60,7 @@
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/internship/company-lookup/:taxCode` | Public | Tra cứu tự động thông tin pháp lý doanh nghiệp qua Mã số thuế (MST) |
 | `POST` | `/api/internship/declare` | Student / Lecturer | Nộp hoặc cập nhật phiếu khai báo nơi thực tập (đồng bộ tự động MST, Vị trí, Mentor, SĐT Mentor, Địa chỉ sang hồ sơ sinh viên) |
-| `GET` | `/api/internship/declaration/:studentId` | Logged In | Xem danh sách phiếu khai báo nơi thực tập của sinh viên |
+| `GET` | `/api/internship/declaration/:studentId` | Logged In | Xem danh sách phiếu khai báo nơi thực tập của sinh viên (hỗ trợ lọc theo học kỳ `?semester=...`) |
 | `DELETE` | `/api/internship/declaration/:studentId` | Logged In | Hủy phiếu khai báo nơi thực tập của sinh viên |
 
 ### 2.4. Phân hệ Bảng tin 2 Tầng & Bóc tách Email Forward (`/api/bulletin`)

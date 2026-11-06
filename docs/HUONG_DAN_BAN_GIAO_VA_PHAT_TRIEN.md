@@ -1,7 +1,7 @@
 # TÀI LIỆU HƯỚNG DẪN BÀN GIAO & PHÁT TRIỂN HỆ THỐNG DB_CNTT
 ## HỆ THỐNG QUẢN LÝ THỰC TẬP, TỰ ĐỘNG HÓA JD & HỖ TRỢ RA QUYẾT ĐỊNH (100% TYPESCRIPT)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 05/11/2026*
+*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 06/11/2026*
 
 ---
 
@@ -188,3 +188,12 @@ Khi tiếp quản hoặc mở rộng mã nguồn, đội nhóm kỹ sư cần l�
 5. **Chuẩn hóa Danh xưng Giảng viên & Tinh giản Giao diện UI:**
    - Chuẩn hóa toàn bộ danh xưng Giảng viên thành tiền tố duy nhất: **`GV. [Họ và tên]`** (ví dụ: `GV. Dương Hữu Phúc`), loại bỏ các học vị chưa xác định (`TS.`, `ThS.`).
    - Giao diện người dùng được tinh giản cô đọng: Loại bỏ các khung hướng dẫn rườm rà, cam kết rút ngắn thành 1 dòng, thông báo toast ngắn gọn, tập trung tối đa vào trải nghiệm làm việc thực tế.
+
+6. **Cô lập Dữ liệu Khai báo Thực tập theo từng Học kỳ phía Sinh viên (Student Semester Declaration Isolation):**
+   - Đảm bảo tính độc lập học vụ: Khi sinh viên đã khai báo thực tập ở Học kỳ 1, nếu chuyển sang Học kỳ 2 trên thanh điều hướng, màn hình khai báo sẽ khởi tạo form mới (trạng thái "Chưa khai báo", danh sách rỗng), không hiển thị thông tin của Học kỳ 1.
+   - Cơ chế lưu trữ cục bộ có tiền tố học kỳ: Khóa LocalStorage được đặt theo mẫu `tdtu_decl_${activeSemester}_${studentId}`.
+   - Khi sinh viên quay lại Học kỳ 1, toàn bộ thông tin đã đăng ký trước đó được nạp lại đầy đủ, đảm bảo an toàn dữ liệu và tính nhất quán.
+
+7. **Nâng cấp Thẩm mỹ UI/UX & Cơ chế Quản lý Cache Động:**
+   - Phiên bản Frontend mới nhất trên nhánh `522H0045` tích hợp phong cách giao diện hiện đại, bóng bẩy, trực quan hóa trạng thái và phản hồi nhanh.
+   - Thẻ nhúng TypeScript trên `index.html` luôn đi kèm tham số phiên bản `?v=20261106_v119_ui_enhancements` ngăn ngừa việc trình duyệt người dùng giữ lại mã cũ sau khi cập nhật.

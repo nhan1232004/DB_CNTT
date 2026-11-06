@@ -104,4 +104,20 @@ Thực tập, Quy chế 320 giờ và Bảng tin tuyển dụng để chuẩn b�
    - Mật khẩu : Sv@123456      (hoặc 52100999 / Student@123456)
    - Họ tên   : Nguyễn Văn Ngoài Kỳ
    - MSSV     : 52100999
+
+================================================================================
+3. KỊCH BẢN KIỂM THỬ ĐẶC TRƯNG MỚI NHẤT (PHIÊN BẢN v3.2.0)
+================================================================================
+
+A. KIỂM THỬ CÔ LẬP KHAI BÁO THỰC TẬP THEO HỌC KỲ (SINH VIÊN):
+   1. Đăng nhập 522h0045@student.tdtu.edu.vn ở HK1 2026-2027.
+   2. Khai báo thông tin thực tập (VD: FPT Software).
+   3. Chuyển sang HK2 2026-2027 trên thanh Header: Form tự động làm mới hoàn
+      toàn (hiển thị "Chưa khai báo", danh sách rỗng, không dính dữ liệu HK1).
+   4. Chuyển lại HK1: Thông tin đã khai báo của HK1 vẫn nguyên vẹn 100%.
+
+B. KIỂM THỬ ĐỒNG BỘ REAL-TIME HAI CHIỀU (SINH VIÊN <-> GIẢNG VIÊN < 500MS):
+   1. Mở Cửa sổ 1: Đăng nhập Sinh viên 522h0045@student.tdtu.edu.vn.
+   2. Mở Cửa sổ 2: Đăng nhập Giảng viên duonghuuphuc@tdtu.edu.vn, vào trang Sinh viên.
+   3. Sinh viên gửi phiếu khai báo -> Giảng viên nhận thông tin tức thì không reload.
 ================================================================================
