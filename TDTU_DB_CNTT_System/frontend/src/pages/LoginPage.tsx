@@ -591,30 +591,6 @@ const LoginPage = ({ onLoginSuccess }) => {
               <div style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
                 Sử dụng tài khoản <strong>@student.tdtu.edu.vn</strong>
               </div>
-
-              {/* Informative Security Notice Box */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '14px 16px',
-                  backgroundColor: '#eff6ff',
-                  borderRadius: '10px',
-                  border: '1px solid #bfdbfe',
-                  fontSize: '13px',
-                  color: '#1e40af',
-                  lineHeight: 1.5,
-                  marginBottom: '10px',
-                }}
-              >
-                <svg className="w-5 h-5 shrink-0 text-[#2563eb] mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span>
-                  Chỉ chấp nhận email do trường cấp.
-                </span>
-              </div>
             </div>
           )}
 

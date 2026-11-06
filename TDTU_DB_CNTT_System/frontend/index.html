@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" class="notranslate light" translate="no" style="color-scheme: light;">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,18 +9,18 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>TDTU Khoa CNTT - Cổng Thông Tin Học Phần Thực Tập TSNN & KTCN</title>
-  
   <!-- TDTU Official Favicon -->
   <link rel="shortcut icon" href="https://stdportal.tdtu.edu.vn/logo.ico" />
 
   <!-- Google Fonts: Inter, Be Vietnam Pro, JetBrains Mono, Roboto Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- TDTU Official Design System CSS -->
-  <link rel="stylesheet" href="./src/index.css?v=20261104_v77_comprehensive_feedback_fixes">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
 
+  <!-- TDTU Official Design System CSS -->
+  <link rel="stylesheet" href="./src/index.css?v=20261102_v55_ui_fit_dropdown_fix">
   <!-- Tailwind CSS CDN with Official TDTU Design Tokens -->
   <script>
     window.tailwind = {
@@ -84,7 +85,10 @@
     }
 
     /* Paragraphs & body content must be justified */
-    p, .prose p, .body-content, .body-desc {
+    p,
+    .prose p,
+    .body-content,
+    .body-desc {
       text-align: justify !important;
       text-justify: inter-word !important;
       font-size: 12.5px !important;
@@ -92,19 +96,25 @@
     }
 
     /* Strict Headings Hierarchy (H1: 24-28px, H2: 18-20px, H3: 14-16px, Font-Weight: 700) */
-    h1, .h1 {
+    h1,
+    .h1 {
       font-size: 26px !important;
       font-weight: 700 !important;
       line-height: 1.3 !important;
       color: #1f2937;
     }
-    h2, .h2 {
+
+    h2,
+    .h2 {
       font-size: 19px !important;
       font-weight: 700 !important;
       line-height: 1.35 !important;
       color: #1f2937;
     }
-    h3, .h3, .section-title {
+
+    h3,
+    .h3,
+    .section-title {
       font-size: 15px !important;
       font-weight: 700 !important;
       line-height: 1.4 !important;
@@ -121,24 +131,30 @@
       width: 6px;
       height: 6px;
     }
+
     ::-webkit-scrollbar-track {
       background: #ffffff;
     }
+
     ::-webkit-scrollbar-thumb {
       background: #cbd5e1;
       border-radius: 4px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
 
     /* Native select appearance reset across all browsers */
-    select.appearance-none, .appearance-none {
+    select.appearance-none,
+    .appearance-none {
       -webkit-appearance: none !important;
       -moz-appearance: none !important;
       appearance: none !important;
     }
-    select.appearance-none::-ms-expand, .appearance-none::-ms-expand {
+
+    select.appearance-none::-ms-expand,
+    .appearance-none::-ms-expand {
       display: none !important;
     }
 
@@ -147,11 +163,13 @@
         opacity: 0;
         transform: translateY(4px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
+
     .fade-in {
       animation: fadeIn 0.25s ease-out forwards;
     }
@@ -190,32 +208,53 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Modular Frontend TypeScript (.ts / .tsx) Services, Components & Pages -->
-  <script type="text/babel" data-presets="tsx" src="./src/config/firebase.config.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/services/prime-rbac.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/services/api.client.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/AdminNotificationModal.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/Navbar.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/common/Sidebar.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/components/student/StudentEligibilityBanner.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/LoginPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DashboardPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ProfilePage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DeclarationPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/CertificatesPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/StudentsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/BulletinPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/EmailJdPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/SemestersPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ImportDataPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/ExportDataPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/DocumentsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/pages/AccountsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
-  <script type="text/babel" data-presets="tsx" src="./src/App.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/config/firebase.config.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/services/prime-rbac.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/services/api.client.ts?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/components/common/AdminNotificationModal.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/components/common/Navbar.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/components/common/Sidebar.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/components/student/StudentEligibilityBanner.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/LoginPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/DashboardPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/ProfilePage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/DeclarationPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/CertificatesPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/StudentsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/BulletinPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/EmailJdPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/SemestersPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/ImportDataPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/ExportDataPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/DocumentsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/pages/AccountsPage.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
+  <script type="text/babel" data-presets="tsx"
+    src="./src/App.tsx?v=20261105_v118_scope_student_declaration_per_semester"></script>
 
   <!-- DevTools & Source Protection Guard (Bảo vệ an toàn thông tin & chống lộ mã nguồn F12) -->
   <script>
-    (function() {
-      document.addEventListener('keydown', function(e) {
+    (function () {
+      document.addEventListener('keydown', function (e) {
         if (e.key === 'F12' || e.keyCode === 123) {
           e.preventDefault();
           return false;
@@ -230,7 +269,7 @@
         }
       }, false);
 
-      document.addEventListener('contextmenu', function(e) {
+      document.addEventListener('contextmenu', function (e) {
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
           return true;
         }
@@ -240,6 +279,7 @@
     })();
   </script>
 </head>
+
 <body class="bg-white text-[#1f2937] antialiased selection:bg-[#003087] selection:text-white">
   <div id="root">
     <div class="min-h-screen flex items-center justify-center text-[#1f2937] text-xs">
@@ -250,7 +290,7 @@
 
   <!-- Resilient App Mounter (Thread-safe Singleton) -->
   <script>
-    (function() {
+    (function () {
       var isMounted = false;
       function tryMount() {
         if (isMounted) return;
@@ -277,4 +317,5 @@
     })();
   </script>
 </body>
+
 </html>

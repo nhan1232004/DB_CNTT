@@ -655,8 +655,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
         );
       }
       return (
-        <span className="bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#15803d]"></span>
+        <span className="bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#16a34a]"></span>
           <span>Đã có nơi</span>
         </span>
       );
@@ -673,8 +673,8 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
     if (isWait) {
       return (
-        <span className="bg-[#fffbeb] text-[#b45309] border border-[#fde68a] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#b45309]"></span>
+        <span className="bg-[#fffbeb] text-[#d97706] border border-[#fde68a] px-3 py-1 rounded-full text-[12px] font-bold inline-flex items-center gap-1.5 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#d97706]"></span>
           <span>Chờ phỏng vấn</span>
         </span>
       );
@@ -1414,7 +1414,24 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#ebf3ff] text-[#003087] flex items-center justify-center font-bold text-[11px] shrink-0 border border-[#bfdbfe]">
+                          {sv.avatarUrl || sv.photoURL || sv.avatar ? (
+                            <img
+                              src={sv.avatarUrl || sv.photoURL || sv.avatar}
+                              alt={displayName}
+                              referrerPolicy="no-referrer"
+                              className="w-8 h-8 rounded-full object-cover border border-[#bfdbfe] shrink-0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            style={{ display: (sv.avatarUrl || sv.photoURL || sv.avatar) ? 'none' : 'flex' }}
+                            className="w-8 h-8 rounded-full bg-[#eff6ff] text-[#003087] flex items-center justify-center font-bold text-[11px] shrink-0 border border-[#bfdbfe]"
+                          >
                             {initials}
                           </div>
                           <div>
@@ -1438,15 +1455,32 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                       </td>
 
                       <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                        <span className="px-3 py-1 rounded-lg font-bold text-[13px] bg-[#f1f5f9] text-[#1e293b] border border-[#cbd5e1] inline-flex items-center justify-center whitespace-nowrap">
-                          {(() => {
-                            const cArr = Array.isArray(sv.courses) ? sv.courses.map((c: any) => String(c).toUpperCase()) : [];
-                            const cCode = String(sv.courseCode || sv.course_str || sv.courseName || '').toUpperCase();
-                            if (sv.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG')) return 'KTCN & TSNN';
-                            if (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || sv.tsnnEnrolled === 1) return 'TSNN';
-                            return 'KTCN';
-                          })()}
-                        </span>
+                        {(() => {
+                          const cArr = Array.isArray(sv.courses) ? sv.courses.map((c: any) => String(c).toUpperCase()) : [];
+                          const cCode = String(sv.courseCode || sv.course_str || sv.courseName || '').toUpperCase();
+                          const isDual = Boolean(sv.isDualCourse || cArr.length > 1 || (cCode.includes('KTCN') && cCode.includes('TSNN')) || cCode.includes('SONG SONG'));
+                          const isTsnn = !isDual && (cArr.some((c: string) => c.includes('TSNN') || c.includes('TẬP SỰ')) || cCode.includes('TSNN') || cCode.includes('TẬP SỰ') || sv.tsnnEnrolled === 1);
+                          
+                          if (isDual) {
+                            return (
+                              <span className="px-3 py-1 rounded-full font-bold text-[12px] bg-[#f0fdfa] text-[#0d9488] border border-[#99f6e4] inline-flex items-center justify-center whitespace-nowrap shadow-2xs">
+                                KTCN & TSNN
+                              </span>
+                            );
+                          }
+                          if (isTsnn) {
+                            return (
+                              <span className="px-3 py-1 rounded-full font-bold text-[12px] bg-[#eff6ff] text-[#0052cc] border border-[#bfdbfe] inline-flex items-center justify-center whitespace-nowrap shadow-2xs">
+                                TSNN
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="px-3 py-1 rounded-full font-bold text-[12px] bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] inline-flex items-center justify-center whitespace-nowrap shadow-2xs">
+                              KTCN
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       <td className="py-3.5 px-3 text-center">

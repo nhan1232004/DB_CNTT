@@ -165,12 +165,12 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
           handleSemUpdate();
         }
       };
-    } catch {}
+    } catch { }
     return () => {
       window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
       window.removeEventListener('storage', handleSemUpdate);
       if (bc) {
-        try { bc.close(); } catch {}
+        try { bc.close(); } catch { }
       }
     };
   }, []);
@@ -189,7 +189,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
             const arr = JSON.parse(raw);
             if (Array.isArray(arr) && arr.length > 0) loadedStudentCount = arr.length;
           }
-        } catch {}
+        } catch { }
         if (loadedStudentCount === 0) loadedStudentCount = 82;
       } else {
         // Đối với học kỳ khác: Cách ly tuyệt đối, chỉ lấy đúng danh sách sinh viên đã nạp cho học kỳ đó
@@ -199,7 +199,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
             const arr = JSON.parse(raw);
             if (Array.isArray(arr)) loadedStudentCount = arr.length;
           }
-        } catch {}
+        } catch { }
       }
       setTotalEnrolledStudents(loadedStudentCount);
 
@@ -252,7 +252,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
           loadData(currentSemester);
         }
       };
-    } catch {}
+    } catch { }
 
     return () => {
       window.removeEventListener('tdtu_certs_updated', handleUpdate);
@@ -260,7 +260,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       window.removeEventListener('tdtu_semester_changed', handleSemesterChange);
       window.removeEventListener('storage', handleUpdate);
       if (bc) {
-        try { bc.close(); } catch {}
+        try { bc.close(); } catch { }
       }
     };
   }, [currentSemester, loadData]);
@@ -309,11 +309,11 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
   const totalCount = validCerts.length;
   const passedCount = validCerts.filter(c => ['B1', 'B2', 'C1', 'C2'].includes(String(c.level || '').toUpperCase())).length;
   const passedRate = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
-  
+
   // Tập hợp các MSSV duy nhất đã nộp chứng chỉ tiếng Anh trong học kỳ này
   const studentIdsWithCert = new Set(validCerts.map(c => String(c.studentId || c.mssv || '').trim().toUpperCase()).filter(Boolean));
   const certSubmittedStudentCount = studentIdsWithCert.size;
-  
+
   // Tổng sinh viên thực tế toàn khoa theo học kỳ (tránh bị fallback ảo sang học kỳ khác)
   let effectiveTotalStudents = totalEnrolledStudents;
   if (effectiveTotalStudents <= certSubmittedStudentCount && currentSemester === 'hk1_2026_2027') {
@@ -323,7 +323,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
         const arr = JSON.parse(raw);
         if (Array.isArray(arr) && arr.length > certSubmittedStudentCount) effectiveTotalStudents = arr.length;
       }
-    } catch {}
+    } catch { }
     if (effectiveTotalStudents <= certSubmittedStudentCount) effectiveTotalStudents = 82;
   }
   const totalEffectiveStudents = effectiveTotalStudents;
@@ -354,7 +354,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
     setCurrentSemester(s);
     loadData(s);
     if (onSemesterChange) onSemesterChange(s);
-    try { localStorage.setItem('tdtu_active_semester', s); } catch {}
+    try { localStorage.setItem('tdtu_active_semester', s); } catch { }
     window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: s } }));
   };
 
@@ -403,7 +403,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
 
       {/* 4 Thẻ Thống kê nhanh (KPIs) - Lớn, rõ ràng, không có ô icon rỗng */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
+
         {/* Card 1: Tổng hồ sơ đã nộp */}
         <div className="p-5 rounded-2xl bg-white border border-[#e2e8f0] shadow-xs flex flex-col justify-between">
           <div className="text-[13px] font-bold text-[#4b5563] uppercase tracking-wider">
@@ -470,7 +470,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       {/* Thanh Tìm kiếm & Bộ lọc linh hoạt */}
       <div className="p-4 rounded-xl bg-white  border border-[#e5e7eb]  shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-          
+
           {/* Ô Tìm kiếm MSSV, Họ tên */}
           <div className="lg:col-span-6 relative flex items-center">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#4b5563]">
@@ -569,7 +569,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
         ) : filteredCerts.length === 0 ? (
           <div className="p-12 text-center text-[#1f2937]">
             <div className="w-12 h-12 rounded-full bg-[#f8fafc]  flex items-center justify-center text-2xl mx-auto mb-3">
-              
+
             </div>
             <p className="text-sm font-bold text-[#1f2937] ">Không tìm thấy chứng chỉ nào</p>
             <p className="text-[13.5px] text-[#4b5563] mt-1">Hãy thử thay đổi từ khóa tìm kiếm hoặc làm mới bộ lọc.</p>
@@ -600,15 +600,15 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
 
                   // Màu badge theo chứng chỉ
                   const certNameUpper = String(cert.name || '').toUpperCase();
-                  const certConfig = ENGLISH_CERTIFICATES.find(c => 
-                    (c.key && certNameUpper.includes(c.key)) || 
+                  const certConfig = ENGLISH_CERTIFICATES.find(c =>
+                    (c.key && certNameUpper.includes(c.key)) ||
                     (c.name && c.name.toUpperCase() === certNameUpper)
                   );
                   const certColorClass = certConfig ? certConfig.color : 'bg-[#f8fafc] text-[#1f2937] border-[#e5e7eb]  ';
 
                   return (
                     <tr key={cert.id || index} className="hover:bg-[#f8fafc]  transition">
-                      
+
                       {/* STT */}
                       <td className="py-3.5 px-4 text-center text-[#1f2937] font-mono text-[14px] font-bold">
                         {startIndex + index + 1}
@@ -647,11 +647,10 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
 
                       {/* Cấp độ CEFR */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-[13.5px] font-bold inline-flex items-center gap-1 ${
-                          isPass
-                            ? 'bg-[#ebf3ff] text-[#003087]   border border-[#bfdbfe] '
-                            : 'bg-[#f8fafc] text-[#1f2937]   border border-[#e5e7eb] '
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-[13.5px] font-bold inline-flex items-center gap-1 ${isPass
+                          ? 'bg-[#ebf3ff] text-[#003087]   border border-[#bfdbfe] '
+                          : 'bg-[#f8fafc] text-[#1f2937]   border border-[#e5e7eb] '
+                          }`}>
                           <span>{isPass ? '' : ''}</span>
                           <span>{String(cert.level || 'B1')}</span>
                         </span>
@@ -690,7 +689,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                               className="p-1.5 text-[#1f2937] hover:text-[#1f2937]  rounded-lg hover:bg-[#f8fafc]  transition"
                               title="Xem chi tiết thông tin hồ sơ"
                             >
-                              
+
                             </button>
                           </div>
                         ) : (
@@ -701,7 +700,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                       {/* Trạng thái Cam kết */}
                       <td className="py-3.5 px-4 text-center">
                         <span className="px-2 py-0.5 rounded-full text-[11.5px] font-bold bg-[#ebf3ff] text-[#003087]   border border-[#bfdbfe] ">
-                           Đã cam đoan
+                          Đã cam đoan
                         </span>
                       </td>
 
@@ -713,14 +712,14 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
           </div>
         )}
 
-        {/* Table Footer with Pagination matching Figma Frame 12 */}
+        {/* Table Footer with Pagination matching FRONTEND_SPEC.md */}
         {!loading && filteredCerts.length > 0 && (
-          <div className="p-4 border-t border-[#e5e7eb]  flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#1f2937]">
+          <div className="px-5 py-3.5 border-t border-[#e2e8f0] bg-[#f8fafc]/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#64748b]">
             <div className="flex items-center gap-3">
               <span>
-                Hiển thị <strong>{totalItems === 0 ? 0 : startIndex + 1}–{endIndex}</strong> trên tổng số <strong>{totalItems}</strong> chứng chỉ
+                Hiển thị <strong className="text-[#0f172a] font-bold">{totalItems === 0 ? 0 : startIndex + 1}–{endIndex}</strong> / <strong className="text-[#0f172a] font-bold">{totalItems}</strong> chứng chỉ
               </span>
-              <span className="hidden sm:inline text-[#1f2937] ">|</span>
+              <span className="hidden sm:inline text-[#cbd5e1]">|</span>
               <div className="flex items-center gap-1.5">
                 <span>Mỗi trang:</span>
                 <select
@@ -729,12 +728,12 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                     setPageSize(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="px-2 py-1 rounded border border-[#e5e7eb]  bg-white  text-[#1f2937]  text-xs font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="px-2.5 py-1 rounded-lg border border-[#e2e8f0] bg-white text-[#0f172a] text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#003087] cursor-pointer"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <option value={10}>10 dòng</option>
+                  <option value={25}>25 dòng</option>
+                  <option value={50}>50 dòng</option>
+                  <option value={100}>100 dòng</option>
                 </select>
               </div>
             </div>
@@ -744,7 +743,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage(1)}
-                className="px-2 py-1 rounded border border-[#e5e7eb]  disabled:opacity-40 hover:bg-[#f8fafc]  font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#64748b] hover:text-[#003087] hover:border-[#bfdbfe] hover:bg-[#ebf3ff] disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold text-xs"
                 title="Trang đầu"
               >
                 «
@@ -753,7 +752,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage(p => p - 1)}
-                className="px-2.5 py-1 rounded border border-[#e5e7eb]  disabled:opacity-40 hover:bg-[#f8fafc]  font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#64748b] hover:text-[#003087] hover:border-[#bfdbfe] hover:bg-[#ebf3ff] disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold text-xs"
                 title="Trang trước"
               >
                 ‹
@@ -761,17 +760,16 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
 
               {getPaginationNumbers(currentPage, totalPages).map((pNum, idx) => (
                 pNum === '...' ? (
-                  <span key={`dots-${idx}`} className="px-2 py-1 text-[#1f2937] font-bold">...</span>
+                  <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-[#94a3b8] font-bold text-xs">...</span>
                 ) : (
                   <button
                     key={`page-${pNum}`}
                     type="button"
                     onClick={() => setCurrentPage(Number(pNum))}
-                    className={`min-w-[28px] px-2 py-1 rounded font-semibold text-xs transition-colors ${
-                      currentPage === Number(pNum)
-                        ? 'bg-[#003087] text-white shadow-xs'
-                        : 'border border-[#e5e7eb] hover:bg-[#ebf3ff] text-[#1f2937]'
-                    }`}
+                    className={`min-w-[32px] h-8 px-2 flex items-center justify-center rounded-lg font-bold text-xs transition cursor-pointer ${currentPage === Number(pNum)
+                      ? 'bg-[#003087] text-white shadow-xs'
+                      : 'border border-[#e2e8f0] bg-white text-[#0f172a] hover:bg-[#ebf3ff] hover:text-[#003087] hover:border-[#bfdbfe]'
+                      }`}
                   >
                     {pNum}
                   </button>
@@ -782,7 +780,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage(p => p + 1)}
-                className="px-2.5 py-1 rounded border border-[#e5e7eb]  disabled:opacity-40 hover:bg-[#f8fafc]  font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#64748b] hover:text-[#003087] hover:border-[#bfdbfe] hover:bg-[#ebf3ff] disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold text-xs"
                 title="Trang tiếp"
               >
                 ›
@@ -791,7 +789,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage(totalPages)}
-                className="px-2 py-1 rounded border border-[#e5e7eb]  disabled:opacity-40 hover:bg-[#f8fafc]  font-bold transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#64748b] hover:text-[#003087] hover:border-[#bfdbfe] hover:bg-[#ebf3ff] disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer font-bold text-xs"
                 title="Trang cuối"
               >
                 »
@@ -805,10 +803,10 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
       {selectedProofModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-3xl max-w-6xl xl:max-w-7xl w-[95vw] border border-[#cbd5e1] shadow-2xl p-8 space-y-6">
-            
+
             <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb] ">
               <div className="flex items-center gap-2">
-                
+
                 <div>
                   <h3 className="text-sm font-bold text-[#1f2937] ">
                     Chi tiết Hồ sơ Chứng chỉ Tiếng Anh
@@ -876,7 +874,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
               </div>
 
               <div className="p-3 bg-[#f8fafc]/70  border border-[#e5e7eb]  rounded-xl text-[11px] text-[#1f2937] ">
-                <strong>Cam kết trung thực của sinh viên: </strong> 
+                <strong>Cam kết trung thực của sinh viên: </strong>
                 Đã cam kết thông tin trung thực.
               </div>
             </div>
@@ -894,11 +892,6 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
           </div>
         </div>
       )}
-
-      {/* Footer Branding */}
-      <div className="text-[10px] text-[#1f2937]  text-center pt-4">
-        © Khoa Công nghệ Thông tin · Trường Đại học Tôn Đức Thắng
-      </div>
     </div>
   );
 };
@@ -1000,14 +993,14 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
           loadCerts();
         }
       };
-    } catch {}
+    } catch { }
 
     return () => {
       window.removeEventListener('tdtu_certs_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('focus', handleUpdate);
       if (bc) {
-        try { bc.close(); } catch {}
+        try { bc.close(); } catch { }
       }
     };
   }, [studentId, currentUser]);
@@ -1058,8 +1051,8 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
     const formattedExamDate = normalizeDateForInput(cert.examDate);
     const formattedIssueDate = normalizeDateForInput(cert.issueDate || cert.examDate);
 
-    const matched = ENGLISH_CERTIFICATES.find(c => 
-      c.key.toLowerCase() === (cert.name || '').toLowerCase() || 
+    const matched = ENGLISH_CERTIFICATES.find(c =>
+      c.key.toLowerCase() === (cert.name || '').toLowerCase() ||
       c.name.toLowerCase() === (cert.name || '').toLowerCase() ||
       (cert.name || '').toLowerCase().includes(c.key.toLowerCase())
     ) || ENGLISH_CERTIFICATES[0];
@@ -1191,7 +1184,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
 
   return (
     <div className="space-y-6 w-full pb-12">
-      
+
       {/* Top Header & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -1229,34 +1222,43 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
         </div>
       )}
 
-      {/* Hero Overview Card */}
-      <div className="p-6 rounded-xl bg-gradient-to-r from-[#003087] to-[#001f5c] text-white shadow-md relative overflow-hidden">
+      {/* Hero Overview Card (Chuẩn nhận diện TDTU - FRONTEND_SPEC.md) */}
+      <div className="p-6 rounded-xl bg-white border border-[#e2e8f0] shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold tracking-wider text-sky-200 uppercase">
-              <span></span>
-              <span>Chuẩn ngoại ngữ TDTU · Khóa 2022 trở đi</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black">
-              Sinh viên: {studentName} ({studentId})
+            <h2 className="text-xl md:text-2xl font-bold text-[#0f172a]">
+              Sinh viên: {studentName} <span className="font-mono text-[#003087]">({studentId})</span>
             </h2>
+            <div className="text-xs text-[#64748b] max-w-2xl leading-relaxed flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                Chuẩn ngoại ngữ TDTU · Khóa 2022 trở đi
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-white/15 pt-4 md:pt-0 md:pl-6 shrink-0">
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-black text-white">
+          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-[#e2e8f0] pt-4 md:pt-0 md:pl-6 shrink-0">
+            <div className="text-center px-2">
+              <div className="text-2xl font-bold text-[#003087] font-mono">
                 {totalCerts}
               </div>
-              <div className="text-xs text-white/90 font-bold">
+              <div className="text-[11.5px] text-[#64748b] font-medium mt-0.5">
                 Chứng chỉ đã nộp
               </div>
             </div>
-            <div className="h-8 w-px bg-white/20"></div>
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-black text-white">
-                {bestCert?.level || '—'}
+            <div className="h-8 w-px bg-[#e2e8f0]"></div>
+            <div className="text-center px-2">
+              <div className="text-sm font-bold">
+                {bestCert?.level ? (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
+                    {bestCert.level} · Đạt chuẩn
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]">
+                    Chưa đạt
+                  </span>
+                )}
               </div>
-              <div className="text-xs text-white/90 font-bold">
+              <div className="text-[11.5px] text-[#64748b] font-medium mt-1">
                 Cấp độ cao nhất
               </div>
             </div>
@@ -1268,11 +1270,8 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
       <div className="bg-white  rounded-xl border border-[#e5e7eb]  shadow-xs overflow-hidden">
         <div className="p-5 border-b border-[#e5e7eb]  flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-black text-[#1f2937]  flex items-center gap-2">
+            <h3 className="text-base font-bold text-[#0f172a] flex items-center gap-2">
               <span>Hồ sơ chứng chỉ tiếng Anh đã nộp</span>
-              <span className="px-2 py-0.5 rounded-full text-[11.5px] font-bold bg-[#ebf3ff]  text-[#003087] ">
-                {certs.length} chứng chỉ
-              </span>
             </h3>
           </div>
 
@@ -1314,7 +1313,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
         ) : certs.length === 0 ? (
           <div className="p-12 text-center text-[#1f2937]">
             <div className="w-16 h-16 rounded-xl bg-[#ebf3ff]  text-[#003087]  flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
-              
+
             </div>
             <h4 className="text-sm font-bold text-[#1f2937] ">
               Bạn chưa khai báo chứng chỉ tiếng Anh nào
@@ -1352,15 +1351,15 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                   const hasDrive = driveUrl && (String(driveUrl).startsWith('http://') || String(driveUrl).startsWith('https://'));
 
                   const certNameUpper = String(c.name || '').toUpperCase();
-                  const certConfig = ENGLISH_CERTIFICATES.find(ec => 
-                    (ec.key && certNameUpper.includes(ec.key)) || 
+                  const certConfig = ENGLISH_CERTIFICATES.find(ec =>
+                    (ec.key && certNameUpper.includes(ec.key)) ||
                     (ec.name && ec.name.toUpperCase() === certNameUpper)
                   );
                   const certColorClass = certConfig ? certConfig.color : 'bg-[#f8fafc] text-[#1f2937] border-[#e5e7eb]  ';
 
                   return (
                     <tr key={c.id || index} className="hover:bg-[#f8fafc]  transition">
-                      
+
                       {/* STT */}
                       <td className="py-3.5 px-4 text-center text-[#1f2937] font-mono text-[11px]">
                         {startIndex + index + 1}
@@ -1505,11 +1504,10 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                     key={`page-${pNum}`}
                     type="button"
                     onClick={() => setCurrentPage(Number(pNum))}
-                    className={`min-w-[28px] px-2 py-1 rounded font-semibold text-xs transition-colors ${
-                      currentPage === Number(pNum)
-                        ? 'bg-[#003087] text-white shadow-xs'
-                        : 'border border-[#e5e7eb] hover:bg-[#ebf3ff] text-[#1f2937]'
-                    }`}
+                    className={`min-w-[28px] px-2 py-1 rounded font-semibold text-xs transition-colors ${currentPage === Number(pNum)
+                      ? 'bg-[#003087] text-white shadow-xs'
+                      : 'border border-[#e5e7eb] hover:bg-[#ebf3ff] text-[#1f2937]'
+                      }`}
                   >
                     {pNum}
                   </button>
@@ -1543,7 +1541,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-3xl max-w-5xl w-[94vw] border border-[#cbd5e1] shadow-2xl p-8 space-y-6 max-h-[94vh] overflow-y-auto">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#e5e7eb] ">
               <div>
@@ -1565,7 +1563,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
 
             {/* Modal Form */}
             <form onSubmit={handleSaveCert} className="space-y-4 text-xs">
-              
+
               {/* Alert thông báo thay thế chứng chỉ */}
               <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-[12px] flex items-start gap-2.5">
                 <span className="text-base leading-none">ℹ️</span>
@@ -1594,7 +1592,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
 
               {/* 2 Cột: Điểm đạt được & Cấp độ CEFR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                
+
                 {/* Điểm đạt được */}
                 <div>
                   <label className="block font-bold text-[#1f2937]  mb-1.5">
@@ -1636,7 +1634,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
 
               {/* Tách biệt 2 ô ngày riêng biệt: Ngày thi & Ngày cấp chứng chỉ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                
+
                 {/* Ngày thi */}
                 <div>
                   <label className="block font-bold text-[#1f2937]  mb-1.5">
@@ -1686,7 +1684,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#1f2937]">
-                    
+
                   </span>
                   <input
                     type="url"
@@ -1715,7 +1713,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                     className="mt-0.5 w-4 h-4 rounded border-[#e5e7eb] text-[#003087] focus:ring-[#003087] cursor-pointer shrink-0"
                   />
                   <label htmlFor="cert-commitment-check" className="text-xs text-[#1f2937]  font-medium leading-relaxed select-none cursor-pointer">
-                    <strong className="text-[#1f2937]  font-bold">Cam kết của sinh viên: </strong> 
+                    <strong className="text-[#1f2937]  font-bold">Cam kết của sinh viên: </strong>
                     Tôi cam kết thông tin và minh chứng là trung thực.
                   </label>
                 </div>
@@ -1734,11 +1732,10 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                   <button
                     type="submit"
                     disabled={saving || !formData.commitment}
-                    className={`px-6 py-2.5 min-w-[160px] text-white rounded-lg font-bold text-[12.5px] shadow-sm transition cursor-pointer whitespace-nowrap ${
-                      saving || !formData.commitment
-                        ? 'bg-slate-400 cursor-not-allowed'
-                        : 'bg-[#003087] hover:bg-[#002266]'
-                    }`}
+                    className={`px-6 py-2.5 min-w-[160px] text-white rounded-lg font-bold text-[12.5px] shadow-sm transition cursor-pointer whitespace-nowrap ${saving || !formData.commitment
+                      ? 'bg-slate-400 cursor-not-allowed'
+                      : 'bg-[#003087] hover:bg-[#002266]'
+                      }`}
                   >
                     {saving ? 'Đang lưu...' : (editingCert ? 'Cập nhật thay đổi' : 'Lưu chứng chỉ')}
                   </button>
@@ -1751,10 +1748,6 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
         </div>
       )}
 
-      {/* Footer Branding */}
-      <div className="text-[10px] text-[#1f2937]  text-center pt-4">
-        © Khoa Công nghệ Thông tin · Trường Đại học Tôn Đức Thắng
-      </div>
 
     </div>
   );

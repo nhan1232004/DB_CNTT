@@ -249,7 +249,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
               enrolledCourses = extracted.courses;
               majorStr = found.major ? ` · Chuyên ngành: ${found.major}` : '';
             }
-          } catch {}
+          } catch { }
         }
 
         // Ưu tiên 2: Tra cứu trực tiếp từ helper getStudentEnrolledCourse (quét toàn bộ học kỳ trong LocalStorage)
@@ -274,7 +274,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
               enrolledCourses = extracted.courses;
               if (docData?.major && !majorStr) majorStr = ` · Chuyên ngành: ${docData.major}`;
             }
-          } catch {}
+          } catch { }
         }
 
         // Ưu tiên 4: Fallback từ thông tin phiên đăng nhập currentUser
@@ -292,7 +292,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (isMounted) {
           setSelectedCourses(enrolledCourses);
           setIsDualCourse(isDual);
-          const txt = isDual 
+          const txt = isDual
             ? 'Phân bổ chính thức: KTCN-TSNN'
             : enrolledCourses.includes('TSNN')
               ? 'Phân bổ chính thức: TSNN'
@@ -337,7 +337,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       if (decl.history && Array.isArray(decl.history)) {
         hist = decl.history;
       } else if (decl.declarationHistory) {
-        try { hist = JSON.parse(decl.declarationHistory); } catch {}
+        try { hist = JSON.parse(decl.declarationHistory); } catch { }
       }
       setDeclarationHistory(hist);
       if (decl.internshipStatus) {
@@ -471,7 +471,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (d.supportCommitment) setSupportCommitment(d.supportCommitment);
         if (d.savedAt) setLastSavedTime(d.savedAt);
       }
-    } catch {}
+    } catch { }
   }, [studentId, activeSemester]);
 
   const viewModeRef = React.useRef(viewMode);
@@ -550,7 +550,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
           handleDeclUpdate();
         }
       };
-    } catch {}
+    } catch { }
 
     return () => {
       window.removeEventListener('tdtu_decl_updated', handleDeclUpdate);
@@ -559,7 +559,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       window.removeEventListener('tdtu_cv_updated', handleDeclUpdate);
       window.removeEventListener('storage', handleDeclUpdate);
       if (bc) {
-        try { bc.close(); } catch {}
+        try { bc.close(); } catch { }
       }
     };
   }, [loadExistingOrDraft, studentId, activeSemester]);
@@ -690,7 +690,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (targetSem === 'hk1_2026_2027') {
           updateCachedList('tdtu_live_students');
         }
-      } catch {}
+      } catch { }
 
       if (window.FirebaseService?.db) {
         try {
@@ -711,7 +711,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
           if (targetSem === 'hk1_2026_2027') {
             window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
           }
-        } catch {}
+        } catch { }
       }
 
       setServerDeclaration(payload);
@@ -725,10 +725,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                 ? JSON.parse(res.data.declaration.declarationHistory)
                 : res.data.declaration.declarationHistory;
               setDeclarationHistory(parsed);
-            } catch {}
+            } catch { }
           }
         }
-      } catch {}
+      } catch { }
 
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
@@ -738,7 +738,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
-      } catch {}
+      } catch { }
       setViewMode('list');
     } catch (err) {
       setMessage({ type: 'error', text: err?.message || 'Không thể lưu trạng thái. Vui lòng thử lại.' });
@@ -822,7 +822,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (activeSemester === 'hk1_2026_2027') {
           updateCachedList('tdtu_live_students');
         }
-      } catch {}
+      } catch { }
 
       if (window.FirebaseService?.db) {
         try {
@@ -841,7 +841,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
           if (targetSem === 'hk1_2026_2027') {
             window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
           }
-        } catch {}
+        } catch { }
       }
 
       setServerDeclaration(payload);
@@ -855,10 +855,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                 ? JSON.parse(res.data.declaration.declarationHistory)
                 : res.data.declaration.declarationHistory;
               setDeclarationHistory(parsed);
-            } catch {}
+            } catch { }
           }
         }
-      } catch {}
+      } catch { }
 
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
       window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: payload }));
@@ -868,7 +868,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
-      } catch {}
+      } catch { }
       setViewMode('list');
     } catch (err) {
       setMessage({ type: 'error', text: err?.message || 'Không thể gửi yêu cầu hỗ trợ. Vui lòng thử lại.' });
@@ -997,7 +997,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         if (targetSem === 'hk1_2026_2027') {
           updateCachedList('tdtu_live_students');
         }
-      } catch {}
+      } catch { }
 
       if (window.FirebaseService?.db) {
         try {
@@ -1028,7 +1028,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
           if (targetSem === 'hk1_2026_2027') {
             window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentUpdateData, { merge: true });
           }
-        } catch {}
+        } catch { }
       }
 
       const res = await window.ApiClient.declareInternship(payload);
@@ -1040,7 +1040,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
               ? JSON.parse(res.data.declaration.declarationHistory)
               : res.data.declaration.declarationHistory;
             setDeclarationHistory(parsed);
-          } catch {}
+          } catch { }
         }
       }
       window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: payload }));
@@ -1051,7 +1051,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       });
       try {
         localStorage.removeItem('tdtu_decl_draft_' + studentId);
-      } catch {}
+      } catch { }
       setViewMode('list');
     } catch (err) {
       setMessage({ type: 'error', text: err?.message || 'Không thể lưu hồ sơ khai báo. Vui lòng thử lại.' });
@@ -1148,7 +1148,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       }
       setLastSavedTime(draft.savedAt);
       setSavedDraft(draft);
-    } catch {}
+    } catch { }
   };
 
   // Chuẩn bị danh sách hồ sơ cho Bảng (Table records) - Đúng học kỳ đang chọn
@@ -1173,9 +1173,9 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         taxCode: internshipStatus === 'has_company' ? (taxCode || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.taxCode : '') || '') : '',
         mentor: internshipStatus === 'has_company'
           ? (() => {
-              const raw = contactPerson || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPerson : '') || 'Chưa chỉ định';
-              return raw.split('·')[0].split('(')[0].trim() || 'Chưa chỉ định';
-            })()
+            const raw = contactPerson || (serverDeclaration?.internshipStatus === 'has_company' ? serverDeclaration?.contactPerson : '') || 'Chưa chỉ định';
+            return raw.split('·')[0].split('(')[0].trim() || 'Chưa chỉ định';
+          })()
           : internshipStatus === 'need_support'
             ? 'Trợ lý Doanh nghiệp Khoa CNTT'
             : 'Chờ kết quả phỏng vấn',
@@ -1238,7 +1238,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
 
   return (
     <div className="space-y-6 w-full pb-12">
-      
+
       {/* Top Header & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -1262,11 +1262,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
               type="button"
               disabled={serverDeclaration ? !canUpdate : !canCreate}
               onClick={() => handleOpenDeclarationForm(false)}
-              className={`px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 ${
-                (serverDeclaration ? !canUpdate : !canCreate)
-                  ? 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-60'
-                  : 'bg-[#003087] hover:bg-[#002266] cursor-pointer'
-              }`}
+              className={`px-5 py-2.5 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 ${(serverDeclaration ? !canUpdate : !canCreate)
+                ? 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-60'
+                : 'bg-[#003087] hover:bg-[#002266] cursor-pointer'
+                }`}
               title={serverDeclaration ? (!canUpdate ? 'Chưa có quyền Sửa (Update)' : 'Cập nhật nơi thực tập') : (!canCreate ? 'Chưa có quyền Thêm (Create)' : 'Khai báo nơi thực tập mới')}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1280,11 +1279,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
 
       {/* Global Alert Notification */}
       {message && (
-        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-xs animate-fadeIn ${
-          message.type === 'success'
-            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-        }`}>
+        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center justify-between shadow-xs animate-fadeIn ${message.type === 'success'
+          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+          : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+          }`}>
           <div className="flex items-center gap-2">
             <span className="font-bold">{message.type === 'success' ? '✓' : '!'}</span>
             <span>{message.text}</span>
@@ -1295,44 +1293,53 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
         </div>
       )}
 
-      {/* Hero Overview Card (Chuẩn nhận diện TDTU - Tương tự Chứng chỉ ngoại ngữ) */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-[#003087] to-[#001f5c] text-white shadow-md relative overflow-hidden">
+      {/* Hero Overview Card (Chuẩn nhận diện TDTU - FRONTEND_SPEC.md) */}
+      <div className="p-6 rounded-xl bg-white border border-[#e2e8f0] shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold tracking-wider text-sky-200 uppercase">
-              <span>{(() => {
-                const sems = window.ApiClient?.getSemesters ? window.ApiClient.getSemesters() : [];
-                const found = sems.find((s: any) => s.id === activeSemester);
-                return found?.name || (activeSemester === 'hk2_2026_2027' ? 'Học kỳ 2 / 2026–2027' : 'Học kỳ 1 / 2026–2027');
-              })()} · Khoa CNTT - ĐH Tôn Đức Thắng</span>
-            </div>
-            <h2 className="text-xl md:text-2xl font-black">
-              Sinh viên: {studentName} ({studentId})
+            <h2 className="text-xl md:text-2xl font-bold text-[#0f172a]">
+              Sinh viên: {studentName} <span className="font-mono text-[#003087]">({studentId})</span>
             </h2>
-            <div className="text-xs text-sky-100 max-w-2xl leading-relaxed flex items-center gap-2 flex-wrap">
-              <span>Học phần:</span>
-              <strong className="text-white font-bold">{courseDisplay}</strong>
-              
+            <div className="text-xs text-[#64748b] max-w-2xl leading-relaxed flex items-center gap-2 flex-wrap">
+              <span>Học phần đăng ký:</span>
+              <strong className="text-[#0f172a] font-bold">{courseDisplay}</strong>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-white/15 pt-4 md:pt-0 md:pl-6 shrink-0">
-            <div className="text-center">
-              <div className="text-xl md:text-2xl font-black text-amber-300">
+          <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-[#e2e8f0] pt-4 md:pt-0 md:pl-6 shrink-0">
+            <div className="text-center px-2">
+              <div className="text-2xl font-bold text-[#003087] font-mono">
                 {activeDeclarationList.length}
               </div>
-              <div className="text-[11px] text-sky-100 font-medium">
+              <div className="text-[11.5px] text-[#64748b] font-medium mt-0.5">
                 Hồ sơ đã nộp
               </div>
             </div>
-            <div className="h-8 w-px bg-white/20"></div>
-            <div className="text-center">
-              <div className="text-sm md:text-base font-black text-emerald-300">
+            <div className="h-8 w-px bg-[#e2e8f0]"></div>
+            <div className="text-center px-2">
+              <div className="text-sm font-bold">
                 {serverDeclaration ? (
-                  internshipStatus === 'has_company' ? 'Đã có nơi TT' : internshipStatus === 'interviewing' ? 'Đang ứng tuyển' : 'Cần Khoa hỗ trợ'
+                  internshipStatus === 'has_company' ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+                      ✓ Đã có nơi TT
+                    </span>
+                  ) : internshipStatus === 'interviewing' ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#fffbeb] text-[#d97706] border border-[#fde68a]">
+                      ⏳ Đang ứng tuyển
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#fef2f2] text-[#dc2626] border border-[#fecaca]">
+                      ! Cần Khoa hỗ trợ
+                    </span>
+                  )
                 ) : (
-                  'Chưa nộp'
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]">
+                    Chưa nộp
+                  </span>
                 )}
+              </div>
+              <div className="text-[11.5px] text-[#64748b] font-medium mt-1">
+                Trạng thái hiện tại
               </div>
             </div>
           </div>
@@ -1345,201 +1352,185 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       {viewMode === 'list' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
-          
-          {/* Card Table Header */}
-          <div className="p-5 border-b border-[#e2e8f0] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-bold text-[#1f2937] flex items-center gap-2">
-                <span>Hồ sơ khai báo thực tập đã nộp</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#ebf3ff] text-[#003087]">
-                  {activeDeclarationList.length} hồ sơ
-                </span>
-              </h3>
-            </div>
-          </div>
-
-          {/* Table Content or Empty State */}
-          {activeDeclarationList.length === 0 ? (
-            <div className="p-12 text-center text-slate-400">
-              <div className="w-14 h-14 rounded-xl bg-[#ebf3ff] text-[#003087] flex items-center justify-center mx-auto mb-3 border border-[#bfdbfe]">
-                <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                Bạn chưa khai báo thông tin nơi thực tập nào
-              </h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
-                Hệ thống ghi nhận bạn đã được phân bổ học phần <strong>{courseDisplay}</strong>. Nhấn nút "Khai báo nơi thực tập ngay" bên dưới để đăng ký nơi thực tập hoặc đề xuất Khoa hỗ trợ.
-              </p>
-              <button
-                type="button"
-                disabled={!canCreate}
-                onClick={() => handleOpenDeclarationForm(true)}
-                className={`px-4 py-2 text-white text-xs font-bold rounded-xl shadow-xs transition ${
-                  !canCreate
+            {/* Table Content or Empty State */}
+            {activeDeclarationList.length === 0 ? (
+              <div className="p-12 text-center text-slate-400">
+                <div className="w-14 h-14 rounded-xl bg-[#ebf3ff] text-[#003087] flex items-center justify-center mx-auto mb-3 border border-[#bfdbfe]">
+                  <svg className="w-6 h-6 text-[#003087]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                  Bạn chưa khai báo thông tin nơi thực tập nào
+                </h4>
+                <p className="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-4 leading-relaxed">
+                  Hệ thống ghi nhận bạn đã được phân bổ học phần <strong>{courseDisplay}</strong>. Nhấn nút "Khai báo nơi thực tập ngay" bên dưới để đăng ký nơi thực tập hoặc đề xuất Khoa hỗ trợ.
+                </p>
+                <button
+                  type="button"
+                  disabled={!canCreate}
+                  onClick={() => handleOpenDeclarationForm(true)}
+                  className={`px-4 py-2 text-white text-xs font-bold rounded-xl shadow-xs transition ${!canCreate
                     ? 'bg-slate-400 dark:bg-slate-600 cursor-not-allowed opacity-60'
                     : 'bg-[#003087] hover:bg-[#002266] cursor-pointer'
-                }`}
-              >
-                + Khai báo nơi thực tập ngay
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#1f2937]">
-                <thead className="bg-[#f8fafc] text-xs font-bold uppercase text-[#1f2937] border-b border-[#e5e7eb]">
-                  <tr>
-                    <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                    <th className="py-3.5 px-4">Học phần</th>
-                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                    <th className="py-3.5 px-4">Doanh nghiệp</th>
-                    <th className="py-3.5 px-4">Vị trí</th>
-                    <th className="py-3.5 px-4">Người hướng dẫn</th>
-                    <th className="py-3.5 px-4 text-center">Link CV</th>
-                    <th className="py-3.5 px-4 text-center">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium">
-                  {activeDeclarationList.map((row) => {
-                    const hasDrive = row.cvDriveLink && (row.cvDriveLink.startsWith('http://') || row.cvDriveLink.startsWith('https://'));
-                    
-                    return (
-                      <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
-                        
-                        {/* STT */}
-                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
-                          {row.stt}
-                        </td>
+                    }`}
+                >
+                  + Khai báo nơi thực tập ngay
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-[#1f2937]">
+                  <thead className="bg-[#f8fafc] text-xs font-bold uppercase text-[#1f2937] border-b border-[#e5e7eb]">
+                    <tr>
+                      <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                      <th className="py-3.5 px-4">Học phần</th>
+                      <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                      <th className="py-3.5 px-4">Doanh nghiệp</th>
+                      <th className="py-3.5 px-4">Vị trí</th>
+                      <th className="py-3.5 px-4">Người hướng dẫn</th>
+                      <th className="py-3.5 px-4 text-center">Link CV</th>
+                      <th className="py-3.5 px-4 text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 font-medium">
+                    {activeDeclarationList.map((row) => {
+                      const hasDrive = row.cvDriveLink && (row.cvDriveLink.startsWith('http://') || row.cvDriveLink.startsWith('https://'));
 
-                        {/* Học phần */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-col">
-                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold border inline-block bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 w-fit">
-                              {row.courseCode}
-                            </span>
-                            
-                          </div>
-                        </td>
+                      return (
+                        <tr key={row.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
 
-                        {/* Trạng thái */}
-                        <td className="py-3.5 px-4 text-center">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border inline-block ${
-                            row.status === 'has_company'
+                          {/* STT */}
+                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                            {row.stt}
+                          </td>
+
+                          {/* Học phần */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-col">
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-bold border inline-block bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 w-fit">
+                                {row.courseCode}
+                              </span>
+
+                            </div>
+                          </td>
+
+                          {/* Trạng thái */}
+                          <td className="py-3.5 px-4 text-center">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border inline-block ${row.status === 'has_company'
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                               : row.status === 'interviewing'
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-800'
                                 : 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-800'
-                          }`}>
-                            {row.statusLabel}
-                          </span>
-                        </td>
+                              }`}>
+                              {row.statusLabel}
+                            </span>
+                          </td>
 
-                        {/* Doanh nghiệp / Nơi thực tập */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-extrabold text-[#003087] dark:text-sky-300">
-                            {row.status === 'has_company'
-                              ? row.companyName
-                              : row.status === 'interviewing'
-                                ? (row.pendingCompany || 'Đang tìm kiếm / Chờ PV')
-                                : 'Khoa CNTT hỗ trợ điều phối'}
-                          </div>
-                          {row.status === 'has_company' && row.taxCode ? (
-                            <div className="text-[11px] font-mono text-slate-500 mt-0.5">
-                              MST: {row.taxCode}
+                          {/* Doanh nghiệp / Nơi thực tập */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-extrabold text-[#003087] dark:text-sky-300">
+                              {row.status === 'has_company'
+                                ? row.companyName
+                                : row.status === 'interviewing'
+                                  ? (row.pendingCompany || 'Đang tìm kiếm / Chờ PV')
+                                  : 'Khoa CNTT hỗ trợ điều phối'}
                             </div>
-                          ) : null}
-                          {row.status === 'has_company' && row.address ? (
-                            <div className="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
-                              {row.address}
+                            {row.status === 'has_company' && row.taxCode ? (
+                              <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                                MST: {row.taxCode}
+                              </div>
+                            ) : null}
+                            {row.status === 'has_company' && row.address ? (
+                              <div className="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
+                                {row.address}
+                              </div>
+                            ) : null}
+                          </td>
+
+                          {/* Vị trí thực tập */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                              {row.status === 'has_company'
+                                ? (row.position || 'Thực tập sinh')
+                                : row.status === 'interviewing'
+                                  ? (row.desiredPosition || row.position || 'Đang chờ phỏng vấn')
+                                  : (row.desiredPosition || row.position || 'Chờ Khoa hỗ trợ')}
                             </div>
-                          ) : null}
-                        </td>
+                          </td>
 
-                        {/* Vị trí thực tập */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-800 dark:text-slate-200">
-                            {row.status === 'has_company'
-                              ? (row.position || 'Thực tập sinh')
-                              : row.status === 'interviewing'
-                                ? (row.desiredPosition || row.position || 'Đang chờ phỏng vấn')
-                                : (row.desiredPosition || row.position || 'Chờ Khoa hỗ trợ')}
-                          </div>
-                        </td>
+                          {/* Người hướng dẫn */}
+                          <td className="py-3.5 px-4">
+                            <div className="text-slate-700 dark:text-slate-300">
+                              {row.status === 'has_company'
+                                ? (row.mentor || 'Chưa chỉ định')
+                                : (row.status === 'need_support' ? 'Trợ lý DN Khoa' : '—')}
+                            </div>
+                          </td>
 
-                        {/* Người hướng dẫn */}
-                        <td className="py-3.5 px-4">
-                          <div className="text-slate-700 dark:text-slate-300">
-                            {row.status === 'has_company'
-                              ? (row.mentor || 'Chưa chỉ định')
-                              : (row.status === 'need_support' ? 'Trợ lý DN Khoa' : '—')}
-                          </div>
-                        </td>
 
-                        
 
-                        {/* Link CV */}
-                        <td className="py-3.5 px-4 text-center">
-                          {hasDrive ? (
-                            <a
-                              href={row.cvDriveLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
-                              title="Mở liên kết CV của bạn trong tab mới"
-                            >
-                              <span>Xem CV</span>
-                              <span className="text-[11px]">↗</span>
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">Chưa có liên kết</span>
-                          )}
-                        </td>
+                          {/* Link CV */}
+                          <td className="py-3.5 px-4 text-center">
+                            {hasDrive ? (
+                              <a
+                                href={row.cvDriveLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="Mở liên kết CV của bạn trong tab mới"
+                              >
+                                <span>Xem CV</span>
+                                <span className="text-[11px]">↗</span>
+                              </a>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">Chưa có liên kết</span>
+                            )}
+                          </td>
 
-                        {/* Thao tác CRUD: Xem chi tiết, Sửa, Xóa */}
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* Nút Xem chi tiết */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDetailModal(row)}
-                              title="Xem chi tiết đầy đủ hồ sơ khai báo"
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </button>
+                          {/* Thao tác CRUD: Xem chi tiết, Sửa, Xóa */}
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Nút Xem chi tiết */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDetailModal(row)}
+                                title="Xem chi tiết đầy đủ hồ sơ khai báo"
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
 
-                            {/* Nút Chỉnh sửa */}
-                            <button
-                              type="button"
-                              disabled={!canUpdate}
-                              onClick={() => handleOpenDeclarationForm(false)}
-                              title={canUpdate ? 'Chỉnh sửa hoặc cập nhật nơi thực tập' : 'Chưa có quyền Sửa (Update - Mã 5)'}
-                              className={`p-1.5 rounded-lg transition ${
-                                canUpdate
+                              {/* Nút Chỉnh sửa */}
+                              <button
+                                type="button"
+                                disabled={!canUpdate}
+                                onClick={() => handleOpenDeclarationForm(false)}
+                                title={canUpdate ? 'Chỉnh sửa hoặc cập nhật nơi thực tập' : 'Chưa có quyền Sửa (Update - Mã 5)'}
+                                className={`p-1.5 rounded-lg transition ${canUpdate
                                   ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer'
                                   : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                              }`}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
+                                  }`}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
 
-                            
-                          </div>
-                        </td>
 
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                            </div>
+                          </td>
+
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
           </div>
         </div>
@@ -1550,30 +1541,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
       {/* ========================================================================= */}
       {viewMode === 'form' && (
         <div className="space-y-6 animate-fadeIn">
-          
-          {/* Header thanh điều hướng quay lại */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className="text-xs font-bold text-[#003087] dark:text-sky-400 hover:underline flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>←</span>
-              <span>Quay lại bảng hồ sơ đã nộp</span>
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
-                {isEditingExisting ? 'Cập nhật hồ sơ thực tập' : 'Biểu mẫu khai báo thực tập mới'}
-              </div>
-            </div>
-          </div>
 
-          {/* Main Grid: Left Wizard (70%), Right Profile Summary (30%) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            {/* Left Form (8 cols) */}
-            <div className="lg:col-span-8 space-y-6">
-              
+          {/* Main Form Container: Full Width Single Column */}
+          <div className="w-full space-y-6">
+
               {/* Stepper Header (Dynamic theo ngữ cảnh) */}
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xs">
                 <div className="flex items-center justify-between gap-2 overflow-hidden">
@@ -1583,13 +1554,12 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                     return (
                       <React.Fragment key={s.num}>
                         <div className="flex items-center gap-2.5 shrink-0">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                            isPassed 
-                              ? 'bg-emerald-600 text-white shadow-xs' 
-                              : isCurrent 
-                                ? (internshipStatus === 'has_company' ? 'bg-[#003087]' : internshipStatus === 'interviewing' ? 'bg-amber-600' : 'bg-rose-600') + ' text-white shadow-xs ring-4 ring-blue-100 dark:ring-blue-900/40' 
-                                : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-400'
-                          }`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${isPassed
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : isCurrent
+                              ? (internshipStatus === 'has_company' ? 'bg-[#003087]' : internshipStatus === 'interviewing' ? 'bg-amber-600' : 'bg-rose-600') + ' text-white shadow-xs ring-4 ring-blue-100 dark:ring-blue-900/40'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-400'
+                            }`}>
                             {isPassed ? '✓' : s.num}
                           </div>
                           <div>
@@ -1603,9 +1573,8 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                         </div>
 
                         {idx < stepsMeta.length - 1 && (
-                          <div className={`flex-1 h-0.5 mx-2 min-w-[20px] transition-colors ${
-                            currentStep > s.num ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
-                          }`} />
+                          <div className={`flex-1 h-0.5 mx-2 min-w-[20px] transition-colors ${currentStep > s.num ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
+                            }`} />
                         )}
                       </React.Fragment>
                     );
@@ -1646,20 +1615,18 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           setTaxConfirmed(false);
                         }
                       }}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        internshipStatus === 'has_company'
-                          ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-100 dark:ring-emerald-900/30'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
-                      }`}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${internshipStatus === 'has_company'
+                        ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm ring-2 ring-emerald-100 dark:ring-emerald-900/30'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
+                        }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
-                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            internshipStatus === 'has_company' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
-                          }`}>
+                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${internshipStatus === 'has_company' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
+                            }`}>
                             {internshipStatus === 'has_company' && <span className="text-[10px]">✓</span>}
                           </span>
                         </div>
@@ -1685,18 +1652,16 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                         setPendingCompany('');
                         setTaxConfirmed(false);
                       }}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        internshipStatus === 'interviewing'
-                          ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/30 shadow-sm ring-2 ring-amber-100 dark:ring-amber-900/30'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
-                      }`}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${internshipStatus === 'interviewing'
+                        ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/30 shadow-sm ring-2 ring-amber-100 dark:ring-amber-900/30'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
+                        }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-2xl">⏳</span>
-                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            internshipStatus === 'interviewing' ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300'
-                          }`}>
+                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${internshipStatus === 'interviewing' ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300'
+                            }`}>
                             {internshipStatus === 'interviewing' && <span className="text-[10px]">✓</span>}
                           </span>
                         </div>
@@ -1722,18 +1687,16 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                         setPendingCompany('');
                         setTaxConfirmed(false);
                       }}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        internshipStatus === 'need_support'
-                          ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 shadow-sm ring-2 ring-rose-100 dark:ring-rose-900/30'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
-                      }`}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-3 ${internshipStatus === 'need_support'
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/30 shadow-sm ring-2 ring-rose-100 dark:ring-rose-900/30'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50/50 dark:bg-slate-800/40'
+                        }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="w-6 h-6 rounded-full bg-[#fef2f2] text-[#dc2626] font-bold text-xs flex items-center justify-center border border-[#fecaca]">!</span>
-                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            internshipStatus === 'need_support' ? 'border-rose-500 bg-rose-500 text-white' : 'border-slate-300'
-                          }`}>
+                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${internshipStatus === 'need_support' ? 'border-rose-500 bg-rose-500 text-white' : 'border-slate-300'
+                            }`}>
                             {internshipStatus === 'need_support' && <span className="text-[10px]">✓</span>}
                           </span>
                         </div>
@@ -1769,7 +1732,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                         <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                           <span>MÃ SỐ THUẾ DOANH NGHIỆP: *</span>
-                          
+
                         </label>
                         <div className="flex flex-col sm:flex-row gap-2.5">
                           <input
@@ -2220,11 +2183,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       type="button"
                       onClick={handleSubmitInterviewing}
                       disabled={!interviewCommitment || submitting || isReadOnly}
-                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                        !interviewCommitment || submitting || isReadOnly
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
-                          : 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm cursor-pointer'
-                      }`}
+                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${!interviewCommitment || submitting || isReadOnly
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                        : 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm cursor-pointer'
+                        }`}
                     >
                       {submitting ? 'Đang lưu...' : 'Gửi cập nhật trạng thái ✓'}
                     </button>
@@ -2248,11 +2210,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       type="button"
                       onClick={handleSubmitNeedSupport}
                       disabled={!supportCommitment || submitting || isReadOnly}
-                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                        !supportCommitment || submitting || isReadOnly
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
-                          : 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm cursor-pointer'
-                      }`}
+                      className={`px-6 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${!supportCommitment || submitting || isReadOnly
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                        : 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm cursor-pointer'
+                        }`}
                     >
                       {submitting ? 'Đang gửi...' : 'Nộp đề xuất tới Khoa CNTT ✓'}
                     </button>
@@ -2264,11 +2225,10 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                       type="button"
                       onClick={handleSubmitFinal}
                       disabled={!finalConfirmed || submitting || isReadOnly}
-                      className={`px-7 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                        !finalConfirmed || submitting || isReadOnly
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
-                          : 'bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm cursor-pointer'
-                      }`}
+                      className={`px-7 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${!finalConfirmed || submitting || isReadOnly
+                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 cursor-not-allowed shadow-none'
+                        : 'bg-[#16a34a] hover:bg-[#15803d] text-white shadow-sm cursor-pointer'
+                        }`}
                     >
                       {submitting ? 'Đang lưu hồ sơ...' : 'Xác nhận & Hoàn tất khai báo ✓'}
                     </button>
@@ -2276,348 +2236,255 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                 </div>
               </div>
 
-            </div>
-
-            {/* Right Sticky Column: Profile summary card */}
-            <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-4">
-              
-              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                      HỒ SƠ CỦA BẠN
-                    </div>
-                    {actualSubmissionTime ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>ĐÃ LƯU HỒ SƠ</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                        <span>ĐANG SOẠN THẢO</span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-base font-extrabold text-slate-900  mt-1">
-                    {studentName} · {studentId}
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center justify-between mt-0.5">
-                    <span>Học kỳ: HK1 2026–2027</span>
-                    <span className="font-mono text-[10px] text-slate-400">Mã SV: {studentId}</span>
-                  </div>
-                </div>
-
-                {/* Hộp ghi nhận mốc thời gian thực tế */}
-                {actualSubmissionTime ? (
-                  <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50/60 dark:from-emerald-950/40 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1.5 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <div className="text-[11px] font-extrabold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>Thời gian thực ghi nhận:</span>
-                      </div>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded font-black bg-emerald-200/80 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200">
-                        Chính thức
-                      </span>
-                    </div>
-                    <div className="font-extrabold text-xs text-emerald-800 dark:text-emerald-300 font-mono tracking-tight">
-                      {actualSubmissionTime}
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1 border-t border-emerald-200/50 dark:border-emerald-800/50">
-                      <span>Mã biên nhận:</span>
-                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">KBTT-{studentId}-20261</span>
-                    </div>
-                  </div>) : null}
-
-                {/* Status Pill */}
-                <div className={`p-3 rounded-xl border flex items-center justify-between ${
-                  internshipStatus === 'has_company'
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                    : internshipStatus === 'interviewing'
-                      ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                      : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
-                }`}>
-                  <div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Trạng thái khai báo</div>
-                    <div className="text-xs font-extrabold mt-0.5">{statusLabel}</div>
-                  </div>
-                  <span className={`w-2.5 h-2.5 rounded-full ${
-                    internshipStatus === 'has_company'
-                      ? 'bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950'
-                      : internshipStatus === 'interviewing'
-                        ? 'bg-amber-500 ring-4 ring-amber-100 dark:ring-amber-950'
-                        : 'bg-rose-500 ring-4 ring-rose-100 dark:ring-rose-950 animate-pulse'
-                  }`}></span>
-                </div>
-
-                {/* Course Summary */}
-                <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Học phần phân bổ chính thức:</div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                    <span>{courseDisplay}</span>
-                  </div>
-                </div>
-
-                {/* Help Box */}
-                <div className="bg-blue-50/50 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-900/60 p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#003087] dark:text-sky-400">
-                    <span>Bạn cần hỗ trợ thêm?</span>
-                  </div>
-                  <div>
-                    <a href="mailto:khoacntt@tdtu.edu.vn" className="text-xs font-bold text-blue-600 dark:text-sky-400 hover:underline">
-                      Email: khoacntt@tdtu.edu.vn
-                    </a>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-
           </div>
 
-        </div>
+        </div >
       )}
 
       {/* ========================================================================= */}
       {/* MODAL 1: XEM CHI TIẾT ĐẦY ĐỦ HỒ SƠ ĐÃ KHAI BÁO (POPUP TRANG TRỌNG) */}
       {/* ========================================================================= */}
-      {selectedDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 w-[95vw] max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[94vh] flex flex-col">
-            
-            <div className="p-5 bg-[#003087] text-white flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-white">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-lg">
-                    Chi tiết Hồ sơ Khai báo Thực tập
-                  </h3>
-                  <div className="text-xs text-white/80">
-                    Trạng thái: <strong className="text-white">{selectedDetailModal.statusLabel}</strong>
+      {
+        selectedDetailModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 w-[95vw] max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-scale-up max-h-[94vh] flex flex-col">
+
+              <div className="p-5 bg-[#003087] text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-lg">
+                      Chi tiết Hồ sơ Khai báo Thực tập
+                    </h3>
+                    <div className="text-xs text-white/80">
+                      Trạng thái: <strong className="text-white">{selectedDetailModal.statusLabel}</strong>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDetailModal(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 text-xl font-bold cursor-pointer transition"
-                title="Đóng cửa sổ"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 md:p-8 overflow-y-auto space-y-5 text-sm">
-              
-              {/* Sinh viên & Môn học */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Họ và tên sinh viên:</span>
-                  <div className="font-extrabold text-slate-900 dark:text-white mt-1 text-base">{studentName}</div>
-                </div>
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Mã số sinh viên:</span>
-                  <div className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-1 text-base">{studentId}</div>
-                </div>
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Học phần thực tập:</span>
-                  <div className="font-extrabold text-[#003087] dark:text-sky-300 mt-1 text-base">{selectedDetailModal.courseName}</div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetailModal(null)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 text-xl font-bold cursor-pointer transition"
+                  title="Đóng cửa sổ"
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Thông tin nơi thực tập & Doanh nghiệp */}
-              <div className="p-5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-3">
-                <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-xs flex items-center gap-2">
-                  <span>🏢</span>
-                  <span>{selectedDetailModal.status === 'has_company' ? 'Doanh nghiệp tiếp nhận thực tập:' : (selectedDetailModal.status === 'need_support' ? 'Điều phối tiếp nhận:' : 'Tình trạng ứng tuyển:')}</span>
+              <div className="p-6 md:p-8 overflow-y-auto space-y-5 text-sm">
+
+                {/* Sinh viên & Môn học */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Họ và tên sinh viên:</span>
+                    <div className="font-extrabold text-slate-900 dark:text-white mt-1 text-base">{studentName}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Mã số sinh viên:</span>
+                    <div className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-1 text-base">{studentId}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Học phần thực tập:</span>
+                    <div className="font-extrabold text-[#003087] dark:text-sky-300 mt-1 text-base">{selectedDetailModal.courseName}</div>
+                  </div>
                 </div>
-                <div className="font-extrabold text-lg text-slate-900 dark:text-white">
-                  {selectedDetailModal.status === 'has_company'
-                    ? (selectedDetailModal.companyName || 'Doanh nghiệp đã khai báo')
-                    : (selectedDetailModal.status === 'need_support'
+
+                {/* Thông tin nơi thực tập & Doanh nghiệp */}
+                <div className="p-5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-3">
+                  <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-xs flex items-center gap-2">
+                    <span>🏢</span>
+                    <span>{selectedDetailModal.status === 'has_company' ? 'Doanh nghiệp tiếp nhận thực tập:' : (selectedDetailModal.status === 'need_support' ? 'Điều phối tiếp nhận:' : 'Tình trạng ứng tuyển:')}</span>
+                  </div>
+                  <div className="font-extrabold text-lg text-slate-900 dark:text-white">
+                    {selectedDetailModal.status === 'has_company'
+                      ? (selectedDetailModal.companyName || 'Doanh nghiệp đã khai báo')
+                      : (selectedDetailModal.status === 'need_support'
                         ? 'Khoa CNTT hỗ trợ điều phối doanh nghiệp'
                         : (selectedDetailModal.pendingCompany || 'Đang tìm kiếm / Chờ kết quả phỏng vấn'))}
+                  </div>
+                  {selectedDetailModal.status === 'has_company' && selectedDetailModal.taxCode && (
+                    <div className="font-mono text-sm text-slate-700 dark:text-slate-300">
+                      Mã số thuế doanh nghiệp: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.taxCode}</strong>
+                    </div>
+                  )}
+                  {selectedDetailModal.status === 'has_company' && selectedDetailModal.address && (
+                    <div className="text-sm text-slate-700 dark:text-slate-300">
+                      Địa chỉ làm việc: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.address}</strong>
+                    </div>
+                  )}
+                  {selectedDetailModal.status === 'has_company' && selectedDetailModal.representative && (
+                    <div className="text-sm text-slate-700 dark:text-slate-300">
+                      Đại diện pháp luật: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.representative}</strong>
+                    </div>
+                  )}
                 </div>
-                {selectedDetailModal.status === 'has_company' && selectedDetailModal.taxCode && (
-                  <div className="font-mono text-sm text-slate-700 dark:text-slate-300">
-                    Mã số thuế doanh nghiệp: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.taxCode}</strong>
-                  </div>
-                )}
-                {selectedDetailModal.status === 'has_company' && selectedDetailModal.address && (
-                  <div className="text-sm text-slate-700 dark:text-slate-300">
-                    Địa chỉ làm việc: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.address}</strong>
-                  </div>
-                )}
-                {selectedDetailModal.status === 'has_company' && selectedDetailModal.representative && (
-                  <div className="text-sm text-slate-700 dark:text-slate-300">
-                    Đại diện pháp luật: <strong className="text-slate-900 dark:text-white">{selectedDetailModal.representative}</strong>
-                  </div>
-                )}
-              </div>
 
-              {/* Vị trí & Người hướng dẫn */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
-                    {selectedDetailModal.status === 'has_company' ? 'Vị trí thực tập tiếp nhận:' : (selectedDetailModal.status === 'need_support' ? 'Vị trí nguyện vọng đề xuất:' : 'Vị trí đang phỏng vấn:')}
-                  </span>
-                  <div className="font-extrabold text-[#003087] dark:text-sky-300 text-base mt-1">
-                    {selectedDetailModal.status === 'has_company'
-                      ? (selectedDetailModal.position || 'Thực tập sinh')
-                      : (selectedDetailModal.status === 'need_support'
+                {/* Vị trí & Người hướng dẫn */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">
+                      {selectedDetailModal.status === 'has_company' ? 'Vị trí thực tập tiếp nhận:' : (selectedDetailModal.status === 'need_support' ? 'Vị trí nguyện vọng đề xuất:' : 'Vị trí đang phỏng vấn:')}
+                    </span>
+                    <div className="font-extrabold text-[#003087] dark:text-sky-300 text-base mt-1">
+                      {selectedDetailModal.status === 'has_company'
+                        ? (selectedDetailModal.position || 'Thực tập sinh')
+                        : (selectedDetailModal.status === 'need_support'
                           ? (selectedDetailModal.desiredPosition || selectedDetailModal.position || 'Chờ Khoa hỗ trợ phân bổ')
                           : (selectedDetailModal.desiredPosition || selectedDetailModal.position || 'Đang chờ kết quả phỏng vấn'))}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Người hướng dẫn:</span>
-                  <div className="font-bold text-slate-800 dark:text-slate-200 text-base mt-1">
-                    {selectedDetailModal.status === 'has_company'
-                      ? (selectedDetailModal.mentor || 'Chưa chỉ định')
-                      : (selectedDetailModal.status === 'need_support'
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Người hướng dẫn:</span>
+                    <div className="font-bold text-slate-800 dark:text-slate-200 text-base mt-1">
+                      {selectedDetailModal.status === 'has_company'
+                        ? (selectedDetailModal.mentor || 'Chưa chỉ định')
+                        : (selectedDetailModal.status === 'need_support'
                           ? 'Trợ lý Doanh nghiệp Khoa CNTT'
                           : 'Chưa có (Đang chờ phỏng vấn)')}
+                    </div>
                   </div>
                 </div>
+
+                {/* Minh chứng Drive nếu có */}
+                {selectedDetailModal.cvDriveLink && (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Hồ sơ năng lực (Link CV):</span>
+                    <div>
+                      <a
+                        href={selectedDetailModal.cvDriveLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-sm font-bold transition inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                        </svg>
+                        <span>Mở xem CV trên Google Drive</span>
+                        <span>↗</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ghi chú */}
+                {selectedDetailModal.supportNote && (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Ghi chú bổ sung:</span>
+                    <div className="text-slate-800 dark:text-slate-200 text-sm italic mt-1 leading-relaxed">
+                      "{selectedDetailModal.supportNote}"
+                    </div>
+                  </div>
+                )}
+
               </div>
 
-              {/* Minh chứng Drive nếu có */}
-              {selectedDetailModal.cvDriveLink && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Hồ sơ năng lực (Link CV):</span>
-                  <div>
-                    <a
-                      href={selectedDetailModal.cvDriveLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-sm font-bold transition inline-flex items-center gap-2 shadow-xs cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
-                      </svg>
-                      <span>Mở xem CV trên Google Drive</span>
-                      <span>↗</span>
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Ghi chú */}
-              {selectedDetailModal.supportNote && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Ghi chú bổ sung:</span>
-                  <div className="text-slate-800 dark:text-slate-200 text-sm italic mt-1 leading-relaxed">
-                    "{selectedDetailModal.supportNote}"
-                  </div>
-                </div>
-              )}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-mono">
+                  Cơ quan xét duyệt: Khoa CNTT - ĐH Tôn Đức Thắng
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetailModal(null)}
+                  className="px-6 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition text-sm cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
 
             </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-mono">
-                Cơ quan xét duyệt: Khoa CNTT - ĐH Tôn Đức Thắng
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedDetailModal(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition text-sm cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-
           </div>
-        </div>
-      )}
+        )
+      }
 
 
 
       {/* ========================================================================= */}
       {/* MODAL 3: CẢNH BÁO RÚT HỖ TRỢ KHI SINH VIÊN TỰ TÌM ĐƯỢC DOANH NGHIỆP */}
       {/* ========================================================================= */}
-      {showWithdrawConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#e5e7eb] overflow-hidden">
-            <div className="p-5 bg-white border-b border-[#e5e7eb] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] flex items-center justify-center shrink-0 font-bold">
-                <svg className="w-5 h-5 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+      {
+        showWithdrawConfirmModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+            <div className="bg-white w-full max-w-xl rounded-xl shadow-2xl border border-[#e5e7eb] overflow-hidden">
+              <div className="p-5 bg-white border-b border-[#e5e7eb] flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] flex items-center justify-center shrink-0 font-bold">
+                  <svg className="w-5 h-5 text-[#dc2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-[16px] text-[#1f2937]">
+                    Xác nhận cập nhật nơi thực tập chính thức
+                  </h3>
+                  <p className="text-[12px] text-[#1f2937] mt-0.5">
+                    Hệ thống ghi nhận trước đó bạn đã nộp đơn "Cần Khoa hỗ trợ"
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-[16px] text-[#1f2937]">
-                  Xác nhận cập nhật nơi thực tập chính thức
-                </h3>
-                <p className="text-[12px] text-[#1f2937] mt-0.5">
-                  Hệ thống ghi nhận trước đó bạn đã nộp đơn "Cần Khoa hỗ trợ"
-                </p>
-              </div>
-            </div>
 
-            <div className="p-6 space-y-4 text-xs">
-              <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 space-y-1.5">
-                <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-[11px]">
-                  Doanh nghiệp mới tiếp nhận thực tập:
-                </div>
-                <div className="font-bold text-slate-900  text-sm">
-                  {companyInfo.name || 'Doanh nghiệp đã khai báo'}
-                </div>
-                {taxCode && <div className="text-slate-500 font-mono">Mã số thuế: {taxCode}</div>}
-                {contactPerson && (
-                  <div className="text-slate-700 dark:text-slate-300 pt-1 border-t border-blue-200/50 dark:border-blue-800/50">
-                    Cán bộ hướng dẫn (Mentor): <strong>{contactPerson}</strong>
+              <div className="p-6 space-y-4 text-xs">
+                <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 space-y-1.5">
+                  <div className="font-bold text-[#003087] dark:text-sky-300 uppercase tracking-wider text-[11px]">
+                    Doanh nghiệp mới tiếp nhận thực tập:
                   </div>
-                )}
+                  <div className="font-bold text-slate-900  text-sm">
+                    {companyInfo.name || 'Doanh nghiệp đã khai báo'}
+                  </div>
+                  {taxCode && <div className="text-slate-500 font-mono">Mã số thuế: {taxCode}</div>}
+                  {contactPerson && (
+                    <div className="text-slate-700 dark:text-slate-300 pt-1 border-t border-blue-200/50 dark:border-blue-800/50">
+                      Cán bộ hướng dẫn (Mentor): <strong>{contactPerson}</strong>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p className="font-bold text-slate-800 dark:text-slate-200">
+                    Khi bạn xác nhận lưu thông tin này:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1.5">
+                    <li>
+                      Hệ thống tự động <strong>ghi nhận mốc thời gian chính xác</strong> ({new Date().toLocaleString('vi-VN')}) bạn tìm được nơi thực tập.
+                    </li>
+                    <li>
+                      Hồ sơ sẽ <strong>tự động rút yêu cầu Khoa hỗ trợ</strong> để Thầy/Cô kịp thời thu hồi lịch phỏng vấn và nhường chỉ tiêu điều phối cho sinh viên khác.
+                    </li>
+                    <li>
+                      Trạng thái của bạn được đồng bộ sang <strong>"Đã có nơi thực tập"</strong> trên hệ thống của Giảng viên và Ban Chủ nhiệm Khoa.
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
-                <p className="font-bold text-slate-800 dark:text-slate-200">
-                  Khi bạn xác nhận lưu thông tin này:
-                </p>
-                <ul className="list-disc pl-5 space-y-1.5">
-                  <li>
-                    Hệ thống tự động <strong>ghi nhận mốc thời gian chính xác</strong> ({new Date().toLocaleString('vi-VN')}) bạn tìm được nơi thực tập.
-                  </li>
-                  <li>
-                    Hồ sơ sẽ <strong>tự động rút yêu cầu Khoa hỗ trợ</strong> để Thầy/Cô kịp thời thu hồi lịch phỏng vấn và nhường chỉ tiêu điều phối cho sinh viên khác.
-                  </li>
-                  <li>
-                    Trạng thái của bạn được đồng bộ sang <strong>"Đã có nơi thực tập"</strong> trên hệ thống của Giảng viên và Ban Chủ nhiệm Khoa.
-                  </li>
-                </ul>
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowWithdrawConfirmModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition text-xs cursor-pointer"
+                >
+                  Hủy bỏ / Xem lại
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWithdrawConfirmModal(false);
+                    doSubmitFinal();
+                  }}
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition text-xs flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+                >
+                  {submitting ? 'Đang lưu...' : 'Xác nhận & Cập nhật mốc thời gian ✓'}
+                </button>
               </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowWithdrawConfirmModal(false)}
-                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold transition text-xs cursor-pointer"
-              >
-                Hủy bỏ / Xem lại
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowWithdrawConfirmModal(false);
-                  doSubmitFinal();
-                }}
-                disabled={submitting}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition text-xs flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
-              >
-                {submitting ? 'Đang lưu...' : 'Xác nhận & Cập nhật mốc thời gian ✓'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   );
 };
 

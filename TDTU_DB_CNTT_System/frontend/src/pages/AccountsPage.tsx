@@ -4,13 +4,15 @@
 // 2. Quản lý phân quyền, cấp Admin, khóa/mở khóa tài khoản
 // 3. Tùy chỉnh các thông tin mốc thời gian & hạn chót học kỳ (Deadlines)
 
-const AccountsPage = ({ currentUser }) => {
+const AccountsPage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemester }) => {
+  const cleanEmail = String(currentUser?.email || '').toLowerCase();
+  const isAdmin = cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn' || Boolean(currentUser?.isAdmin) || currentUser?.role === 'admin';
   const [activeSubTab, setActiveSubTab] = React.useState('accounts'); // 'accounts' | 'deadlines'
   const [users, setUsers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState('all');
-   // 'all' | 'lecturer' | 'student' | 'partner'
+  // 'all' | 'lecturer' | 'student' | 'partner'
   const [message, setMessage] = React.useState(null);
 
   // Modal Tạo tài khoản Đối tác bên ngoài
@@ -262,42 +264,65 @@ const AccountsPage = ({ currentUser }) => {
     );
   });
 
+  // Nếu là sinh viên, hiển thị giao diện Profile đầy đủ như trong ProfilePage
+  if (currentUser?.role === 'student' && window.ProfilePage) {
+    return (
+      <window.ProfilePage
+        currentUser={currentUser}
+        activeSemester={activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027'}
+        onNavigateTab={onNavigateTab}
+        onSemesterChange={onSemesterChange}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 w-full pb-12">
-      
+
       {/* Header & Sub-Tabs */}
       <div className="bg-white  p-6 rounded-xl border border-[#e5e7eb]  shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1f2937] ">
-            Quản trị Tài khoản & Phân quyền
+            {isAdmin ? 'Quản trị Tài khoản & Phân quyền' : 'Hồ sơ & Tài khoản cá nhân'}
           </h1>
-          
+          <p className="text-[13px] text-[#4b5563] mt-1">
+            {isAdmin ? 'Quản lý tài khoản hệ thống, cấp quyền & ma trận phân quyền RBAC' : 'Thông tin chi tiết tài khoản và trạng thái xác thực hệ thống Khoa CNTT'}
+          </p>
         </div>
 
-        {/* Menu chọn mục dạng danh sách Dropdown gọn gàng */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="subTabDropdown" className="text-[13.5px] font-bold text-[#4b5563] shrink-0">
-            Chế độ xem:
-          </label>
-          <select
-            id="subTabDropdown"
-            value={activeSubTab}
-            onChange={e => setActiveSubTab(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-[#003087] font-bold text-[14px] outline-none cursor-pointer focus:border-[#003087] focus:ring-2 focus:ring-[#003087] shadow-xs"
-          >
-            <option value="accounts">Tài khoản & Phân quyền ({nonStudentUsers.length})</option>
-            <option value="prime_matrix">Ma trận Prime RBAC (Phân quyền chi tiết)</option>
-          </select>
-        </div>
+        {/* Menu chọn mục dạng danh sách Dropdown gọn gàng (chỉ Admin) */}
+        {isAdmin ? (
+          <div className="flex items-center gap-2">
+            <label htmlFor="subTabDropdown" className="text-[13.5px] font-bold text-[#4b5563] shrink-0">
+              Chế độ xem:
+            </label>
+            <select
+              id="subTabDropdown"
+              value={activeSubTab}
+              onChange={e => setActiveSubTab(e.target.value)}
+              className="px-4 py-2.5 rounded-xl border border-[#cbd5e1] bg-white text-[#003087] font-bold text-[14px] outline-none cursor-pointer focus:border-[#003087] focus:ring-2 focus:ring-[#003087] shadow-xs"
+            >
+              <option value="accounts">Tài khoản & Phân quyền ({nonStudentUsers.length})</option>
+              <option value="prime_matrix">Ma trận Prime RBAC (Phân quyền chi tiết)</option>
+            </select>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] text-[13px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#003087]"></span>
+            <span>Hồ sơ tài khoản cá nhân</span>
+          </div>
+        )}
       </div>
+
+
+
 
       {/* Global Toast Alert */}
       {message && (
-        <div className={`p-3.5 rounded-xl border text-[14px] font-semibold flex items-center justify-between ${
-          message.type === 'success' 
-            ? 'bg-[#ebf3ff]  border-[#bfdbfe]  text-[#003087] ' 
-            : 'bg-[#fef2f2]  border-[#fecaca]  text-[#dc2626] '
-        }`}>
+        <div className={`p-3.5 rounded-xl border text-[14px] font-semibold flex items-center justify-between ${message.type === 'success'
+          ? 'bg-[#ebf3ff]  border-[#bfdbfe]  text-[#003087] '
+          : 'bg-[#fef2f2]  border-[#fecaca]  text-[#dc2626] '
+          }`}>
           <span>{message.text}</span>
           <button onClick={() => setMessage(null)} className="underline ml-4 font-bold">Đóng</button>
         </div>
@@ -306,12 +331,12 @@ const AccountsPage = ({ currentUser }) => {
       {/* ======================================================== */}
       {/* TAB 1: QUẢN LÝ TÀI KHOẢN (Bảng dữ liệu chuẩn mực, không màu mè dư thừa) */}
       {/* ======================================================== */}
-      {activeSubTab === 'accounts' && (
+      {activeSubTab === 'accounts' && isAdmin && (
         <div className="space-y-4">
-          
+
           {/* Action Bar: Lọc vai trò, Ô Tìm kiếm & Nút Tạo Đối tác */}
           <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
+
             {/* Dropdown chọn phân loại tài khoản: Giảng viên & Đối tác */}
             <div className="flex items-center gap-2">
               <label htmlFor="roleFilterDropdown" className="text-[13.5px] font-bold text-[#4b5563] shrink-0">
@@ -455,9 +480,8 @@ const AccountsPage = ({ currentUser }) => {
                               <button
                                 type="button"
                                 onClick={() => handleToggleAdmin(u.email, Boolean(u.isAdmin))}
-                                className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[95px] whitespace-nowrap ${
-                                  u.isAdmin ? 'bg-[#f1f5f9] text-[#1f2937] hover:bg-[#e2e8f0]' : 'bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] hover:bg-[#dbeafe]'
-                                }`}
+                                className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[95px] whitespace-nowrap ${u.isAdmin ? 'bg-[#f1f5f9] text-[#1f2937] hover:bg-[#e2e8f0]' : 'bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe] hover:bg-[#dbeafe]'
+                                  }`}
                               >
                                 {u.isAdmin ? 'Hủy Admin' : 'Cấp Admin'}
                               </button>
@@ -466,9 +490,8 @@ const AccountsPage = ({ currentUser }) => {
                             <button
                               type="button"
                               onClick={() => handleToggleStatus(u.uid, Boolean(u.isActive))}
-                              className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[90px] whitespace-nowrap ${
-                                u.isActive ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] hover:bg-[#fee2e2]' : 'bg-[#003087] text-white hover:bg-[#002266]'
-                              }`}
+                              className={`px-4 py-2 rounded-lg text-[12.5px] font-bold transition cursor-pointer min-w-[90px] whitespace-nowrap ${u.isActive ? 'bg-[#fef2f2] text-[#dc2626] border border-[#fecaca] hover:bg-[#fee2e2]' : 'bg-[#003087] text-white hover:bg-[#002266]'
+                                }`}
                             >
                               {u.isActive ? 'Khóa' : 'Mở khóa'}
                             </button>
@@ -501,7 +524,7 @@ const AccountsPage = ({ currentUser }) => {
       {/* ======================================================== */}
       {activeSubTab === 'prime_matrix' && (
         <div className="space-y-6">
-          
+
           {/* Top Banner */}
           <div className="bg-gradient-to-r from-[#003087] to-[#001a4d] text-white p-6 rounded-xl shadow-md border border-blue-800">
             <h2 className="text-xl font-bold tracking-tight text-white">
@@ -527,11 +550,10 @@ const AccountsPage = ({ currentUser }) => {
                     key={rId}
                     type="button"
                     onClick={() => setSelectedRoleForMatrix(rId)}
-                    className={`px-3 py-1.5 rounded-xl text-[14px] font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#003087] text-white shadow-xs'
-                        : 'bg-white text-[#1f2937] border border-[#e5e7eb] hover:bg-[#ebf3ff] hover:text-[#003087]'
-                    }`}
+                    className={`px-3 py-1.5 rounded-xl text-[14px] font-bold transition flex items-center gap-1.5 cursor-pointer ${isSelected
+                      ? 'bg-[#003087] text-white shadow-xs'
+                      : 'bg-white text-[#1f2937] border border-[#e5e7eb] hover:bg-[#ebf3ff] hover:text-[#003087]'
+                      }`}
                   >
                     <span>{roleLabels[rId] || rId}</span>
                   </button>
@@ -615,7 +637,7 @@ const AccountsPage = ({ currentUser }) => {
                         <td className="py-3 px-4 font-semibold text-[#1f2937] ">
                           {feat.name}
                         </td>
-                        
+
                         {/* Checkboxes for 2, 3, 5, 7, 11, 13, 17 */}
                         {[2, 3, 5, 7, 11, 13, 17].map(primeVal => {
                           const isChecked = mask > 1 && mask % primeVal === 0;
@@ -707,7 +729,7 @@ const AccountsPage = ({ currentUser }) => {
       {showPartnerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white  rounded-2xl border border-[#e5e7eb]  p-7 max-w-2xl w-full shadow-2xl space-y-5">
-            
+
             <div className="flex items-center justify-between border-b border-[#e5e7eb]  pb-3">
               <div>
                 <h3 className="text-base font-bold text-[#1f2937] ">
@@ -722,12 +744,12 @@ const AccountsPage = ({ currentUser }) => {
                 onClick={() => setShowPartnerModal(false)}
                 className="text-[#1f2937] hover:text-[#1f2937] text-lg font-bold"
               >
-                ✕
+
               </button>
             </div>
 
             <form onSubmit={handleCreatePartnerSubmit} className="space-y-3.5">
-              
+
               <div>
                 <label className="block text-[14px] font-bold text-[#1f2937]  mb-1">
                   Tên Doanh nghiệp / Tổ chức Đối tác *

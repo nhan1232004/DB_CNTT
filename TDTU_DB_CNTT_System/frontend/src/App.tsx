@@ -456,7 +456,7 @@ const AppInner = () => {
     }
 
     // Giảng viên: Nếu đang ở các tab đã bỏ, tự động chuyển về dashboard
-    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(activeTab)) {
+    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'handbook'].includes(activeTab)) {
       setActiveTab('dashboard');
       return;
     }
@@ -475,7 +475,7 @@ const AppInner = () => {
 
     // Sinh viên không có trong danh sách kỳ đang kích hoạt: chuyển thành SV ngoài kỳ, chỉ xem được dashboard, profile và bulletin
     if (isStudent && (!isStudentEnrolledInActiveSem || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
-      if (!['dashboard', 'profile', 'bulletin'].includes(activeTab)) {
+      if (!['dashboard', 'profile', 'bulletin', 'accounts'].includes(activeTab)) {
         setActiveTab('dashboard');
         return;
       }
@@ -503,8 +503,6 @@ const AppInner = () => {
       return;
     }
     if (featKey === 'accounts') {
-      const isAdm = currentUser.isAdmin || currentUser.role === 'admin' || cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn';
-      if (!isAdm) setActiveTab('dashboard');
       return;
     }
 
@@ -709,9 +707,9 @@ const AppInner = () => {
                 )
               )}
 
-              {activeTab === 'accounts' && (currentUser?.isAdmin || currentUser?.role === 'admin' || String(currentUser?.email || '').toLowerCase() === 'duonghuuphuc@tdtu.edu.vn' || String(currentUser?.email || '').toLowerCase() === 'phamvanc@tdtu.edu.vn') && (
+              {activeTab === 'accounts' && (
                 window.AccountsPage ? (
-                  <window.AccountsPage currentUser={currentUser} />
+                  <window.AccountsPage currentUser={currentUser} onNavigateTab={setActiveTab} onSemesterChange={handleSemesterChange} activeSemester={effectiveSemester} />
                 ) : (
                   <div className="p-8 text-center text-[#1f2937] font-bold">Đang tải Cài đặt hệ thống...</div>
                 )
