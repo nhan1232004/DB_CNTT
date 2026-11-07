@@ -21,6 +21,24 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
     return dateStr;
   };
 
+  // Tính số ngày còn lại động theo hạn chót tùy chỉnh
+  const getRemainingInfo = (dateStr) => {
+    if (window.ApiClient?.calculateDaysRemaining) {
+      return window.ApiClient.calculateDaysRemaining(dateStr);
+    }
+    if (!dateStr) return { days: 0, label: 'Chưa đặt hạn', badgeText: 'Hạn chót: Chưa đặt', isExpired: false, isToday: false };
+    const parts = String(dateStr).trim().split('T')[0].split('-').map(Number);
+    const target = parts.length === 3 && parts[0] > 1900
+      ? new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0)
+      : new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) return { days: diffDays, label: `Còn ${diffDays} ngày`, badgeText: `Hạn chót: Còn ${diffDays} ngày`, isExpired: false, isToday: false };
+    if (diffDays === 0) return { days: 0, label: 'Hôm nay', badgeText: 'Hạn chót: Hôm nay', isExpired: false, isToday: true };
+    return { days: diffDays, label: `Quá hạn ${Math.abs(diffDays)} ngày`, badgeText: `Đã kết thúc kỳ (Quá hạn ${Math.abs(diffDays)} ngày)`, isExpired: true, isToday: false };
+  };
+
   // Helper tính số lượng sinh viên thực tế cho từng kỳ (chính xác 100%, không số liệu ảo)
   const getSemesterStudentCount = React.useCallback((semId) => {
     if (semId === 'hk1_2026_2027') {
@@ -148,9 +166,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
       }
     };
     window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
+    window.addEventListener('tdtu_deadlines_updated', handleSemUpdate);
     window.addEventListener('storage', handleSemUpdate);
     return () => {
       window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
+      window.removeEventListener('tdtu_deadlines_updated', handleSemUpdate);
       window.removeEventListener('storage', handleSemUpdate);
     };
   }, [getSemesterStudentCount]);
@@ -244,19 +264,22 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
   const handleSaveEdit = (e) => {
     e.preventDefault();
     if (!canUpdate) return;
-    const updated = semestersList.map(s => s.id === editingSemester.id ? editingSemester : s);
+    const stampedSem = { ...editingSemester, updatedAt: new Date().toISOString() };
+    const updated = semestersList.map(s => s.id === stampedSem.id ? stampedSem : s);
     saveSemesters(updated);
-    // Cập nhật cả deadline hệ thống
-    if (editingSemester.isActive && window.ApiClient?.saveSystemDeadlines) {
-      window.ApiClient.saveSystemDeadlines(editingSemester);
+    // Luôn đồng bộ hạn chót của học kỳ vừa chỉnh sửa sang hệ thống Deadlines và thanh điều hướng
+    if (window.ApiClient?.saveSystemDeadlines) {
+      window.ApiClient.saveSystemDeadlines(stampedSem);
     }
-    window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: updated }));
-    if (editingSemester.isActive) {
-      window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: editingSemester.id, semester: editingSemester } }));
-      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: editingSemester }));
+    window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: updated, semesters: updated } }));
+    window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: stampedSem }));
+    window.dispatchEvent(new CustomEvent('tdtu_semester_deadline_updated', { detail: stampedSem }));
+    if (stampedSem.isActive || stampedSem.id === activeSemester) {
+      window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: stampedSem.id, semester: stampedSem } }));
     }
+    const rem = getRemainingInfo(stampedSem.declarationDeadline);
     setEditingSemester(null);
-    showToast(' Đã cập nhật thông tin học kỳ và các mốc hạn chót!');
+    showToast(`✓ Đã cập nhật hạn chót "${stampedSem.name}" (${rem.label})!`);
   };
 
   // Tạo mới học kỳ
@@ -368,25 +391,55 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
                   )}
                 </div>
 
-                {/* Deadlines Timeline Preview (Format DD-MM-YYYY chuẩn học vụ) */}
-                <div className="space-y-2 py-3 border-y border-[#e5e7eb]  text-[14px]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#1f2937] ">1. Hạn khai báo DN:</span>
-                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.declarationDeadline)}</strong>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#1f2937] ">2. Hạn nộp chứng chỉ:</span>
-                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.certDeadline)}</strong>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#1f2937] ">3. Hạn GV thẩm định:</span>
-                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.reviewDeadline)}</strong>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#1f2937] ">4. Hạn nộp Báo cáo:</span>
-                    <strong className="font-mono text-[#1f2937] ">{formatDateVN(sem.reportDeadline)}</strong>
-                  </div>
-                </div>
+                {/* Deadlines Timeline Preview (Format DD-MM-YYYY chuẩn học vụ + Số ngày còn lại động) */}
+                {(() => {
+                  const declRem = getRemainingInfo(sem.declarationDeadline);
+                  const certRem = getRemainingInfo(sem.certDeadline);
+                  const revRem = getRemainingInfo(sem.reviewDeadline);
+                  const repRem = getRemainingInfo(sem.reportDeadline);
+                  return (
+                    <div className="space-y-2 py-3 border-y border-[#e5e7eb] text-[14px]">
+                      <div className="flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-dashed border-[#e5e7eb]">
+                        <span className="text-[12.5px] font-bold text-[#4b5563]">Thời gian còn lại của kỳ:</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold border ${
+                          declRem.isExpired
+                            ? 'bg-[#f8fafc] text-[#4b5563] border-[#e5e7eb]'
+                            : 'bg-[#fef2f2] text-[#dc2626] border-[#fecaca]'
+                        }`}>
+                          {declRem.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#1f2937]">1. Hạn khai báo DN:</span>
+                        <div className="flex items-center gap-1.5">
+                          <strong className="font-mono text-[#1f2937]">{formatDateVN(sem.declarationDeadline)}</strong>
+                          <span className="text-[11.5px] font-semibold text-[#003087]">({declRem.label})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#1f2937]">2. Hạn nộp chứng chỉ:</span>
+                        <div className="flex items-center gap-1.5">
+                          <strong className="font-mono text-[#1f2937]">{formatDateVN(sem.certDeadline)}</strong>
+                          <span className="text-[11.5px] text-[#4b5563]">({certRem.label})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#1f2937]">3. Hạn GV thẩm định:</span>
+                        <div className="flex items-center gap-1.5">
+                          <strong className="font-mono text-[#1f2937]">{formatDateVN(sem.reviewDeadline)}</strong>
+                          <span className="text-[11.5px] text-[#4b5563]">({revRem.label})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#1f2937]">4. Hạn nộp Báo cáo:</span>
+                        <div className="flex items-center gap-1.5">
+                          <strong className="font-mono text-[#1f2937]">{formatDateVN(sem.reportDeadline)}</strong>
+                          <span className="text-[11.5px] text-[#4b5563]">({repRem.label})</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {sem.regulationNote ? (
                   <div className="text-[11px] text-[#1f2937] mt-3 italic line-clamp-2">
@@ -470,8 +523,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    1. Hạn khai báo DN:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>1. Hạn khai báo DN (Hạn chót kỳ):</span>
+                    <span className="text-[12px] font-bold text-[#dc2626] bg-[#fef2f2] px-2 py-0.5 rounded-full border border-[#fecaca]">
+                      {getRemainingInfo(editingSemester.declarationDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"
@@ -482,8 +538,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    2. Hạn nộp chứng chỉ:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>2. Hạn nộp chứng chỉ:</span>
+                    <span className="text-[11.5px] font-semibold text-[#003087]">
+                      {getRemainingInfo(editingSemester.certDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"
@@ -497,8 +556,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    3. Hạn GV thẩm định:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>3. Hạn GV thẩm định:</span>
+                    <span className="text-[11.5px] font-semibold text-[#003087]">
+                      {getRemainingInfo(editingSemester.reviewDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"
@@ -509,8 +571,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    4. Hạn nộp Báo cáo:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>4. Hạn nộp Báo cáo:</span>
+                    <span className="text-[11.5px] font-semibold text-[#003087]">
+                      {getRemainingInfo(editingSemester.reportDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"
@@ -601,8 +666,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    Hạn khai báo DN:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>Hạn khai báo DN (Hạn chót kỳ):</span>
+                    <span className="text-[12px] font-bold text-[#dc2626] bg-[#fef2f2] px-2 py-0.5 rounded-full border border-[#fecaca]">
+                      {getRemainingInfo(newDeclarationDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"
@@ -613,8 +681,11 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-[#1f2937]  mb-1">
-                    Hạn nộp chứng chỉ:
+                  <label className="flex items-center justify-between font-bold text-[#1f2937] mb-1">
+                    <span>Hạn nộp chứng chỉ:</span>
+                    <span className="text-[11.5px] font-semibold text-[#003087]">
+                      {getRemainingInfo(newCertDeadline).label}
+                    </span>
                   </label>
                   <input
                     type="date"

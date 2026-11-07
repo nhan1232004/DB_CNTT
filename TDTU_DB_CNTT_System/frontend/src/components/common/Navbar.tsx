@@ -98,6 +98,7 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
 
   const computeDeadline = React.useCallback(() => {
     try {
+      const currentSemId = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
       let rawSemList = [];
       if (window.ApiClient?.getSemesters) {
         rawSemList = window.ApiClient.getSemesters();
@@ -109,25 +110,35 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
         setSemesters(rawSemList);
       }
       const targetSem = (Array.isArray(rawSemList) && rawSemList.length > 0)
-        ? (rawSemList.find(s => s.id === (activeSemester || 'hk1_2026_2027')) || rawSemList[0])
+        ? (rawSemList.find(s => s.id === currentSemId) || rawSemList.find(s => s.isActive) || rawSemList[0])
         : null;
 
-      const dl = targetSem?.registrationDeadline || targetSem?.deadline || '2026-11-24';
-      const deadlineDate = new Date(dl);
+      const sysDl = window.ApiClient?.getSystemDeadlines ? window.ApiClient.getSystemDeadlines(currentSemId) : null;
+      const dl = targetSem?.declarationDeadline || sysDl?.declarationDeadline || targetSem?.registrationDeadline || targetSem?.deadline || sysDl?.deadline || '2026-12-24';
+
+      if (window.ApiClient?.calculateDaysRemaining) {
+        const info = window.ApiClient.calculateDaysRemaining(dl);
+        setDeadlineText(info.badgeText);
+        return;
+      }
+
+      const parts = String(dl).trim().split('T')[0].split('-').map(Number);
+      const deadlineDate = parts.length === 3 && parts[0] > 1900
+        ? new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0)
+        : new Date(dl);
       const today = new Date();
-      deadlineDate.setHours(23, 59, 59, 999);
-      const diffTime = deadlineDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      today.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
       if (diffDays > 0) {
         setDeadlineText(`Hạn chót: Còn ${diffDays} ngày`);
       } else if (diffDays === 0) {
         setDeadlineText('Hạn chót: Hôm nay');
       } else {
-        setDeadlineText('Đã kết thúc kỳ');
+        setDeadlineText(`Đã kết thúc kỳ (Quá hạn ${Math.abs(diffDays)} ngày)`);
       }
     } catch {
-      setDeadlineText('Hạn chót: Còn 18 ngày');
+      setDeadlineText('Hạn chót: Chưa đặt');
     }
   }, [activeSemester]);
 
@@ -135,10 +146,30 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
     computeDeadline();
     const handleDeadlineUpdated = () => computeDeadline();
     window.addEventListener('tdtu_semester_deadline_updated', handleDeadlineUpdated);
+    window.addEventListener('tdtu_deadlines_updated', handleDeadlineUpdated);
+    window.addEventListener('tdtu_semesters_updated', handleDeadlineUpdated);
+    window.addEventListener('tdtu_semester_changed', handleDeadlineUpdated);
     window.addEventListener('storage', handleDeadlineUpdated);
+
+    let bc = null;
+    try {
+      bc = new BroadcastChannel('tdtu_realtime_sync');
+      bc.onmessage = (ev) => {
+        if (!ev?.data?.type || ev.data.type === 'semesters_updated' || ev.data.type === 'deadlines_updated') {
+          computeDeadline();
+        }
+      };
+    } catch {}
+
     return () => {
       window.removeEventListener('tdtu_semester_deadline_updated', handleDeadlineUpdated);
+      window.removeEventListener('tdtu_deadlines_updated', handleDeadlineUpdated);
+      window.removeEventListener('tdtu_semesters_updated', handleDeadlineUpdated);
+      window.removeEventListener('tdtu_semester_changed', handleDeadlineUpdated);
       window.removeEventListener('storage', handleDeadlineUpdated);
+      if (bc) {
+        try { bc.close(); } catch {}
+      }
     };
   }, [computeDeadline]);
 

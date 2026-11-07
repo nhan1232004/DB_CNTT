@@ -78,15 +78,28 @@ const AccountsPage = ({ currentUser, onNavigateTab, onSemesterChange, activeSeme
     };
 
     const handleDeadlinesUpdate = (e) => {
-      if (e?.detail) setDeadlinesForm(prev => ({ ...prev, ...e.detail }));
+      if (window.ApiClient?.getSystemDeadlines) {
+        const current = window.ApiClient.getSystemDeadlines();
+        if (current) {
+          setDeadlinesForm(prev => ({ ...prev, ...current }));
+          return;
+        }
+      }
+      if (e?.detail && !Array.isArray(e.detail.list)) {
+        setDeadlinesForm(prev => ({ ...prev, ...e.detail }));
+      }
     };
 
     window.addEventListener('tdtu_users_updated', handleUsersUpdate);
     window.addEventListener('tdtu_deadlines_updated', handleDeadlinesUpdate);
+    window.addEventListener('tdtu_semesters_updated', handleDeadlinesUpdate);
+    window.addEventListener('tdtu_semester_changed', handleDeadlinesUpdate);
 
     return () => {
       window.removeEventListener('tdtu_users_updated', handleUsersUpdate);
       window.removeEventListener('tdtu_deadlines_updated', handleDeadlinesUpdate);
+      window.removeEventListener('tdtu_semesters_updated', handleDeadlinesUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleDeadlinesUpdate);
     };
   }, []);
 

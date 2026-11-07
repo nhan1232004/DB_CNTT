@@ -593,7 +593,36 @@ class ApiClient {
             const semId = data.id || data.semesterId || 'hk1_2026_2027';
             this.safeSetStorage(`tdtu_system_deadlines_${semId}`, JSON.stringify(data));
             this.safeSetStorage('tdtu_system_deadlines', JSON.stringify(data));
+            // Đồng bộ ngược hạn chót vào danh sách học kỳ (tdtu_semesters_list)
+            try {
+              const rawList = localStorage.getItem('tdtu_semesters_list');
+              if (rawList) {
+                const list = JSON.parse(rawList);
+                if (Array.isArray(list)) {
+                  let changed = false;
+                  const nextList = list.map((s: any) => {
+                    if (s && s.id === semId) {
+                      changed = true;
+                      return {
+                        ...s,
+                        declarationDeadline: data.declarationDeadline || s.declarationDeadline,
+                        certDeadline: data.certDeadline || s.certDeadline,
+                        reviewDeadline: data.reviewDeadline || s.reviewDeadline,
+                        reportDeadline: data.reportDeadline || s.reportDeadline,
+                        regulationNote: data.regulationNote !== undefined ? data.regulationNote : s.regulationNote
+                      };
+                    }
+                    return s;
+                  });
+                  if (changed) {
+                    this.safeSetStorage('tdtu_semesters_list', JSON.stringify(nextList));
+                    this.scheduleEvent('tdtu_semesters_updated', { list: nextList, semesters: nextList });
+                  }
+                }
+              }
+            } catch {}
             this.scheduleEvent('tdtu_deadlines_updated', data);
+            this.scheduleEvent('tdtu_semester_deadline_updated', data);
             console.log('[Firestore Sync]: Đã nhận dữ liệu hạn chót học kỳ thời gian thực.');
           }
         }
@@ -621,7 +650,27 @@ class ApiClient {
               }
             }
             this.safeSetStorage('tdtu_semesters_list', JSON.stringify(merged));
+            // Đồng bộ hạn chót của từng học kỳ xuống tdtu_system_deadlines_${sem.id}
+            try {
+              const activeSemId = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+              merged.forEach((s: any) => {
+                if (s && s.id) {
+                  const dlObj = {
+                    ...s,
+                    id: s.id,
+                    semesterId: s.id,
+                    semesterName: s.name
+                  };
+                  this.safeSetStorage(`tdtu_system_deadlines_${s.id}`, JSON.stringify(dlObj));
+                  if (s.id === activeSemId || s.isActive) {
+                    this.safeSetStorage('tdtu_system_deadlines', JSON.stringify(dlObj));
+                  }
+                }
+              });
+            } catch {}
             this.scheduleEvent('tdtu_semesters_updated', { list: merged, semesters: merged });
+            this.scheduleEvent('tdtu_deadlines_updated', { list: merged });
+            this.scheduleEvent('tdtu_semester_deadline_updated', { list: merged });
             this.postBroadcast({ type: 'semesters_updated', list: merged });
             console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', merged.length);
           }
@@ -4167,26 +4216,83 @@ class ApiClient {
   // ==========================================
   // Quản lý Mốc thời gian & Hạn chót học kỳ (Deadlines) theo từng học kỳ
   // ==========================================
+  // Tính toán chính xác số ngày còn lại theo múi giờ địa phương từ mốc hạn chót tùy chỉnh (YYYY-MM-DD hoặc DD-MM-YYYY)
+  static calculateDaysRemaining(deadlineStr: any) {
+    if (!deadlineStr) {
+      return { days: 0, label: 'Chưa đặt hạn', badgeText: 'Hạn chót: Chưa đặt', isExpired: false, isToday: false };
+    }
+    try {
+      const str = String(deadlineStr).trim();
+      let year = 0, month = 0, day = 0;
+      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(str)) {
+        const parts = str.split('T')[0].split('-').map(Number);
+        year = parts[0]; month = parts[1]; day = parts[2];
+      } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(str)) {
+        const parts = str.split(/[\/\-]/).map(Number);
+        day = parts[0]; month = parts[1]; year = parts[2];
+      } else {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          year = d.getFullYear(); month = d.getMonth() + 1; day = d.getDate();
+        }
+      }
+      if (!year || !month || !day) {
+        return { days: 0, label: 'Chưa đặt hạn', badgeText: 'Hạn chót: Chưa đặt', isExpired: false, isToday: false };
+      }
+      const targetEnd = new Date(year, month - 1, day, 23, 59, 59, 999);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const targetStart = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const diffDays = Math.round((targetStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        return {
+          days: diffDays,
+          label: `Còn ${diffDays} ngày`,
+          badgeText: `Hạn chót: Còn ${diffDays} ngày`,
+          isExpired: false,
+          isToday: false,
+          targetEnd
+        };
+      }
+      if (diffDays === 0) {
+        return {
+          days: 0,
+          label: 'Hạn chót: Hôm nay',
+          badgeText: 'Hạn chót: Hôm nay',
+          isExpired: false,
+          isToday: true,
+          targetEnd
+        };
+      }
+      const overdue = Math.abs(diffDays);
+      return {
+        days: diffDays,
+        label: `Quá hạn ${overdue} ngày`,
+        badgeText: `Đã kết thúc kỳ (Quá hạn ${overdue} ngày)`,
+        isExpired: true,
+        isToday: false,
+        targetEnd
+      };
+    } catch {
+      return { days: 0, label: 'Chưa đặt hạn', badgeText: 'Hạn chót: Chưa đặt', isExpired: false, isToday: false };
+    }
+  }
+
   static getSystemDeadlines(semesterId: any = null) {
     const sem = semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
-    // 1. Thử lấy từ tdtu_system_deadlines_${sem}
-    try {
-      const savedSem = localStorage.getItem(`tdtu_system_deadlines_${sem}`);
-      if (savedSem) {
-        const parsed = JSON.parse(savedSem);
-        if (parsed) return parsed;
-      }
-    } catch {}
+    let fromSemList: any = null;
+    let fromSysDl: any = null;
 
-    // 2. Thử lấy từ tdtu_semesters_list
+    // 1. Đọc từ danh sách học kỳ (tdtu_semesters_list)
     try {
       const rawList = localStorage.getItem('tdtu_semesters_list');
       if (rawList) {
         const list = JSON.parse(rawList);
         if (Array.isArray(list)) {
-          const found = list.find(s => s.id === sem);
+          const found = list.find(s => s && s.id === sem);
           if (found) {
-            return {
+            fromSemList = {
               ...found,
               semesterName: found.name,
               semesterId: found.id
@@ -4195,6 +4301,25 @@ class ApiClient {
         }
       }
     } catch {}
+
+    // 2. Đọc từ tdtu_system_deadlines_${sem}
+    try {
+      const savedSem = localStorage.getItem(`tdtu_system_deadlines_${sem}`);
+      if (savedSem) {
+        const parsed = JSON.parse(savedSem);
+        if (parsed) fromSysDl = parsed;
+      }
+    } catch {}
+
+    if (fromSemList && fromSysDl) {
+      const tSem = fromSemList.updatedAt ? new Date(fromSemList.updatedAt).getTime() : 0;
+      const tSys = fromSysDl.updatedAt ? new Date(fromSysDl.updatedAt).getTime() : 0;
+      return tSem >= tSys
+        ? { ...fromSysDl, ...fromSemList, semesterName: fromSemList.name || fromSysDl.semesterName, semesterId: sem }
+        : { ...fromSemList, ...fromSysDl, semesterName: fromSysDl.semesterName || fromSemList.name, semesterId: sem };
+    }
+    if (fromSemList) return fromSemList;
+    if (fromSysDl) return fromSysDl;
 
     // 3. Fallback theo từng học kỳ cụ thể
     if (sem === 'hk2_2025_2026') {
@@ -4243,23 +4368,64 @@ class ApiClient {
   }
 
   static saveSystemDeadlines(deadlines: any) {
+    const semId = deadlines.id || deadlines.semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+    const nowIso = new Date().toISOString();
+    const toSave = {
+      ...deadlines,
+      semesterId: semId,
+      id: semId,
+      semesterName: deadlines.semesterName || deadlines.name || 'Học kỳ 1 / 2026–2027',
+      updatedAt: nowIso
+    };
     try {
-      const semId = deadlines.id || deadlines.semesterId || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
-      const toSave = { ...deadlines, semesterId: semId, id: semId };
-      localStorage.setItem('tdtu_system_deadlines', JSON.stringify(toSave));
-      localStorage.setItem(`tdtu_system_deadlines_${semId}`, JSON.stringify(toSave));
-      window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: toSave }));
+      this.safeSetStorage('tdtu_system_deadlines', JSON.stringify(toSave));
+      this.safeSetStorage(`tdtu_system_deadlines_${semId}`, JSON.stringify(toSave));
+
+      // Đồng bộ hai chiều vào tdtu_semesters_list để Quản lý học kỳ và Thanh điều hướng luôn khớp 100%
+      const rawList = localStorage.getItem('tdtu_semesters_list');
+      if (rawList) {
+        const list = JSON.parse(rawList);
+        if (Array.isArray(list)) {
+          let updatedList = list.map((s: any) => {
+            if (s && s.id === semId) {
+              return {
+                ...s,
+                name: deadlines.name || deadlines.semesterName || s.name,
+                declarationDeadline: toSave.declarationDeadline || s.declarationDeadline,
+                certDeadline: toSave.certDeadline || s.certDeadline,
+                reviewDeadline: toSave.reviewDeadline || s.reviewDeadline,
+                reportDeadline: toSave.reportDeadline || s.reportDeadline,
+                regulationNote: toSave.regulationNote !== undefined ? toSave.regulationNote : s.regulationNote,
+                updatedAt: nowIso
+              };
+            }
+            return s;
+          });
+          this.safeSetStorage('tdtu_semesters_list', JSON.stringify(updatedList));
+          this.scheduleEvent('tdtu_semesters_updated', { list: updatedList, semesters: updatedList });
+          if (window.FirebaseService?.db) {
+            window.FirebaseService.db.collection('tdtu_system').doc('semesters').set({
+              list: updatedList,
+              json: JSON.stringify(updatedList),
+              updatedAt: nowIso
+            }, { merge: true }).catch(() => {});
+          }
+        }
+      }
+
+      this.scheduleEvent('tdtu_deadlines_updated', toSave);
+      this.scheduleEvent('tdtu_semester_deadline_updated', toSave);
+      this.postBroadcast({ type: 'deadlines_updated', data: toSave });
     } catch {}
 
     // Đồng bộ ngay lập tức lên Firestore collection tdtu_system
     if (window.FirebaseService?.db) {
       try {
-        const semId = deadlines.id || deadlines.semesterId || 'hk1_2026_2027';
-        window.FirebaseService.db.collection('tdtu_system').doc(`deadlines_${semId}`).set(deadlines, { merge: true }).catch(() => {});
-        window.FirebaseService.db.collection('tdtu_system').doc('deadlines').set(deadlines, { merge: true }).catch(() => {});
+        window.FirebaseService.db.collection('tdtu_system').doc(`deadlines_${semId}`).set(toSave, { merge: true }).catch(() => {});
+        window.FirebaseService.db.collection('tdtu_system').doc('deadlines').set(toSave, { merge: true }).catch(() => {});
       } catch (err) {}
     }
-    return { success: true, deadlines };
+    return { success: true, deadlines: toSave };
   }
 
   // ==========================================
@@ -4408,20 +4574,45 @@ class ApiClient {
 
   static saveSemesters(list: any[]) {
     if (!Array.isArray(list)) return;
+    const nowIso = new Date().toISOString();
+    const stampedList = list.map((s: any) => ({
+      ...s,
+      updatedAt: s?.updatedAt || nowIso
+    }));
     try {
-      this.safeSetStorage('tdtu_semesters_list', JSON.stringify(list));
-      this.scheduleEvent('tdtu_semesters_updated', { list, semesters: list });
+      this.safeSetStorage('tdtu_semesters_list', JSON.stringify(stampedList));
+      // Đồng bộ hạn chót của từng học kỳ xuống tdtu_system_deadlines_${sem.id}
+      const activeSemId = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+      stampedList.forEach((s: any) => {
+        if (s && s.id) {
+          const dlObj = {
+            ...s,
+            id: s.id,
+            semesterId: s.id,
+            semesterName: s.name,
+            updatedAt: nowIso
+          };
+          this.safeSetStorage(`tdtu_system_deadlines_${s.id}`, JSON.stringify(dlObj));
+          if (s.id === activeSemId || s.isActive) {
+            this.safeSetStorage('tdtu_system_deadlines', JSON.stringify(dlObj));
+          }
+        }
+      });
+      this.scheduleEvent('tdtu_semesters_updated', { list: stampedList, semesters: stampedList });
+      this.scheduleEvent('tdtu_deadlines_updated', { list: stampedList });
+      this.scheduleEvent('tdtu_semester_deadline_updated', { list: stampedList });
     } catch {}
 
-    this.postBroadcast({ type: 'semesters_updated', list });
+    this.postBroadcast({ type: 'semesters_updated', list: stampedList });
+    this.postBroadcast({ type: 'deadlines_updated', list: stampedList });
 
     // Đồng bộ lên Firestore collection tdtu_system doc semesters
     if (window.FirebaseService?.db) {
       try {
         window.FirebaseService.db.collection('tdtu_system').doc('semesters').set({
-          list,
-          json: JSON.stringify(list),
-          updatedAt: new Date().toISOString()
+          list: stampedList,
+          json: JSON.stringify(stampedList),
+          updatedAt: nowIso
         }, { merge: true }).catch(() => {});
       } catch {}
     }

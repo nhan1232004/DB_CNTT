@@ -24,19 +24,29 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
   });
 
   const getDaysRemaining = (deadlineStr) => {
-    if (!deadlineStr) return 18;
+    if (window.ApiClient?.calculateDaysRemaining) {
+      const info = window.ApiClient.calculateDaysRemaining(deadlineStr);
+      return info.days > 0 ? info.days : 0;
+    }
+    if (!deadlineStr) return 0;
     try {
-      const target = new Date(deadlineStr).getTime();
-      const now = Date.now();
-      const diff = target - now;
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      const parts = String(deadlineStr).trim().split('T')[0].split('-').map(Number);
+      const target = parts.length === 3 && parts[0] > 1900
+        ? new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0).getTime()
+        : new Date(deadlineStr).getTime();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const days = Math.round((target - today.getTime()) / (1000 * 60 * 60 * 24));
       return days > 0 ? days : 0;
     } catch {
-      return 18;
+      return 0;
     }
   };
 
   const remainingDays = getDaysRemaining(deadlines.declarationDeadline);
+  const remainingLabel = window.ApiClient?.calculateDaysRemaining
+    ? window.ApiClient.calculateDaysRemaining(deadlines.declarationDeadline).label
+    : `Còn ${remainingDays} ngày`;
 
   const isEnrolledStudent = React.useMemo(() => {
     if (currentUser?.isEnrolledThisSemester === false) return false;
@@ -124,6 +134,9 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
     window.addEventListener('tdtu_data_updated', handleUpdate);
     window.addEventListener('tdtu_cv_updated', handleUpdate);
     window.addEventListener('tdtu_semester_changed', handleUpdate);
+    window.addEventListener('tdtu_deadlines_updated', handleUpdate);
+    window.addEventListener('tdtu_semesters_updated', handleUpdate);
+    window.addEventListener('tdtu_semester_deadline_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 
     let bc = null;
@@ -143,12 +156,15 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
       window.removeEventListener('tdtu_data_updated', handleUpdate);
       window.removeEventListener('tdtu_cv_updated', handleUpdate);
       window.removeEventListener('tdtu_semester_changed', handleUpdate);
+      window.removeEventListener('tdtu_deadlines_updated', handleUpdate);
+      window.removeEventListener('tdtu_semesters_updated', handleUpdate);
+      window.removeEventListener('tdtu_semester_deadline_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
       if (bc) {
         try { bc.close(); } catch {}
       }
     };
-  }, [studentId]);
+  }, [studentId, activeSemester]);
 
   // Cập nhật link CV Google Drive
   const handleSaveCv = (e) => {
@@ -338,7 +354,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
           <div className="mt-3 flex items-center justify-between text-[13.5px]">
             <span className="text-[#1f2937]">Hạn nộp: {new Date(deadlines.declarationDeadline).toLocaleDateString('vi-VN')}</span>
             <span className="px-2.5 py-0.5 rounded-full bg-[#f8fafc] text-[#1f2937] font-bold text-[11px] border border-[#e5e7eb]">
-              Còn {remainingDays} ngày
+              {remainingLabel}
             </span>
           </div>
         </div>
