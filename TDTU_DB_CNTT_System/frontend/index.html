@@ -175,29 +175,9 @@
     }
   </style>
 
-  <!-- React 18 & Babel Standalone for direct runtime execution -->
+  <!-- React 18 Production Runtime -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script>
-    if (window.Babel && window.Babel.registerPreset) {
-      try {
-        window.Babel.registerPreset('tsx', {
-          presets: [
-            [window.Babel.availablePresets['typescript'], { ignoreExtensions: true }],
-            [window.Babel.availablePresets['react'], { runtime: 'classic' }]
-          ]
-        });
-      } catch (err) {
-        window.Babel.registerPreset('tsx', {
-          presets: [
-            [window.Babel.availablePresets['typescript'], { isTSX: true, allExtensions: true }],
-            [window.Babel.availablePresets['react'], { runtime: 'classic' }]
-          ]
-        });
-      }
-    }
-  </script>
 
   <!-- Firebase 10 App, Auth & Firestore SDK (Compat CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -207,49 +187,8 @@
   <!-- SheetJS for Client-Side Excel (.xlsx, .xls, .csv) Import & Multi-tab Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- Modular Frontend TypeScript (.ts / .tsx) Services, Components & Pages -->
-  <script type="text/babel" data-presets="tsx"
-    src="./src/config/firebase.config.ts?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/services/prime-rbac.ts?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/services/api.client.ts?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/components/common/AdminNotificationModal.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/components/common/Navbar.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/components/common/Sidebar.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/components/student/StudentEligibilityBanner.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/LoginPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/DashboardPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/ProfilePage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/DeclarationPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/CertificatesPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/StudentsPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/BulletinPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/EmailJdPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/SemestersPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/ImportDataPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/ExportDataPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/DocumentsPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/pages/AccountsPage.tsx?v=20261106_v120_p0_security_fixes"></script>
-  <script type="text/babel" data-presets="tsx"
-    src="./src/App.tsx?v=20261106_v120_p0_security_fixes"></script>
+  <!-- Pre-compiled Production Bundle (esbuild - 21 Modules + Real-time SyncEngine & TdtuStore) -->
+  <script src="./dist/app.bundle.js?v=20261107_v121_esbuild_sync_engine"></script>
 
   <!-- DevTools & Source Protection Guard (Bảo vệ an toàn thông tin & chống lộ mã nguồn F12) -->
   <script>

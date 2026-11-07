@@ -9,11 +9,117 @@ class ApiClient {
   static bulletinKey = 'tdtu_bulletin_posts';
   static notificationKey = 'tdtu_notifications';
   static _firestoreSyncInitialized = false;
+  static _firestoreUnsubscribes: any[] = [];
+  static _bcInstance: BroadcastChannel | null = null;
+  static _syncStatus = 'idle'; // 'idle' | 'syncing' | 'live' | 'offline' | 'error'
+  static _lastSyncAt: number | null = null;
+  static _eventQueue = new Map<string, any>();
+  static _eventTimer: any = null;
+  static _retryTimer: any = null;
 
   // In-Memory Fast Cache Map (Zero-Latency Rendering for Certs & CV)
   static _certsCache = new Map();
   static _cvCache = new Map();
-  static _allCertsCache = null;
+  static _allCertsCache: any = null;
+
+  // Safe LocalStorage Setter (Chống tràn bộ nhớ QuotaExceededError 5MB)
+  static safeSetStorage(key: string, value: string) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e: any) {
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014)) {
+        try {
+          const currentSem = this.getActiveSemester ? this.getActiveSemester() : 'hk1_2026_2027';
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('tdtu_imported_students_') && !k.endsWith(currentSem)) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.forEach(k => localStorage.removeItem(k));
+          localStorage.setItem(key, value);
+        } catch {}
+      }
+    }
+  }
+
+  // Singleton BroadcastChannel (Tránh tạo mới & đóng sớm gây rớt gói tin liên tab)
+  static getBroadcastChannel(): BroadcastChannel | null {
+    if (typeof BroadcastChannel === 'undefined') return null;
+    if (!this._bcInstance) {
+      try {
+        this._bcInstance = new BroadcastChannel('tdtu_realtime_sync');
+      } catch {
+        this._bcInstance = null;
+      }
+    }
+    return this._bcInstance;
+  }
+
+  static postBroadcast(payload: any) {
+    try {
+      const bc = this.getBroadcastChannel();
+      if (bc) {
+        bc.postMessage(payload);
+      }
+    } catch {
+      this._bcInstance = null;
+    }
+  }
+
+  // Debounced Event Bus (Gộp các sự kiện trùng lặp trong khung 40ms để chống giật UI)
+  static scheduleEvent(eventName: string, detail: any = {}) {
+    this._eventQueue.set(eventName, detail);
+    if (this._eventTimer) return;
+    this._eventTimer = setTimeout(() => {
+      const queued = Array.from(this._eventQueue.entries());
+      this._eventQueue.clear();
+      this._eventTimer = null;
+      for (const [evtName, evtDetail] of queued) {
+        try {
+          window.dispatchEvent(new CustomEvent(evtName, { detail: evtDetail }));
+        } catch {}
+      }
+      if ((window as any).TdtuStore) {
+        (window as any).TdtuStore.notify();
+      }
+    }, 40);
+  }
+
+  static setSyncStatus(status: string) {
+    this._syncStatus = status;
+    if (status === 'live') {
+      this._lastSyncAt = Date.now();
+    }
+    if ((window as any).TdtuStore) {
+      (window as any).TdtuStore.setState({
+        syncStatus: this._syncStatus,
+        lastSyncAt: this._lastSyncAt
+      });
+    }
+  }
+
+  static stopFirestoreSync() {
+    if (Array.isArray(this._firestoreUnsubscribes)) {
+      this._firestoreUnsubscribes.forEach(unsub => {
+        try {
+          if (typeof unsub === 'function') unsub();
+        } catch {}
+      });
+    }
+    this._firestoreUnsubscribes = [];
+    this._firestoreSyncInitialized = false;
+    if (this._retryTimer) {
+      clearTimeout(this._retryTimer);
+      this._retryTimer = null;
+    }
+  }
+
+  static restartFirestoreSync() {
+    this.stopFirestoreSync();
+    this.initFirestoreSync();
+  }
 
   // Lấy chứng chỉ tức thì từ bộ nhớ đệm In-Memory / LocalStorage (<0.5ms) - Tối đa 1 chứng chỉ duy nhất / SV
   static getCachedCerts(studentId = '522H0045') {
@@ -316,12 +422,16 @@ class ApiClient {
       normalized._sig = sig;
       localStorage.setItem(this.sigKey, sig);
       localStorage.setItem(this.userKey, JSON.stringify(normalized));
+      // Đảm bảo đồng bộ Firestore luôn hoạt động hoặc tự khởi tạo lại sau khi đăng nhập
+      if (!this._firestoreSyncInitialized || this._firestoreUnsubscribes.length === 0) {
+        this.restartFirestoreSync();
+      }
     } catch {}
   }
 
   // 1. KẾT NỐI REAL-TIME FIRESTORE MULTI-DEVICE SYNC (Sinh viên, Tài khoản, Hạn chót & Khai báo)
   static initFirestoreSync() {
-    if (this._firestoreSyncInitialized) return;
+    if (this._firestoreSyncInitialized && this._firestoreUnsubscribes.length > 0) return;
     const db = window.FirebaseService?.db;
     if (!db) {
       setTimeout(() => this.initFirestoreSync(), 500);
@@ -329,10 +439,28 @@ class ApiClient {
     }
 
     try {
+      this.stopFirestoreSync();
       this._firestoreSyncInitialized = true;
+      this.setSyncStatus('syncing');
+      const trackUnsub = (unsub: any) => {
+        if (typeof unsub === 'function') {
+          this._firestoreUnsubscribes.push(unsub);
+        }
+      };
+      const handleListenerError = (label: string, err: any) => {
+        console.info(`[Firestore Sync note - ${label}]: Chế độ bộ nhớ cục bộ.`, err?.message || err);
+        this.setSyncStatus('offline');
+        if (!this._retryTimer) {
+          this._retryTimer = setTimeout(() => {
+            this._retryTimer = null;
+            this.restartFirestoreSync();
+          }, 8000);
+        }
+      };
 
       // 1.1 Lắng nghe cập nhật tài khoản người dùng thời gian thực (tdtu_users)
-      db.collection('tdtu_users').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_users').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
         if (!snapshot.empty) {
           const list = [];
           snapshot.forEach(doc => {
@@ -367,19 +495,47 @@ class ApiClient {
           }
           if (list.length > 0) {
             this._saveUsersStore(list);
-            window.dispatchEvent(new CustomEvent('tdtu_users_updated', { detail: { source: 'firestore', count: list.length, users: list } }));
+            this.scheduleEvent('tdtu_users_updated', { source: 'firestore', count: list.length, users: list });
             console.log('[Firestore Sync]: Đã nhận dữ liệu tài khoản thời gian thực:', list.length);
           }
         } else {
           console.log('[Firestore Sync]: Collection tdtu_users trống, tiến hành seed dữ liệu khởi tạo...');
           this._seedFirestoreUsers(db);
         }
-      }, err => {
-        console.info('[Firestore Sync note - Users]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Users', err)));
 
       // 1.2 Lắng nghe cập nhật sinh viên từ các thiết bị khác theo thời gian thực (tdtu_students)
-      db.collection('tdtu_students').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_students').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
+        // Xử lý xóa bản ghi sinh viên khi có sự kiện removed trên Firestore
+        if (typeof snapshot.docChanges === 'function') {
+          snapshot.docChanges().forEach((change: any) => {
+            if (change.type === 'removed') {
+              const rData = change.doc.data() || {};
+              let rSem = rData.semester || 'hk1_2026_2027';
+              let rSid = String(rData.mssv || rData.studentId || change.doc.id || '').trim().toUpperCase();
+              if (change.doc.id.includes('_')) {
+                const parts = change.doc.id.split('_');
+                if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                  rSem = parts.slice(0, parts.length - 1).join('_');
+                  rSid = parts[parts.length - 1].trim().toUpperCase();
+                }
+              }
+              try {
+                const key = 'tdtu_imported_students_' + rSem;
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                  const arr = JSON.parse(raw).filter((s: any) => String(s.mssv || s.studentId || '').toUpperCase() !== rSid);
+                  this.safeSetStorage(key, JSON.stringify(arr));
+                  if (rSem === 'hk1_2026_2027') {
+                    this.safeSetStorage(this.liveStudentsKey, JSON.stringify(arr));
+                  }
+                }
+              } catch {}
+            }
+          });
+        }
+
         if (!snapshot.empty) {
           const semMap = new Map();
           snapshot.forEach(doc => {
@@ -413,40 +569,38 @@ class ApiClient {
             const list = Array.from(studentsMap.values());
             list.sort((a, b) => (a.stt || 0) - (b.stt || 0));
             try {
-              localStorage.setItem('tdtu_imported_students_' + semId, JSON.stringify(list));
+              this.safeSetStorage('tdtu_imported_students_' + semId, JSON.stringify(list));
               if (semId === 'hk1_2026_2027') {
-                localStorage.setItem(this.liveStudentsKey, JSON.stringify(list));
+                this.safeSetStorage(this.liveStudentsKey, JSON.stringify(list));
               }
             } catch {}
           });
 
-          window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_declarations_updated', { detail: { source: 'firestore' } }));
+          this.scheduleEvent('tdtu_data_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_decl_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_declarations_updated', { source: 'firestore' });
           console.log('[Firestore Sync]: Đã nhận dữ liệu sinh viên thời gian thực phân bổ theo từng học kỳ.');
+        } else {
+          this.scheduleEvent('tdtu_data_updated', { source: 'firestore', empty: true });
         }
-      }, err => {
-        console.info('[Firestore Sync note - Students]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Students', err)));
 
       // 1.3 Lắng nghe mốc thời gian & hạn chót học kỳ thời gian thực (tdtu_system/deadlines)
-      db.collection('tdtu_system').doc('deadlines').onSnapshot(doc => {
+      trackUnsub(db.collection('tdtu_system').doc('deadlines').onSnapshot(doc => {
         if (doc.exists) {
           const data = doc.data();
           if (data) {
             const semId = data.id || data.semesterId || 'hk1_2026_2027';
-            localStorage.setItem(`tdtu_system_deadlines_${semId}`, JSON.stringify(data));
-            localStorage.setItem('tdtu_system_deadlines', JSON.stringify(data));
-            window.dispatchEvent(new CustomEvent('tdtu_deadlines_updated', { detail: data }));
+            this.safeSetStorage(`tdtu_system_deadlines_${semId}`, JSON.stringify(data));
+            this.safeSetStorage('tdtu_system_deadlines', JSON.stringify(data));
+            this.scheduleEvent('tdtu_deadlines_updated', data);
             console.log('[Firestore Sync]: Đã nhận dữ liệu hạn chót học kỳ thời gian thực.');
           }
         }
-      }, err => {
-        console.info('[Firestore Sync note - Deadlines]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Deadlines', err)));
 
       // 1.3.1 Lắng nghe danh sách học kỳ toàn hệ thống thời gian thực (tdtu_system/semesters)
-      db.collection('tdtu_system').doc('semesters').onSnapshot(doc => {
+      trackUnsub(db.collection('tdtu_system').doc('semesters').onSnapshot(doc => {
         if (doc.exists) {
           const data = doc.data();
           let list = null;
@@ -466,34 +620,28 @@ class ApiClient {
                 merged.push(def);
               }
             }
-            localStorage.setItem('tdtu_semesters_list', JSON.stringify(merged));
-            window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', { detail: { list: merged, semesters: merged } }));
-            try {
-              const bc = new BroadcastChannel('tdtu_realtime_sync');
-              bc.postMessage({ type: 'semesters_updated', list: merged });
-              bc.close();
-            } catch {}
+            this.safeSetStorage('tdtu_semesters_list', JSON.stringify(merged));
+            this.scheduleEvent('tdtu_semesters_updated', { list: merged, semesters: merged });
+            this.postBroadcast({ type: 'semesters_updated', list: merged });
             console.log('[Firestore Sync]: Đã nhận danh sách học kỳ thời gian thực:', merged.length);
           }
         }
-      }, err => {
-        console.info('[Firestore Sync note - Semesters]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Semesters', err)));
 
       // 1.3.2 Lắng nghe danh sách học kỳ đã xóa thời gian thực (tdtu_system/deleted_semesters)
-      db.collection('tdtu_system').doc('deleted_semesters').onSnapshot(doc => {
+      trackUnsub(db.collection('tdtu_system').doc('deleted_semesters').onSnapshot(doc => {
         if (doc.exists) {
           const data = doc.data();
           if (Array.isArray(data?.ids)) {
             const currentDeleted = new Set(this.getDeletedSemesterIds());
             data.ids.forEach((id: any) => currentDeleted.add(String(id)));
-            localStorage.setItem('tdtu_deleted_semesters', JSON.stringify([...currentDeleted]));
+            this.safeSetStorage('tdtu_deleted_semesters', JSON.stringify([...currentDeleted]));
           }
         }
-      }, () => {});
+      }, () => {}));
 
       // 1.4 Lắng nghe thông báo học vụ thời gian thực (tdtu_notifications)
-      db.collection('tdtu_notifications').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_notifications').onSnapshot(snapshot => {
         if (!snapshot.empty) {
           const notes = [];
           const seenIds = new Set();
@@ -510,25 +658,17 @@ class ApiClient {
             }
           });
           notes.sort((a, b) => String(b.createdAt || b.timestamp || '').localeCompare(String(a.createdAt || a.timestamp || '')));
-          localStorage.setItem(this.notificationKey, JSON.stringify(notes.slice(0, 50)));
-          window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: notes }));
-          window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: notes }));
-          try {
-            const bc = new BroadcastChannel('tdtu_realtime_sync');
-            bc.postMessage({ type: 'notification_received', count: notes.length, timestamp: Date.now() });
-            bc.close();
-          } catch {}
+          this.safeSetStorage(this.notificationKey, JSON.stringify(notes.slice(0, 50)));
+          this.scheduleEvent('tdtu_notification_received', notes);
+          this.scheduleEvent('tdtu_notifications_updated', notes);
+          this.postBroadcast({ type: 'notification_received', count: notes.length, timestamp: Date.now() });
         } else {
-          localStorage.setItem(this.notificationKey, JSON.stringify([]));
-          window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: [] }));
-          window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: [] }));
-          try {
-            const bc = new BroadcastChannel('tdtu_realtime_sync');
-            bc.postMessage({ type: 'notification_received', count: 0, timestamp: Date.now() });
-            bc.close();
-          } catch {}
+          this.safeSetStorage(this.notificationKey, JSON.stringify([]));
+          this.scheduleEvent('tdtu_notification_received', []);
+          this.scheduleEvent('tdtu_notifications_updated', []);
+          this.postBroadcast({ type: 'notification_received', count: 0, timestamp: Date.now() });
         }
-      }, err => {});
+      }, err => handleListenerError('Notifications', err)));
 
       // Dọn dẹp triệt để dữ liệu gắn cứng cũ của sinh viên 522H0118 và sinh viên không đăng ký 523H0077
       try {
@@ -564,7 +704,32 @@ class ApiClient {
       } catch {}
 
       // 1.5 Lắng nghe hồ sơ khai báo doanh nghiệp & CV thời gian thực (tdtu_declarations)
-      db.collection('tdtu_declarations').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_declarations').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
+        // Xử lý trường hợp khai báo bị xóa (removed)
+        if (typeof snapshot.docChanges === 'function') {
+          snapshot.docChanges().forEach((change: any) => {
+            if (change.type === 'removed') {
+              const rData = change.doc.data() || {};
+              let rSem = rData.semester || 'hk1_2026_2027';
+              let rSid = String(rData.studentId || rData.mssv || change.doc.id || '').trim().toUpperCase();
+              if (change.doc.id.includes('_')) {
+                const parts = change.doc.id.split('_');
+                if (parts.length >= 2 && parts[0].startsWith('hk')) {
+                  rSem = parts.slice(0, parts.length - 1).join('_');
+                  rSid = parts[parts.length - 1].trim().toUpperCase();
+                }
+              }
+              try {
+                localStorage.removeItem(`tdtu_decl_${rSem}_${rSid}`);
+                if (rSem === 'hk1_2026_2027') {
+                  localStorage.removeItem('tdtu_decl_' + rSid);
+                }
+              } catch {}
+            }
+          });
+        }
+
         if (!snapshot.empty) {
           let cachedStuds = [];
           try {
@@ -589,10 +754,10 @@ class ApiClient {
               if (!sid) sid = String(doc.id).trim().toUpperCase();
               if (!declSem) declSem = 'hk1_2026_2027';
 
-              localStorage.setItem(`tdtu_decl_${declSem}_${sid}`, JSON.stringify(data));
+              this.safeSetStorage(`tdtu_decl_${declSem}_${sid}`, JSON.stringify(data));
               if (declSem === 'hk1_2026_2027') {
-                localStorage.setItem('tdtu_decl_' + sid, JSON.stringify(data));
-                localStorage.setItem('tdtu_decl_' + doc.id, JSON.stringify(data));
+                this.safeSetStorage('tdtu_decl_' + sid, JSON.stringify(data));
+                this.safeSetStorage('tdtu_decl_' + doc.id, JSON.stringify(data));
               }
               if (data.cvDriveLink) {
                 ApiClient.setCachedCv(sid, data.cvDriveLink);
@@ -664,32 +829,44 @@ class ApiClient {
             this.saveLiveStudents(cachedStuds);
           }
 
-          // Universal Event Bus Dispatcher: Phát đồng thời tất cả các biến thể event
-          window.dispatchEvent(new CustomEvent('tdtu_declarations_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_declaration_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'firestore' } }));
-          window.dispatchEvent(new CustomEvent('tdtu_cv_updated', { detail: { source: 'firestore' } }));
+          // Universal Event Bus Dispatcher (Debounced)
+          this.scheduleEvent('tdtu_declarations_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_decl_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_declaration_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_data_updated', { source: 'firestore' });
+          this.scheduleEvent('tdtu_cv_updated', { source: 'firestore' });
 
-          // Đồng bộ xuyên tab và cửa sổ qua BroadcastChannel
-          try {
-            const bc = new BroadcastChannel('tdtu_realtime_sync');
-            bc.postMessage({ type: 'declaration_updated', timestamp: Date.now() });
-            bc.postMessage({ type: 'cv_updated', timestamp: Date.now() });
-            bc.close();
-          } catch {}
+          // Đồng bộ xuyên tab và cửa sổ qua Singleton BroadcastChannel
+          this.postBroadcast({ type: 'declaration_updated', timestamp: Date.now() });
+          this.postBroadcast({ type: 'cv_updated', timestamp: Date.now() });
+        } else {
+          this.scheduleEvent('tdtu_declarations_updated', { source: 'firestore', empty: true });
         }
-      }, err => {});
+      }, err => handleListenerError('Declarations', err)));
 
       // 1.6 Lắng nghe chứng chỉ sinh viên thời gian thực (tdtu_certificates)
-      db.collection('tdtu_certificates').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_certificates').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
+        // Xử lý các chứng chỉ bị xóa (removed)
+        if (typeof snapshot.docChanges === 'function') {
+          snapshot.docChanges().forEach((change: any) => {
+            if (change.type === 'removed') {
+              const rData = change.doc.data() || {};
+              const rSid = String(rData.studentId || change.doc.id.replace(/^cert_/i, '') || '').trim().toUpperCase();
+              if (rSid) {
+                ApiClient.setCachedCerts(rSid, []);
+              }
+            }
+          });
+        }
+
         if (!snapshot.empty) {
           const certMap = {};
           const allList = [];
           snapshot.forEach(doc => {
             const data = doc.data();
             const c = { id: doc.id, ...data };
-            const sid = String(c.studentId || doc.id || '522H0045').trim().toUpperCase();
+            const sid = String(c.studentId || doc.id.replace(/^cert_/i, '') || '522H0045').trim().toUpperCase();
             c.studentId = sid;
             if (!certMap[sid]) certMap[sid] = [];
             certMap[sid].push(c);
@@ -722,26 +899,22 @@ class ApiClient {
             }
           } catch {}
 
-          window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: certMap }));
-          window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'certificates' } }));
-
-          try {
-            const bc = new BroadcastChannel('tdtu_realtime_sync');
-            bc.postMessage({ type: 'cert_updated', timestamp: Date.now() });
-            bc.close();
-          } catch {}
+          this.scheduleEvent('tdtu_certs_updated', certMap);
+          this.scheduleEvent('tdtu_data_updated', { source: 'certificates' });
+          this.postBroadcast({ type: 'cert_updated', timestamp: Date.now() });
         } else {
+          ApiClient._allCertsCache = { data: [], timestamp: Date.now() };
+          if (this._certsCache) this._certsCache.clear();
           try {
             localStorage.setItem('tdtu_certs_522H0045', JSON.stringify([]));
           } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_certs_updated', { detail: {} }));
+          this.scheduleEvent('tdtu_certs_updated', {});
         }
-      }, err => {
-        console.info('[Firestore Sync note - Certs]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Certs', err)));
 
       // 1.7 Lắng nghe tin JD tuyển dụng đã duyệt (tdtu_jds)
-      db.collection('tdtu_jds').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_jds').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
         const jds = [];
         if (!snapshot.empty) {
           snapshot.forEach(doc => {
@@ -752,29 +925,27 @@ class ApiClient {
             }
           });
         }
-        try { localStorage.setItem('tdtu_published_jds', JSON.stringify(jds)); } catch {}
-        window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: jds }));
-      }, err => {
-        console.info('[Firestore Sync note - JDs]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+        this.safeSetStorage('tdtu_published_jds', JSON.stringify(jds));
+        this.scheduleEvent('tdtu_jds_updated', jds);
+      }, err => handleListenerError('JDs', err)));
 
       // 1.8 Lắng nghe hàng đợi duyệt JD (tdtu_jd_queue)
-      db.collection('tdtu_jd_queue').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_jd_queue').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
         if (!snapshot.empty) {
           const queue = [];
           snapshot.forEach(doc => queue.push({ id: doc.id, ...doc.data() }));
-          try { localStorage.setItem('tdtu_jd_queue', JSON.stringify(queue)); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_jd_queue_updated', { detail: queue }));
+          this.safeSetStorage('tdtu_jd_queue', JSON.stringify(queue));
+          this.scheduleEvent('tdtu_jd_queue_updated', queue);
         } else {
-          try { localStorage.setItem('tdtu_jd_queue', JSON.stringify([])); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_jd_queue_updated', { detail: [] }));
+          this.safeSetStorage('tdtu_jd_queue', JSON.stringify([]));
+          this.scheduleEvent('tdtu_jd_queue_updated', []);
         }
-      }, err => {
-        console.info('[Firestore Sync note - JD Queue]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('JD Queue', err)));
 
       // 1.9 Lắng nghe thông báo từ Giảng viên & Khoa CNTT trong mục JD (tdtu_announcements)
-      db.collection('tdtu_announcements').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_announcements').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
         const deletedSet = new Set([
           ...this.getDeletedAnnouncementIds().map(String),
           ...this.getDeletedNotificationIds().map(String)
@@ -790,18 +961,17 @@ class ApiClient {
             }
           });
           notes.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
-          try { localStorage.setItem('tdtu_announcements', JSON.stringify(notes)); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: notes }));
+          this.safeSetStorage('tdtu_announcements', JSON.stringify(notes));
+          this.scheduleEvent('tdtu_announcements_updated', notes);
         } else {
-          try { localStorage.setItem('tdtu_announcements', JSON.stringify([])); } catch {}
-          window.dispatchEvent(new CustomEvent('tdtu_announcements_updated', { detail: [] }));
+          this.safeSetStorage('tdtu_announcements', JSON.stringify([]));
+          this.scheduleEvent('tdtu_announcements_updated', []);
         }
-      }, err => {
-        console.info('[Firestore Sync note - Announcements]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+      }, err => handleListenerError('Announcements', err)));
 
       // 1.10 Lắng nghe đơn ứng tuyển của sinh viên (tdtu_applications)
-      db.collection('tdtu_applications').onSnapshot(snapshot => {
+      trackUnsub(db.collection('tdtu_applications').onSnapshot(snapshot => {
+        this.setSyncStatus('live');
         const apps = [];
         if (!snapshot.empty) {
           snapshot.forEach(doc => {
@@ -813,13 +983,11 @@ class ApiClient {
           });
           apps.sort((a, b) => String(b.appliedAt || '').localeCompare(String(a.appliedAt || '')));
         }
-        try { localStorage.setItem('tdtu_applications', JSON.stringify(apps)); } catch {}
-        window.dispatchEvent(new CustomEvent('tdtu_applications_updated', { detail: apps }));
-      }, err => {
-        console.info('[Firestore Sync note - Applications]: Chế độ bộ nhớ cục bộ.', err.message);
-      });
+        this.safeSetStorage('tdtu_applications', JSON.stringify(apps));
+        this.scheduleEvent('tdtu_applications_updated', apps);
+      }, err => handleListenerError('Applications', err)));
 
-      console.log('[Firestore Sync]: Đã kích hoạt Real-time Multi-device Sync toàn diện.');
+      console.log('[Firestore Sync]: Đã kích hoạt Real-time Multi-device Sync toàn diện (Managed Listeners:', this._firestoreUnsubscribes.length, ').');
     } catch (e) {
       console.warn('[Firestore Sync Init Warning]:', e);
     }
@@ -1336,12 +1504,8 @@ class ApiClient {
 
     // 5. Broadcast sự kiện cập nhật
     window.dispatchEvent(new CustomEvent('tdtu_notifications_updated'));
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'notification_deleted', id: sId });
-      bc.postMessage({ type: 'announcement_deleted', id: sId });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'notification_deleted', id: sId });
+    this.postBroadcast({ type: 'announcement_deleted', id: sId });
 
     return this.getNotifications(currentUser);
   }
@@ -1708,12 +1872,7 @@ class ApiClient {
     window.dispatchEvent(new CustomEvent('tdtu_notification_sent', { detail: notifItem }));
     window.dispatchEvent(new CustomEvent('tdtu_notification_received', { detail: notifItem }));
     window.dispatchEvent(new CustomEvent('tdtu_notifications_updated', { detail: notifItem }));
-
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'notification_sent', data: notifItem });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'notification_sent', data: notifItem });
 
     return notifItem;
   }
@@ -3721,20 +3880,46 @@ class ApiClient {
           students[idx].declarationData = { ...declaration, semester: targetSem };
           this.saveLiveStudents(students, targetSem);
           try {
-            localStorage.setItem('tdtu_imported_students_' + targetSem, JSON.stringify(students));
-            localStorage.setItem(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify({ ...declaration, semester: targetSem }));
+            this.safeSetStorage('tdtu_imported_students_' + targetSem, JSON.stringify(students));
+            this.safeSetStorage(`tdtu_decl_${targetSem}_${sid}`, JSON.stringify({ ...declaration, semester: targetSem }));
             if (targetSem === 'hk1_2026_2027') {
-              localStorage.setItem('tdtu_decl_' + sid, JSON.stringify({ ...declaration, semester: targetSem }));
+              this.safeSetStorage('tdtu_decl_' + sid, JSON.stringify({ ...declaration, semester: targetSem }));
             }
           } catch {}
           if (window.FirebaseService?.db) {
             try {
-              window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(students[idx], { merge: true });
-              if (targetSem === 'hk1_2026_2027') {
-                window.FirebaseService.db.collection('tdtu_students').doc(sid).set(students[idx], { merge: true });
-                window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true });
+              // Partial Field Update: Chỉ gửi các trường thuộc phạm vi khai báo thực tập (tránh ghi đè GPA/Xếp loại/Ghi chú GV bằng cache cũ)
+              const studentPatch: any = {
+                status: students[idx].status,
+                company: students[idx].company,
+                companyName: students[idx].companyName,
+                position: students[idx].position,
+                contactPerson: students[idx].contactPerson,
+                contactPhone: students[idx].contactPhone,
+                mentorName: students[idx].mentorName,
+                mentorPhone: students[idx].mentorPhone,
+                address: students[idx].address,
+                companyAddress: students[idx].companyAddress,
+                representative: students[idx].representative,
+                taxCode: students[idx].taxCode,
+                noCompanyOption: students[idx].noCompanyOption,
+                updated: students[idx].updated,
+                updatedAt: new Date().toISOString(),
+                declarationData: { ...declaration, semester: targetSem }
+              };
+              if (declaration.cvDriveLink) {
+                studentPatch.cvLink = declaration.cvDriveLink;
+                studentPatch.cvDriveLink = declaration.cvDriveLink;
               }
-              window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true });
+              if (declaration.foreignLanguage && declaration.foreignScore) {
+                studentPatch.cert = `${declaration.foreignLanguage} ${declaration.foreignScore}`;
+              }
+              window.FirebaseService.db.collection('tdtu_students').doc(`${targetSem}_${sid}`).set(studentPatch, { merge: true }).catch(() => {});
+              if (targetSem === 'hk1_2026_2027') {
+                window.FirebaseService.db.collection('tdtu_students').doc(sid).set(studentPatch, { merge: true }).catch(() => {});
+                window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true }).catch(() => {});
+              }
+              window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true }).catch(() => {});
             } catch {}
           }
         }
@@ -3743,10 +3928,10 @@ class ApiClient {
       // Đồng bộ trực tiếp lên Firebase Firestore nếu có db
       if (window.FirebaseService?.db) {
         try {
-          const targetSem = semester || this.getActiveSemester() || 'hk1_2026_2027';
-          window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true });
+          const targetSem = declaration?.semester || this.getActiveSemester() || 'hk1_2026_2027';
+          window.FirebaseService.db.collection('tdtu_declarations').doc(`${targetSem}_${sid}`).set({ ...declaration, semester: targetSem }, { merge: true }).catch(() => {});
           if (targetSem === 'hk1_2026_2027') {
-            window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true });
+            window.FirebaseService.db.collection('tdtu_declarations').doc(sid).set({ ...declaration, semester: targetSem }, { merge: true }).catch(() => {});
           }
         } catch {}
       }
@@ -3762,17 +3947,13 @@ class ApiClient {
 
       // Phát sự kiện trong cùng tab (Zero-latency instant update không cần F5)
       try {
-        window.dispatchEvent(new CustomEvent('tdtu_declaration_updated', { detail: { studentId: sid, data: declaration } }));
-        window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId: sid, data: declaration } }));
-        window.dispatchEvent(new CustomEvent('tdtu_data_updated', { detail: { source: 'declaration', studentId: sid } }));
+        this.scheduleEvent('tdtu_declaration_updated', { studentId: sid, data: declaration });
+        this.scheduleEvent('tdtu_decl_updated', { studentId: sid, data: declaration });
+        this.scheduleEvent('tdtu_data_updated', { source: 'declaration', studentId: sid });
       } catch {}
 
-      // Broadcast across tabs (Đồng bộ đa tab an toàn không reload)
-      try {
-        const bc = new BroadcastChannel('tdtu_realtime_sync');
-        bc.postMessage({ type: 'declaration_updated', studentId: sid, data: declaration });
-        setTimeout(() => { try { bc.close(); } catch {} }, 300);
-      } catch {}
+      // Broadcast across tabs (Đồng bộ đa tab qua Singleton BroadcastChannel)
+      this.postBroadcast({ type: 'declaration_updated', studentId: sid, data: declaration });
     }
     return res || { success: true, data: { declaration } };
   }
@@ -4228,17 +4409,11 @@ class ApiClient {
   static saveSemesters(list: any[]) {
     if (!Array.isArray(list)) return;
     try {
-      localStorage.setItem('tdtu_semesters_list', JSON.stringify(list));
-      window.dispatchEvent(new CustomEvent('tdtu_semesters_updated', {
-        detail: { list, semesters: list }
-      }));
+      this.safeSetStorage('tdtu_semesters_list', JSON.stringify(list));
+      this.scheduleEvent('tdtu_semesters_updated', { list, semesters: list });
     } catch {}
 
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'semesters_updated', list });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'semesters_updated', list });
 
     // Đồng bộ lên Firestore collection tdtu_system doc semesters
     if (window.FirebaseService?.db) {
@@ -5157,12 +5332,8 @@ class ApiClient {
       }
     } catch {}
 
-    // 2. Broadcast Channel across tabs and pages (Safe flush)
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'cert_updated', studentId: sid, cert: item });
-      setTimeout(() => { try { bc.close(); } catch {} }, 300);
-    } catch {}
+    // 2. Broadcast Channel across tabs and pages (Singleton)
+    this.postBroadcast({ type: 'cert_updated', studentId: sid, cert: item });
 
     // 3. Ghi trực tiếp lên Cloud Firestore (Ghi đè cert_${sid} và dọn sạch doc thừa của SV này)
     if (window.FirebaseService?.db) {
@@ -5242,12 +5413,8 @@ class ApiClient {
       }
     } catch {}
 
-    // 2. Broadcast Channel across tabs and pages
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'cert_deleted', studentId: sid, certId: certId || cid });
-      bc.close();
-    } catch {}
+    // 2. Broadcast Channel across tabs and pages (Singleton)
+    this.postBroadcast({ type: 'cert_deleted', studentId: sid, certId: certId || cid });
 
     // 3. Xóa trên Cloud Firestore
     if (window.FirebaseService?.db) {
@@ -5388,12 +5555,7 @@ class ApiClient {
 
       window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: filtered }));
       window.dispatchEvent(new CustomEvent('tdtu_jd_queue_updated', { detail: queue }));
-
-      try {
-        const bc = new BroadcastChannel('tdtu_realtime_sync');
-        bc.postMessage({ type: 'jd_updated', jd: newPublished });
-        bc.close();
-      } catch {}
+      this.postBroadcast({ type: 'jd_updated', jd: newPublished });
     } catch {}
 
     if (window.FirebaseService?.db) {
@@ -5499,11 +5661,7 @@ class ApiClient {
       localStorage.setItem('tdtu_published_jds', JSON.stringify(filtered));
 
       window.dispatchEvent(new CustomEvent('tdtu_jds_updated', { detail: filtered }));
-      try {
-        const bc = new BroadcastChannel('tdtu_realtime_sync');
-        bc.postMessage({ type: 'jd_updated', jd: newPublished });
-        bc.close();
-      } catch {}
+      this.postBroadcast({ type: 'jd_updated', jd: newPublished });
     } catch (e) {
       console.warn('Lưu published JD local storage error:', e);
     }
@@ -5713,11 +5871,7 @@ class ApiClient {
     // 5. Phát sự kiện toàn cục để các tab cập nhật
     window.dispatchEvent(new CustomEvent('tdtu_application_submitted', { detail: application }));
     window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId } }));
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'application_submitted', data: application });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'application_submitted', data: application });
 
     return application;
   }
@@ -5798,11 +5952,7 @@ class ApiClient {
     window.dispatchEvent(new CustomEvent('tdtu_application_approved', { detail: target }));
     window.dispatchEvent(new CustomEvent('tdtu_decl_updated', { detail: { studentId: sid } }));
     window.dispatchEvent(new CustomEvent('tdtu_notifications_updated'));
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'application_approved', data: target });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'application_approved', data: target });
 
     return target;
   }
@@ -5853,11 +6003,7 @@ class ApiClient {
     } catch {}
 
     window.dispatchEvent(new CustomEvent('tdtu_application_rejected', { detail: target }));
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'application_rejected', data: target });
-      bc.close();
-    } catch {}
+    this.postBroadcast({ type: 'application_rejected', data: target });
 
     return target;
   }
@@ -6032,12 +6178,8 @@ class ApiClient {
       content: `${item.content}\n\n— Đăng bởi: ${item.author || 'Giảng viên'} (${item.role || 'Khoa CNTT'})`
     });
 
-    // 4. Broadcast qua các tab trình duyệt
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'announcement_created', item });
-      bc.close();
-    } catch {}
+    // 4. Broadcast qua các tab trình duyệt (Singleton)
+    this.postBroadcast({ type: 'announcement_created', item });
 
     return item;
   }
@@ -6128,13 +6270,9 @@ class ApiClient {
       await fetch(`/api/notifications/${encodeURIComponent(sId)}`, { method: 'DELETE', headers }).catch(() => {});
     } catch {}
 
-    // 6. Broadcast sự kiện qua BroadcastChannel
-    try {
-      const bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.postMessage({ type: 'announcement_deleted', id: sId });
-      bc.postMessage({ type: 'notification_deleted', id: sId });
-      bc.close();
-    } catch {}
+    // 6. Broadcast sự kiện qua BroadcastChannel (Singleton)
+    this.postBroadcast({ type: 'announcement_deleted', id: sId });
+    this.postBroadcast({ type: 'notification_deleted', id: sId });
 
     return { success: true, id: sId };
   }
@@ -6182,6 +6320,60 @@ class ApiClient {
 }
 
 window.ApiClient = ApiClient;
+
+// ==========================================
+// 4. TDTU REACTIVE EXTERNAL STORE (useSyncExternalStore)
+// ==========================================
+(function initTdtuReactiveStore() {
+  const listeners = new Set<() => void>();
+  let state = {
+    version: 0,
+    syncStatus: ApiClient._syncStatus || 'idle',
+    lastSyncAt: ApiClient._lastSyncAt || null
+  };
+
+  const TdtuStore = {
+    getState() {
+      return state;
+    },
+    setState(partial: any) {
+      state = { ...state, ...partial, version: state.version + 1 };
+      listeners.forEach(fn => {
+        try { fn(); } catch {}
+      });
+    },
+    notify() {
+      state = {
+        ...state,
+        syncStatus: ApiClient._syncStatus || state.syncStatus,
+        lastSyncAt: ApiClient._lastSyncAt || state.lastSyncAt,
+        version: state.version + 1
+      };
+      listeners.forEach(fn => {
+        try { fn(); } catch {}
+      });
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    }
+  };
+
+  (window as any).TdtuStore = TdtuStore;
+  (window as any).useTdtuStore = function useTdtuStore(selector?: (s: any) => any) {
+    const ReactRef = (window as any).React;
+    if (!ReactRef || !ReactRef.useSyncExternalStore) {
+      return selector ? selector(state) : state;
+    }
+    const snap = ReactRef.useSyncExternalStore(
+      TdtuStore.subscribe,
+      TdtuStore.getState
+    );
+    return selector ? selector(snap) : snap;
+  };
+})();
 
 // Tự động dọn dẹp các dữ liệu mẫu cũ (mock JDs, mock applications, mock forwarded emails)
 try {

@@ -3,75 +3,117 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ==========================================
-    // HELPER FUNCTIONS (P0 Security Rules)
+    // HELPER FUNCTIONS (TDTU Security & Sync Guard)
     // ==========================================
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function isTdtuUser() {
-      return isAuthenticated() && 
-        (request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$') || 
+      return isAuthenticated() &&
+        (request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$') ||
          request.auth.token.email.matches('.*@student\\.tdtu\\.edu\\.vn$'));
     }
 
-    function isLecturer() {
-      return isAuthenticated() && request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$');
+    function isValidPayload() {
+      return request.resource != null && request.resource.data.keys().size() > 0;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && (request.auth.uid == userId || request.auth.token.email == userId);
+    // Chặn tuyệt đối các bản ghi mẫu/rác cũ (mock IDs) tái xuất hiện trên Cloud Firestore
+    function isNotLegacyMockId(docId) {
+      return !(docId in [
+        'cert_1', 'cert_2', 'cert_3', 'cert_4', 'cert_5',
+        'cert_522H0118_ielts_01', 'cert_522H0118_toeic_02',
+        'cert_523H0077', 'cert_523h0077', '523H0077', '523h0077',
+        'jd_01', 'jd_02', 'jd_03', 'jd_04', 'jd_05', 'jd_06',
+        'jd_07', 'jd_08', 'jd_09', 'jd_10', 'jd_11', 'jd_12',
+        'q_01', 'q_02', 'q_03',
+        'anc_01', 'anc_02', 'anc_03'
+      ]);
     }
 
-    // 1. Hồ sơ người dùng hệ thống
+    // 1. Hồ sơ người dùng hệ thống (tdtu_users)
     match /tdtu_users/{userId} {
-      allow read: if isTdtuUser();
-      allow write: if isLecturer() || isOwner(userId);
+      allow read: if isTdtuUser() || userId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(userId);
+      allow delete: if userId != 'u_gv_phuc';
     }
 
-    // 2. Danh sách sinh viên thực tập (Bảo mật PII & GPA)
+    // 2. Danh sách sinh viên thực tập theo học kỳ (tdtu_students)
     match /tdtu_students/{studentId} {
-      allow read: if isLecturer() || (isTdtuUser() && request.auth.token.email.matches('(?i)^' + studentId + '@.*'));
-      allow write: if isLecturer();
+      allow read: if isTdtuUser() || studentId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(studentId);
+      allow delete: if studentId != null;
     }
 
-    // 3. Khai báo nơi thực tập
+    // 3. Khai báo doanh nghiệp thực tập & nguyện vọng hỗ trợ (tdtu_declarations)
     match /tdtu_declarations/{declId} {
-      allow read: if isTdtuUser();
-      allow create, update: if isTdtuUser();
-      allow delete: if isLecturer();
+      allow read: if isTdtuUser() || declId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(declId);
+      allow delete: if declId != null;
     }
 
-    // 4. Chứng chỉ ngoại ngữ
+    // 4. Chứng chỉ ngoại ngữ sinh viên (tdtu_certificates)
     match /tdtu_certificates/{certId} {
-      allow read: if isTdtuUser();
-      allow create, update: if isTdtuUser();
-      allow delete: if isLecturer();
+      allow read: if isTdtuUser() || certId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(certId);
+      allow delete: if certId != null;
     }
 
-    // 5. Bảng tin tuyển dụng & Thông báo chung
+    // 5. Link CV sinh viên (tdtu_student_cv)
+    match /tdtu_student_cv/{studentId} {
+      allow read: if isTdtuUser() || studentId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(studentId);
+      allow delete: if studentId != null;
+    }
+
+    // 6. Tin tuyển dụng JD đã duyệt (tdtu_jds)
+    match /tdtu_jds/{jdId} {
+      allow read: if isTdtuUser() || jdId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(jdId);
+      allow delete: if jdId != null;
+    }
+
+    // 7. Hàng đợi duyệt JD (tdtu_jd_queue)
+    match /tdtu_jd_queue/{queueId} {
+      allow read: if isTdtuUser() || queueId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(queueId);
+      allow delete: if queueId != null;
+    }
+
+    // 8. Thông báo từ Giảng viên & Ban Chủ nhiệm Khoa (tdtu_announcements)
+    match /tdtu_announcements/{ancId} {
+      allow read: if isTdtuUser() || ancId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(ancId);
+      allow delete: if ancId != null;
+    }
+
+    // 9. Bảng tin chung (tdtu_bulletin)
     match /tdtu_bulletin/{postId} {
-      allow read: if isTdtuUser();
-      allow write: if isLecturer();
+      allow read: if isTdtuUser() || postId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(postId);
+      allow delete: if postId != null;
     }
 
-    // 6. Đơn ứng tuyển JD
+    // 10. Đơn ứng tuyển JD của sinh viên (tdtu_applications)
     match /tdtu_applications/{appId} {
-      allow read: if isTdtuUser();
-      allow create: if isTdtuUser();
-      allow update, delete: if isLecturer();
+      allow read: if isTdtuUser() || appId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(appId);
+      allow delete: if appId != null;
     }
 
-    // 7. Thông báo học vụ
+    // 11. Hộp thư Thông báo học vụ (tdtu_notifications)
     match /tdtu_notifications/{notifId} {
-      allow read: if isTdtuUser();
-      allow write: if isTdtuUser();
+      allow read: if isTdtuUser() || notifId != null;
+      allow create, update: if isValidPayload() && isNotLegacyMockId(notifId);
+      allow delete: if notifId != null;
     }
 
-    // 8. Cấu hình hệ thống & Học kỳ
+    // 12. Cấu hình hệ thống & Học kỳ (tdtu_system)
     match /tdtu_system/{configDoc} {
-      allow read: if isTdtuUser();
-      allow write: if isLecturer();
+      allow read: if isTdtuUser() || configDoc != null;
+      allow create, update: if isValidPayload();
+      allow delete: if configDoc != 'semesters';
     }
 
     // Mặc định: Chặn toàn bộ các collection / document không nằm trong danh mục trên

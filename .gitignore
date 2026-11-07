@@ -4,6 +4,8 @@ node_modules/
 
 # Build / Cache
 dist/
+!TDTU_DB_CNTT_System/frontend/dist/
+!TDTU_DB_CNTT_System/frontend/dist/**
 build/
 .firebase/
 .vite/
