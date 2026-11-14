@@ -24,7 +24,6 @@ const SOURCE_FILES = [
   'src/pages/EmailJdPage.tsx',
   'src/pages/SemestersPage.tsx',
   'src/pages/ImportDataPage.tsx',
-  'src/pages/ExportDataPage.tsx',
   'src/pages/DocumentsPage.tsx',
   'src/pages/AccountsPage.tsx',
   'src/App.tsx'

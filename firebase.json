@@ -7,22 +7,14 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "data/**/*.xlsx",
+      "package.json",
+      "tsconfig.json"
     ],
     "headers": [
-      {
-        "source": "**/*.@(ts|tsx)",
-        "headers": [
-          {
-            "key": "Content-Type",
-            "value": "text/javascript; charset=utf-8"
-          },
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate, max-age=0"
-          }
-        ]
-      },
       {
         "source": "**",
         "headers": [

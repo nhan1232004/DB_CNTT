@@ -188,8 +188,7 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
     if (item.id === 'accounts') return false; // Đã tích hợp xuống Bottom Profile
     if (item.id === 'profile') return false;  // Đã gộp xuống Bottom Profile
     if (isFacultyStaff && (item.id === 'declaration' || item.id === 'profile')) return false;
-    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts', 'handbook'].includes(item.id)) return false;
-    if (item.id === 'handbook' && isLecturer) return false;
+    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'accounts'].includes(item.id)) return false;
     if (isPartner) return ['dashboard', 'bulletin'].includes(item.id);
 
     // Sinh viên không có trong danh sách kỳ thực tập đang chọn: CHỈ THẤY Bảng điều khiển & Bảng tin

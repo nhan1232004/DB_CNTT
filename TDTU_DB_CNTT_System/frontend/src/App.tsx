@@ -456,7 +456,7 @@ const AppInner = () => {
     }
 
     // Giảng viên: Nếu đang ở các tab đã bỏ, tự động chuyển về dashboard
-    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export', 'handbook'].includes(activeTab)) {
+    if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export'].includes(activeTab)) {
       setActiveTab('dashboard');
       return;
     }
@@ -493,15 +493,10 @@ const AppInner = () => {
       import: 'import',
       export: 'export',
       documents: 'reporting',
-      accounts: 'accounts',
-      handbook: 'handbook'
+      accounts: 'accounts'
     };
 
     const featKey = tabFeatureMap[activeTab];
-    if (featKey === 'handbook') {
-      if (isLecturer) setActiveTab('dashboard');
-      return;
-    }
     if (featKey === 'accounts') {
       return;
     }
