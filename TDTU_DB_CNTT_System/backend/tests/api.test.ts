@@ -332,3 +332,88 @@ test('10. P0 Security: Phân quyền Prime RBAC qua HTTP Router (403 vs 200)', a
     assert.equal(resLecturerRead.status, 200, 'Giảng viên có quyền READ danh sách sinh viên');
   });
 });
+
+test('11. P0/P1 Security: Bảo vệ hồ sơ cá nhân & chứng chỉ chéo giữa các sinh viên (403 Forbidden)', async () => {
+  await withServer(async (baseUrl) => {
+    const studentAToken = createValidToken({
+      uid: 'std_522h0045',
+      name: 'Nguyễn Hữu Nhân',
+      email: '522h0045@student.tdtu.edu.vn',
+      role: 'student',
+      roleId: 'sv_trong_ky',
+      studentId: '522H0045',
+      isEnrolledThisSemester: true
+    });
+
+    // 1. Sinh viên A xem hồ sơ của chính mình -> 200 OK
+    const resSelfProfile = await fetch(`${baseUrl}/api/students/522H0045`, {
+      headers: { 'Authorization': `Bearer ${studentAToken}` }
+    });
+    assert.equal(resSelfProfile.status, 200, 'Sinh viên xem được hồ sơ của chính mình');
+
+    // 2. Sinh viên A cố tình xem hoặc sửa hồ sơ của Sinh viên B (522H0002) -> 403 Forbidden
+    const resOtherProfile = await fetch(`${baseUrl}/api/students/522H0002`, {
+      headers: { 'Authorization': `Bearer ${studentAToken}` }
+    });
+    assert.equal(resOtherProfile.status, 403, 'Chặn sinh viên A xem hồ sơ sinh viên B');
+
+    const resUpdateOther = await fetch(`${baseUrl}/api/students/522H0002`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${studentAToken}` },
+      body: JSON.stringify({ phone: '0900000000' })
+    });
+    assert.equal(resUpdateOther.status, 403, 'Chặn sinh viên A sửa hồ sơ sinh viên B');
+
+    // 3. Sinh viên A cố tình xem hoặc nộp chứng chỉ ngoại ngữ cho Sinh viên B -> 403 Forbidden
+    const resOtherCerts = await fetch(`${baseUrl}/api/certificates/522H0002`, {
+      headers: { 'Authorization': `Bearer ${studentAToken}` }
+    });
+    assert.equal(resOtherCerts.status, 403, 'Chặn sinh viên A xem chứng chỉ của sinh viên B');
+
+    const resUploadOtherCert = await fetch(`${baseUrl}/api/certificates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${studentAToken}` },
+      body: JSON.stringify({ studentId: '522H0002', name: 'TOEIC', type: 'TOEIC', score: '850' })
+    });
+    assert.equal(resUploadOtherCert.status, 403, 'Chặn sinh viên A nộp chứng chỉ thay sinh viên B');
+  });
+});
+
+test('12. P1 Security: Giới hạn quyền Sinh viên Ngoài kỳ (Out-of-Semester Read-only)', async () => {
+  await withServer(async (baseUrl) => {
+    const outStudentToken = createValidToken({
+      uid: 'std_52100999',
+      name: 'Sinh viên Ngoài kỳ',
+      email: '52100999@student.tdtu.edu.vn',
+      role: 'student',
+      roleId: 'sv_ngoai_ky',
+      studentId: '52100999',
+      isEnrolledThisSemester: false
+    });
+
+    // Sinh viên ngoài kỳ cố gắng nộp khai báo thực tập mới -> 403 (mask declaration = 22, không chia hết cho 3 CREATE)
+    const resDeclare = await fetch(`${baseUrl}/api/internship/declare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${outStudentToken}` },
+      body: JSON.stringify({
+        studentId: '52100999',
+        companyName: 'FPT Software',
+        taxCode: '0101248141'
+      })
+    });
+    assert.equal(resDeclare.status, 403, 'Sinh viên ngoài kỳ bị chặn khai báo thực tập mới');
+
+    // Sinh viên ngoài kỳ cố gắng nộp chứng chỉ mới -> 403
+    const resCert = await fetch(`${baseUrl}/api/certificates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${outStudentToken}` },
+      body: JSON.stringify({
+        studentId: '52100999',
+        name: 'IELTS',
+        type: 'IELTS',
+        score: '6.5'
+      })
+    });
+    assert.equal(resCert.status, 403, 'Sinh viên ngoài kỳ bị chặn thêm chứng chỉ mới');
+  });
+});

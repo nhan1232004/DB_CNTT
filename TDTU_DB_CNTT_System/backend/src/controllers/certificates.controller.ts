@@ -1,5 +1,6 @@
 import { certificatesService } from '../services/certificates.service.ts';
 import { sendSuccess, sendError } from '../utils/response.ts';
+import { isStudentOwnerOrStaff } from '../utils/student-helper.ts';
 import type { RouteHandler } from '../models/types.ts';
 
 export const getStandardsHandler: RouteHandler = (_req, res) => {
@@ -28,6 +29,10 @@ export const validateCertificateHandler: RouteHandler = (req, res) => {
 export const getStudentCertificatesHandler: RouteHandler = (req, res) => {
   try {
     const studentId = req.params.studentId || (req.user?.studentId) || '522H0045';
+    if (!isStudentOwnerOrStaff(req.user, studentId)) {
+      sendError(res, 403, 'Sinh viên chỉ có quyền xem chứng chỉ ngoại ngữ của chính mình', 'FORBIDDEN_CERTIFICATES');
+      return;
+    }
     const certs = certificatesService.getStudentCertificates(studentId);
     sendSuccess(res, certs, `Danh sách chứng chỉ của sinh viên ${studentId}`);
   } catch (err: any) {
@@ -52,6 +57,14 @@ export const addCertificateHandler: RouteHandler = (req, res) => {
       return;
     }
     const studentId = body.studentId || (req.user?.studentId) || '522H0045';
+    if (!isStudentOwnerOrStaff(req.user, studentId)) {
+      sendError(res, 403, 'Sinh viên không được phép nộp chứng chỉ thay cho sinh viên khác', 'FORBIDDEN_CERT_UPLOAD');
+      return;
+    }
+    if (req.user?.role === 'student' && req.user?.isEnrolledThisSemester === false) {
+      sendError(res, 403, 'Sinh viên ngoài kỳ thực tập chỉ có quyền xem lịch sử chứng chỉ', 'OUT_OF_SEMESTER_CERT_READONLY');
+      return;
+    }
     const cert = certificatesService.saveStudentCertificate({
       ...body,
       studentId

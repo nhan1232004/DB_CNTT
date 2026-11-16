@@ -288,7 +288,20 @@ const StudentNotificationToast = ({ currentUser, onNavigateToBulletin }) => {
 
 const AppInner = () => {
   const [currentUser, setCurrentUser] = React.useState(null);
-  const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [activeTab, setActiveTabState] = React.useState(() => {
+    try {
+      const path = window.location.pathname || '/';
+      if (path !== '/' && path !== '/index.html' && window.ModuleRegistry?.resolveRouteByPath) {
+        const resolved = window.ModuleRegistry.resolveRouteByPath(path);
+        return resolved.found ? resolved.tabId : 'not_found';
+      }
+      const savedTab = sessionStorage.getItem('tdtu_last_active_tab');
+      if (savedTab && window.ModuleRegistry?.getModuleById?.(savedTab)) {
+        return savedTab;
+      }
+    } catch {}
+    return 'dashboard';
+  });
   const [authChecking, setAuthChecking] = React.useState(true);
   const [activeSemester, setActiveSemester] = React.useState(() => {
     try {
@@ -297,12 +310,37 @@ const AppInner = () => {
     return 'hk1_2026_2027';
   });
 
+  // Điều hướng SPA chuẩn với URL Deep-linking & Lịch sử trình duyệt (pushState / replaceState)
+  const setActiveTab = React.useCallback((nextTab, options = {}) => {
+    const targetTab = nextTab || 'dashboard';
+    setActiveTabState(targetTab);
+    try {
+      if (targetTab !== 'not_found') {
+        sessionStorage.setItem('tdtu_last_active_tab', targetTab);
+      }
+      const targetPath = window.ModuleRegistry?.getPathByTabId
+        ? window.ModuleRegistry.getPathByTabId(targetTab)
+        : (targetTab === 'dashboard' ? '/dashboard' : `/${targetTab}`);
+      if (window.location.pathname !== targetPath) {
+        if (options?.replace) {
+          window.history.replaceState({ tab: targetTab }, '', targetPath);
+        } else {
+          window.history.pushState({ tab: targetTab }, '', targetPath);
+        }
+      }
+    } catch {}
+  }, []);
+
   const handleSemesterChange = React.useCallback((newSem) => {
     setActiveSemester(newSem);
     try {
       localStorage.setItem('tdtu_active_semester', newSem);
     } catch {}
-    window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
+    if (window.SyncManager?.broadcastSemesterChange) {
+      window.SyncManager.broadcastSemesterChange(newSem);
+    } else {
+      window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
+    }
   }, []);
 
   // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không
@@ -345,22 +383,24 @@ const AppInner = () => {
   // Xác định học kỳ thực tế: Luôn đồng bộ chuẩn theo học kỳ activeSemester đang được chọn trên thanh điều hướng
   const effectiveSemester = activeSemester || 'hk1_2026_2027';
 
-  // Chống can thiệp URL & LocalStorage để chuyển đổi tài khoản hoặc vượt quyền trái phép
+  // Đồng bộ URL Deep-linking 2 chiều (popstate Back/Forward) & Bảo vệ toàn vẹn phiên đăng nhập
   React.useEffect(() => {
-    const sanitizeUrl = () => {
+    const syncRouteFromLocation = () => {
       try {
         const path = window.location.pathname || '/';
-        const search = window.location.search || '';
-        const hash = window.location.hash || '';
-        if ((path !== '/' && path !== '/index.html') || search !== '' || hash !== '') {
-          window.history.replaceState(null, '', '/');
+        if (window.ModuleRegistry?.resolveRouteByPath) {
+          const resolved = window.ModuleRegistry.resolveRouteByPath(path);
+          if (resolved.found) {
+            setActiveTabState(resolved.tabId);
+            sessionStorage.setItem('tdtu_last_active_tab', resolved.tabId);
+          } else if (path !== '/' && path !== '/index.html') {
+            setActiveTabState('not_found');
+          }
         }
       } catch {}
     };
 
-    sanitizeUrl();
-    window.addEventListener('popstate', sanitizeUrl);
-    window.addEventListener('hashchange', sanitizeUrl);
+    window.addEventListener('popstate', syncRouteFromLocation);
 
     const handleStorageTamper = (e) => {
       if (e && (e.key === 'tdtu_auth_user' || e.key === 'tdtu_auth_token')) {
@@ -368,7 +408,7 @@ const AppInner = () => {
         const rawData = localStorage.getItem('tdtu_auth_user');
         if (!rawToken || !rawData) {
           setCurrentUser(null);
-          setActiveTab('dashboard');
+          setActiveTab('dashboard', { replace: true });
           return;
         }
         const verified = window.ApiClient?.getSavedUser ? window.ApiClient.getSavedUser() : null;
@@ -401,9 +441,6 @@ const AppInner = () => {
           const u = res?.user || (res?.role ? res : null);
           if (u && u.role && window.ApiClient?.isTdtuEmail?.(u.email) && u.email.toLowerCase() === saved.email.toLowerCase()) {
             setCurrentUser(u);
-            if (u.role === 'student' && u.isEnrolledThisSemester === false) {
-              setActiveTab('dashboard');
-            }
           } else {
             setCurrentUser(saved);
           }
@@ -412,9 +449,6 @@ const AppInner = () => {
           const recheck = window.ApiClient.getSavedUser() || saved;
           if (recheck && recheck.role && window.ApiClient?.isTdtuEmail?.(recheck.email)) {
             setCurrentUser(recheck);
-            if (recheck.role === 'student' && recheck.isEnrolledThisSemester === false) {
-              setActiveTab('dashboard');
-            }
           }
         })
         .finally(() => setAuthChecking(false));
@@ -426,22 +460,22 @@ const AppInner = () => {
 
     const handleSemesterEvt = (e) => {
       if (e?.detail?.semesterId) {
-        setActiveSemester(e.detail.semesterId);
+        setActiveSemester(prev => (prev !== e.detail.semesterId ? e.detail.semesterId : prev));
       }
     };
     window.addEventListener('tdtu_semester_changed', handleSemesterEvt);
 
     return () => {
-      window.removeEventListener('popstate', sanitizeUrl);
-      window.removeEventListener('hashchange', sanitizeUrl);
+      window.removeEventListener('popstate', syncRouteFromLocation);
       window.removeEventListener('storage', handleStorageTamper);
       window.removeEventListener('tdtu_semester_changed', handleSemesterEvt);
     };
-  }, []);
+  }, [setActiveTab]);
 
   // Bảo vệ phân quyền chuyển tab nghiêm ngặt theo Ma trận Số nguyên tố (Prime RBAC)
   React.useEffect(() => {
     if (!currentUser) return;
+    if (activeTab === 'not_found') return; // Giữ màn hình 404 khi truy cập URL không tồn tại
     
     const cleanEmail = String(currentUser.email || '').toLowerCase();
     const isAdmin = cleanEmail === 'duonghuuphuc@tdtu.edu.vn' || cleanEmail === 'phamvanc@tdtu.edu.vn' || (Boolean(currentUser.isAdmin) && cleanEmail !== 'nguyenvana@tdtu.edu.vn');
@@ -451,13 +485,13 @@ const AppInner = () => {
 
     // Cả Admin & Giảng viên: Không vào declaration và profile -> Tự động chuyển về dashboard
     if (isFacultyStaff && (activeTab === 'declaration' || activeTab === 'profile')) {
-      setActiveTab('dashboard');
+      setActiveTab('dashboard', { replace: true });
       return;
     }
 
     // Giảng viên: Nếu đang ở các tab đã bỏ, tự động chuyển về dashboard
     if (isLecturer && ['declaration', 'profile', 'email_jd', 'semesters', 'import', 'export'].includes(activeTab)) {
-      setActiveTab('dashboard');
+      setActiveTab('dashboard', { replace: true });
       return;
     }
 
@@ -476,7 +510,7 @@ const AppInner = () => {
     // Sinh viên không có trong danh sách kỳ đang kích hoạt: chuyển thành SV ngoài kỳ, chỉ xem được dashboard, profile và bulletin
     if (isStudent && (!isStudentEnrolledInActiveSem || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
       if (!['dashboard', 'profile', 'bulletin', 'accounts'].includes(activeTab)) {
-        setActiveTab('dashboard');
+        setActiveTab('dashboard', { replace: true });
         return;
       }
     }
@@ -504,10 +538,10 @@ const AppInner = () => {
     if (window.PrimeRbac?.checkUserPermission && featKey) {
       const hasRead = window.PrimeRbac.checkUserPermission(currentUser, featKey, 2);
       if (!hasRead) {
-        setActiveTab('dashboard');
+        setActiveTab('dashboard', { replace: true });
       }
     }
-  }, [currentUser, activeTab]);
+  }, [currentUser, activeTab, activeSemester, isStudentEnrolledInSemester, setActiveTab]);
 
   const handleLoginSuccess = (user, token) => {
     const candidate = user?.user || (user?.role ? user : null);
@@ -519,20 +553,18 @@ const AppInner = () => {
     if (token) window.ApiClient.setToken(token);
     window.ApiClient.setSavedUser(candidate);
     const verifiedUser = window.ApiClient.getSavedUser() || candidate;
-    try {
-      window.history.replaceState(null, '', '/');
-    } catch {}
     setCurrentUser(verifiedUser);
-    setActiveTab('dashboard');
+    setActiveTab('dashboard', { replace: true });
   };
 
   const handleLogout = () => {
     if (window.ApiClient) window.ApiClient.clearToken();
     try {
+      sessionStorage.removeItem('tdtu_last_active_tab');
       window.history.replaceState(null, '', '/');
     } catch {}
     setCurrentUser(null);
-    setActiveTab('dashboard');
+    setActiveTabState('dashboard');
   };
 
   if (authChecking) {
@@ -571,7 +603,28 @@ const AppInner = () => {
 
         <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5 lg:px-6 bg-white w-full">
           <div className="w-full">
-            <TabErrorBoundary activeTab={activeTab} onResetToDashboard={() => setActiveTab('dashboard')}>
+            <TabErrorBoundary key={activeTab} activeTab={activeTab} onResetToDashboard={() => setActiveTab('dashboard')}>
+              {activeTab === 'not_found' && (
+                <div className="p-8 max-w-xl mx-auto my-12 bg-white border border-[#e5e7eb] rounded-2xl shadow-sm text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#fef2f2] text-[#dc2626] mx-auto flex items-center justify-center font-extrabold text-xl">
+                    404
+                  </div>
+                  <h3 className="text-[18px] font-bold text-[#1f2937]">Không tìm thấy trang yêu cầu (404 Not Found)</h3>
+                  <p className="text-[12.5px] text-[#4b5563] leading-relaxed">
+                    Đường dẫn URL <code className="px-1.5 py-0.5 bg-[#f1f5f9] rounded text-[#003087] font-mono">{typeof window !== 'undefined' ? window.location.pathname : ''}</code> không tồn tại trong Danh mục Phân hệ (Module Registry).
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('dashboard', { replace: true })}
+                      className="px-5 py-2.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-[12.5px] font-bold transition shadow-xs cursor-pointer"
+                    >
+                      Quay về Bảng điều khiển (/dashboard)
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'dashboard' && (
                 window.DashboardPage ? (
                   <window.DashboardPage

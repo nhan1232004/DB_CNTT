@@ -1,22 +1,79 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { ENV } from '../config/env.config.ts';
 
 let dbInstance: DatabaseSync | null = null;
+let activeDbPath: string | null = null;
+
+function resolveEffectiveDbPath(): string {
+  if (activeDbPath) return activeDbPath;
+  const isTestEnv =
+    process.env.NODE_ENV === 'test' ||
+    process.execArgv.some(arg => arg.includes('--test')) ||
+    process.argv.some(arg => arg.endsWith('.test.ts') || arg.endsWith('.test.js'));
+
+  if (isTestEnv && !process.env.DB_PATH) {
+    const tmpPath = path.join(os.tmpdir(), `tdtu_db_cntt_test_${process.pid}.sqlite`);
+    try {
+      if (fs.existsSync(ENV.DB_PATH)) {
+        fs.copyFileSync(ENV.DB_PATH, tmpPath);
+      }
+      process.on('exit', () => {
+        try {
+          if (dbInstance) {
+            dbInstance.close();
+            dbInstance = null;
+          }
+          for (const suffix of ['', '-wal', '-shm']) {
+            if (fs.existsSync(tmpPath + suffix)) fs.unlinkSync(tmpPath + suffix);
+          }
+        } catch {}
+      });
+      activeDbPath = tmpPath;
+      return activeDbPath;
+    } catch {}
+  }
+
+  activeDbPath = ENV.DB_PATH;
+  return activeDbPath;
+}
 
 export function getDatabase(): DatabaseSync {
   if (!dbInstance) {
-    const dbDir = path.dirname(ENV.DB_PATH);
+    const targetPath = resolveEffectiveDbPath();
+    const dbDir = path.dirname(targetPath);
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
-    dbInstance = new DatabaseSync(ENV.DB_PATH);
+    dbInstance = new DatabaseSync(targetPath);
+    // Tối ưu hóa chịu tải cao & chống khóa ghi đồng thời (Multi-user Concurrency Hardening)
     dbInstance.exec('PRAGMA journal_mode = WAL;');
+    dbInstance.exec('PRAGMA busy_timeout = 5000;');
+    dbInstance.exec('PRAGMA synchronous = NORMAL;');
+    dbInstance.exec('PRAGMA temp_store = MEMORY;');
+    dbInstance.exec('PRAGMA cache_size = -64000;');
     dbInstance.exec('PRAGMA foreign_keys = ON;');
     initDatabaseSchema(dbInstance);
   }
   return dbInstance;
+}
+
+export function withWriteRetry<T>(fn: () => T, maxRetries = 5): T {
+  let lastErr: any;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return fn();
+    } catch (err: any) {
+      lastErr = err;
+      const msg = String(err?.message || '');
+      if (!msg.includes('SQLITE_BUSY') && !msg.includes('database is locked')) {
+        throw err;
+      }
+    }
+  }
+  throw lastErr;
 }
 
 export function initDatabaseSchema(db: DatabaseSync): void {

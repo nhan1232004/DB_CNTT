@@ -10,6 +10,7 @@ const SOURCE_FILES = [
   'src/config/firebase.config.ts',
   'src/services/prime-rbac.ts',
   'src/services/api.client.ts',
+  'src/config/module-registry.ts',
   'src/components/common/AdminNotificationModal.tsx',
   'src/components/common/Navbar.tsx',
   'src/components/common/Sidebar.tsx',

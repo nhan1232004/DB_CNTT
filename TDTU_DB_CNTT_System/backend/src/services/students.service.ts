@@ -1,4 +1,5 @@
-import { getDatabase } from '../models/sqlite.db.ts';
+import { getDatabase, withWriteRetry } from '../models/sqlite.db.ts';
+import { normalizeStudentCourse } from '../utils/student-helper.ts';
 
 export class StudentsService {
   private db = getDatabase();
@@ -294,49 +295,43 @@ export class StudentsService {
     const academicRank = String(dto.academicRank || 'Khá').trim();
     const lecturerNote = String(dto.lecturerNote || '').trim();
 
-    let ktcn = dto.ktcnEnrolled !== undefined ? (dto.ktcnEnrolled ? 1 : 0) : 0;
-    let tsnn = dto.tsnnEnrolled !== undefined ? (dto.tsnnEnrolled ? 1 : 0) : 0;
-    if (Array.isArray(dto.courses)) {
-      ktcn = dto.courses.some((c: string) => c.toUpperCase().includes('KTCN') || c.includes('Kiến tập')) ? 1 : ktcn;
-      tsnn = dto.courses.some((c: string) => c.toUpperCase().includes('TSNN') || c.includes('Tập sự') || c.includes('Dự án')) ? 1 : tsnn;
-    } else if (dto.courseCode || dto.course_str) {
-      const cStr = String(dto.courseCode || dto.course_str).toUpperCase();
-      if (cStr.includes('KTCN')) ktcn = 1;
-      if (cStr.includes('TSNN') || cStr.includes('DA')) tsnn = 1;
-    }
-    if (!ktcn && !tsnn) ktcn = 1;
-    const isDual = (ktcn && tsnn) ? 1 : 0;
+    const normalizedCourse = normalizeStudentCourse(dto);
+    const ktcn = normalizedCourse.ktcnEnrolled;
+    const tsnn = normalizedCourse.tsnnEnrolled;
+    const isDual = normalizedCourse.isDualCourse;
     const status = String(dto.status || 'seeking').trim();
     const now = new Date().toISOString();
 
-    this.db.prepare(`
-      INSERT INTO students (
+    withWriteRetry(() => {
+      this.db.prepare(`
+        INSERT INTO students (
+          studentId, fullName, email, className, major,
+          birthDate, birthPlace, gender, phone, gpa10, gpa4, academicRank, lecturerNote,
+          ktcnEnrolled, tsnnEnrolled, isDualCourse, isEligible, status, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        ON CONFLICT(studentId) DO UPDATE SET
+          fullName = excluded.fullName,
+          email = excluded.email,
+          className = excluded.className,
+          major = excluded.major,
+          birthDate = excluded.birthDate,
+          birthPlace = excluded.birthPlace,
+          gender = excluded.gender,
+          phone = excluded.phone,
+          gpa10 = excluded.gpa10,
+          gpa4 = excluded.gpa4,
+          academicRank = excluded.academicRank,
+          lecturerNote = COALESCE(NULLIF(excluded.lecturerNote, ''), students.lecturerNote),
+          ktcnEnrolled = excluded.ktcnEnrolled,
+          tsnnEnrolled = excluded.tsnnEnrolled,
+          isDualCourse = excluded.isDualCourse,
+          status = excluded.status
+      `).run(
         studentId, fullName, email, className, major,
         birthDate, birthPlace, gender, phone, gpa10, gpa4, academicRank, lecturerNote,
-        ktcnEnrolled, tsnnEnrolled, isDualCourse, isEligible, status, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-      ON CONFLICT(studentId) DO UPDATE SET
-        fullName = excluded.fullName,
-        email = excluded.email,
-        className = excluded.className,
-        major = excluded.major,
-        birthDate = excluded.birthDate,
-        birthPlace = excluded.birthPlace,
-        gender = excluded.gender,
-        phone = excluded.phone,
-        gpa10 = excluded.gpa10,
-        gpa4 = excluded.gpa4,
-        academicRank = excluded.academicRank,
-        lecturerNote = COALESCE(NULLIF(excluded.lecturerNote, ''), students.lecturerNote),
-        ktcnEnrolled = excluded.ktcnEnrolled,
-        tsnnEnrolled = excluded.tsnnEnrolled,
-        isDualCourse = excluded.isDualCourse,
-        status = excluded.status
-    `).run(
-      studentId, fullName, email, className, major,
-      birthDate, birthPlace, gender, phone, gpa10, gpa4, academicRank, lecturerNote,
-      ktcn, tsnn, isDual, status, now
-    );
+        ktcn, tsnn, isDual, status, now
+      );
+    });
 
     try {
       this.db.prepare(`

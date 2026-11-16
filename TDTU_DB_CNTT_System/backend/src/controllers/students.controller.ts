@@ -1,5 +1,6 @@
 import { studentsService } from '../services/students.service.ts';
 import { sendSuccess, sendError } from '../utils/response.ts';
+import { isStudentOwnerOrStaff } from '../utils/student-helper.ts';
 import type { RouteHandler } from '../models/types.ts';
 
 export const getStudentsHandler: RouteHandler = (req, res) => {
@@ -27,6 +28,10 @@ export const checkEligibilityHandler: RouteHandler = (req, res) => {
       sendError(res, 400, 'Mã số sinh viên là bắt buộc', 'STUDENT_ID_REQUIRED');
       return;
     }
+    if (!isStudentOwnerOrStaff(req.user, studentId)) {
+      sendError(res, 403, 'Sinh viên chỉ có quyền tra cứu điều kiện thực tập của chính mình', 'FORBIDDEN_ELIGIBILITY');
+      return;
+    }
     const result = studentsService.checkEligibility(studentId);
     sendSuccess(res, result, result.message);
   } catch (err: any) {
@@ -42,11 +47,9 @@ export const getStudentDetailHandler: RouteHandler = (req, res) => {
       return;
     }
     // P0 Security: Sinh viên chỉ có quyền xem hồ sơ của chính mình
-    if (req.user?.role === 'student' && !req.user?.isAdmin) {
-      if (req.user?.studentId && req.user.studentId.toUpperCase() !== String(studentId).toUpperCase()) {
-        sendError(res, 403, 'Sinh viên chỉ có quyền truy cập hồ sơ của chính mình', 'FORBIDDEN_PROFILE');
-        return;
-      }
+    if (!isStudentOwnerOrStaff(req.user, studentId)) {
+      sendError(res, 403, 'Sinh viên chỉ có quyền truy cập hồ sơ của chính mình', 'FORBIDDEN_PROFILE');
+      return;
     }
     const student = studentsService.getStudentById(studentId);
     if (!student) {
@@ -72,6 +75,14 @@ export const createStudentHandler: RouteHandler = (req, res) => {
 export const updateStudentHandler: RouteHandler = (req, res) => {
   try {
     const { studentId } = req.params;
+    if (!isStudentOwnerOrStaff(req.user, studentId)) {
+      sendError(res, 403, 'Sinh viên không được phép chỉnh sửa hồ sơ của sinh viên khác', 'FORBIDDEN_PROFILE_UPDATE');
+      return;
+    }
+    if (req.user?.role === 'student' && req.user?.isEnrolledThisSemester === false) {
+      sendError(res, 403, 'Sinh viên ngoài kỳ thực tập không có quyền chỉnh sửa hồ sơ học kỳ hiện tại', 'OUT_OF_SEMESTER_READONLY');
+      return;
+    }
     const body = req.body || {};
     const updated = studentsService.updateStudent(studentId, body);
     sendSuccess(res, updated, 'Cập nhật hồ sơ sinh viên thành công');

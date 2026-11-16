@@ -19,11 +19,8 @@ import * as certCtrl from '../controllers/certificates.controller.ts';
 import * as reportingCtrl from '../controllers/reporting.controller.ts';
 import * as notifCtrl from '../controllers/notification.controller.ts';
 
-// Import plugins to ensure auto-registration in WidgetRegistry
-import '../services/charts/top-companies.plugin.ts';
-import '../services/charts/status-pie.plugin.ts';
-import '../services/charts/major-distribution.plugin.ts';
-import '../services/charts/salary-trend.plugin.ts';
+// Import Chart Plugin Index (Auto-discovers & registers all *.plugin.ts in WidgetRegistry)
+import '../services/charts/index.ts';
 
 export function createApiRouter(): HttpRouter {
   const router = new HttpRouter();
