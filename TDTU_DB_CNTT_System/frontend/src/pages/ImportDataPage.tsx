@@ -290,7 +290,14 @@ const ImportDataPage: React.FC<ImportDataPageProps> = ({ currentUser, activeSeme
       if ((window as any).ApiClient?.importStudentsExcel) {
         await (window as any).ApiClient.importStudentsExcel(selectedSemester, finalImportList, importMode);
       } else if ((window as any).ApiClient?.saveLiveStudents) {
-        (window as any).ApiClient.saveLiveStudents(finalImportList);
+        (window as any).ApiClient.saveLiveStudents(finalImportList, selectedSemester);
+      }
+      if (selectedSemester && selectedSemester !== activeSemester) {
+        if (onSemesterChange) {
+          onSemesterChange(selectedSemester);
+        } else if ((window as any).ApiClient?.setActiveSemester) {
+          (window as any).ApiClient.setActiveSemester(selectedSemester, { userSelected: true });
+        }
       }
 
       setImportSuccess(`Đã nạp thành công ${finalImportList.length} sinh viên vào cơ sở dữ liệu học kỳ ${selectedSemester.toUpperCase()} (${importMode === 'replace' ? 'Thay thế toàn bộ' : 'Gộp thêm'})!`);

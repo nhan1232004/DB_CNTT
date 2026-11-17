@@ -102,6 +102,12 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   const [importSuccess, setImportSuccess] = React.useState(null);
   const [importSummary, setImportSummary] = React.useState(null);
 
+  React.useEffect(() => {
+    if (activeSemester && !importModalOpen) {
+      setImportSemester(activeSemester);
+    }
+  }, [activeSemester, importModalOpen]);
+
   // Modal CRUD Sinh viên (Thêm mới / Chỉnh sửa)
   const [crudModalOpen, setCrudModalOpen] = React.useState(false);
   const [editingStudentId, setEditingStudentId] = React.useState(null);
@@ -800,6 +806,9 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     try {
       setImporting(true);
       const res = await window.ApiClient.importStudentsExcel(importSemester, parsedRows, importMode);
+      if (importSemester && importSemester !== activeSemester && onSemesterChange) {
+        onSemesterChange(importSemester);
+      }
       setImportSuccess(`Đã import (${importMode === 'replace' ? 'Thay thế toàn bộ' : 'Gộp thêm'}) thành công ${res?.importedCount || parsedRows.length} sinh viên vào ${importSemester}!`);
       setTimeout(() => {
         setImportModalOpen(false);
@@ -1055,7 +1064,10 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           {isAdmin && (
             <button
               type="button"
-              onClick={() => setImportModalOpen(true)}
+              onClick={() => {
+                setImportSemester(activeSemester);
+                setImportModalOpen(true);
+              }}
               className="px-5 py-2.5 min-w-[140px] min-h-[42px] whitespace-nowrap bg-white text-[#003087] border border-[#003087] hover:bg-[#ebf3ff] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
               title="Nhập danh sách sinh viên từ file Excel bên ngoài"
             >
