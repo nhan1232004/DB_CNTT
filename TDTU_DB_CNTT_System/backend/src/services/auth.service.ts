@@ -23,6 +23,58 @@ export class AuthService {
     return { isValid: false };
   }
 
+  getActiveSemester(): string {
+    try {
+      const row = this.db.prepare("SELECT value FROM system_state WHERE key = 'active_semester'").get() as any;
+      if (row && row.value) {
+        return String(row.value).trim() || 'hk1_2026_2027';
+      }
+    } catch {}
+    return 'hk1_2026_2027';
+  }
+
+  isStudentEnrolledInSemester(studentId?: string, semester?: string): boolean {
+    if (!studentId) return false;
+    const cleanSid = String(studentId).trim().toUpperCase();
+    if (!cleanSid || cleanSid === '52100999') return false;
+    const targetSem = (semester || '').trim() || this.getActiveSemester();
+
+    try {
+      // Ưu tiên kiểm tra trong bảng semester_enrollments (chính xác theo từng học kỳ)
+      const inEnroll = this.db.prepare(
+        'SELECT 1 FROM semester_enrollments WHERE semester = ? AND UPPER(studentId) = UPPER(?)'
+      ).get(targetSem, cleanSid);
+      if (inEnroll) return true;
+
+      // Nếu học kỳ đã có dữ liệu quản trị (meta tồn tại hoặc có SV khác trong kỳ) nhưng SV không có tên -> Ngoài kỳ
+      const semCount = (this.db.prepare('SELECT COUNT(*) as c FROM semester_enrollments WHERE semester = ?').get(targetSem) as any)?.c || 0;
+      const metaRow = this.db.prepare('SELECT value FROM system_state WHERE key = ?').get(`students_meta_${targetSem}`) as any;
+      if (semCount > 0 || metaRow) {
+        return false;
+      }
+
+      // Fallback duy nhất nếu DB cũ chưa backfill cho HK1
+      if (targetSem === 'hk1_2026_2027') {
+        return Boolean(
+          this.db.prepare("SELECT 1 FROM students WHERE UPPER(studentId) = UPPER(?) AND (semester IS NULL OR semester = '' OR semester = 'hk1_2026_2027')").get(cleanSid)
+        );
+      }
+    } catch {}
+    return false;
+  }
+
+  resolveCurrentClaims(user: UserClaims): UserClaims {
+    if (user.role === 'student' && user.studentId) {
+      const enrolled = this.isStudentEnrolledInSemester(user.studentId);
+      return {
+        ...user,
+        isEnrolledThisSemester: enrolled,
+        roleId: enrolled ? 'sv_trong_ky' : 'sv_ngoai_ky'
+      };
+    }
+    return user;
+  }
+
   loginWithGoogle(email: string, name?: string, avatarUrl?: string): { token: string; user: UserClaims } {
     const domainCheck = this.validateEmailDomain(email);
     if (!domainCheck.isValid || !domainCheck.role) {
@@ -68,7 +120,9 @@ export class AuthService {
       throw new Error('Tài khoản đã bị tạm khóa bởi Quản trị viên Khoa CNTT');
     }
 
-    const isEnrolled = userRow.role === 'student' && userRow.studentId ? Boolean(this.db.prepare('SELECT 1 FROM students WHERE UPPER(studentId) = UPPER(?)').get(userRow.studentId)) : undefined;
+    const isEnrolled = userRow.role === 'student' && userRow.studentId
+      ? this.isStudentEnrolledInSemester(userRow.studentId)
+      : undefined;
 
     const claims: Omit<UserClaims, 'iat' | 'exp'> = {
       uid: userRow.uid,
@@ -77,6 +131,7 @@ export class AuthService {
       role: userRow.role,
       isAdmin: Boolean(userRow.isAdmin),
       studentId: userRow.studentId || undefined,
+      roleId: userRow.role === 'student' ? (isEnrolled ? 'sv_trong_ky' : 'sv_ngoai_ky') : undefined,
       isEnrolledThisSemester: isEnrolled,
       avatarUrl: userRow.avatarUrl,
       department: userRow.department

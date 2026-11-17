@@ -12,10 +12,11 @@ export const getStudentsHandler: RouteHandler = (req, res) => {
   }
 };
 
-export const getSummaryHandler: RouteHandler = (_req, res) => {
+export const getSummaryHandler: RouteHandler = (req, res) => {
   try {
-    const summary = studentsService.getSummary();
-    sendSuccess(res, summary, 'Tổng quan đợt thực tập HK1/2026-2027');
+    const semester = req.query?.semester;
+    const summary = studentsService.getSummary(semester);
+    sendSuccess(res, summary, `Tổng quan đợt thực tập (${summary.period || semester || 'HK1/2026-2027'})`);
   } catch (err: any) {
     sendError(res, 500, err?.message || 'Lỗi lấy dữ liệu tổng quan');
   }
@@ -32,7 +33,8 @@ export const checkEligibilityHandler: RouteHandler = (req, res) => {
       sendError(res, 403, 'Sinh viên chỉ có quyền tra cứu điều kiện thực tập của chính mình', 'FORBIDDEN_ELIGIBILITY');
       return;
     }
-    const result = studentsService.checkEligibility(studentId);
+    const semester = req.query?.semester;
+    const result = studentsService.checkEligibility(studentId, semester);
     sendSuccess(res, result, result.message);
   } catch (err: any) {
     sendError(res, 500, err?.message || 'Lỗi kiểm tra thẩm định điều kiện');
@@ -51,7 +53,8 @@ export const getStudentDetailHandler: RouteHandler = (req, res) => {
       sendError(res, 403, 'Sinh viên chỉ có quyền truy cập hồ sơ của chính mình', 'FORBIDDEN_PROFILE');
       return;
     }
-    const student = studentsService.getStudentById(studentId);
+    const semester = req.query?.semester;
+    const student = studentsService.getStudentById(studentId, semester);
     if (!student) {
       sendError(res, 404, `Không tìm thấy sinh viên có MSSV: ${studentId}`, 'STUDENT_NOT_FOUND');
       return;
@@ -65,7 +68,8 @@ export const getStudentDetailHandler: RouteHandler = (req, res) => {
 export const createStudentHandler: RouteHandler = (req, res) => {
   try {
     const body = req.body || {};
-    const created = studentsService.createStudent(body);
+    const semester = req.query?.semester || body.semester;
+    const created = studentsService.createStudent(body, semester);
     sendSuccess(res, created, 'Thêm / cập nhật sinh viên thành công', 201);
   } catch (err: any) {
     sendError(res, 400, err?.message || 'Lỗi thêm sinh viên');
@@ -84,7 +88,8 @@ export const updateStudentHandler: RouteHandler = (req, res) => {
       return;
     }
     const body = req.body || {};
-    const updated = studentsService.updateStudent(studentId, body);
+    const semester = req.query?.semester || body.semester;
+    const updated = studentsService.updateStudent(studentId, body, semester);
     sendSuccess(res, updated, 'Cập nhật hồ sơ sinh viên thành công');
   } catch (err: any) {
     sendError(res, 400, err?.message || 'Lỗi cập nhật sinh viên');
@@ -94,8 +99,9 @@ export const updateStudentHandler: RouteHandler = (req, res) => {
 export const deleteStudentHandler: RouteHandler = (req, res) => {
   try {
     const { studentId } = req.params;
-    const deleted = studentsService.deleteStudent(studentId);
-    sendSuccess(res, { studentId, deleted }, 'Đã xóa sinh viên thành công');
+    const semester = req.query?.semester;
+    const deleted = studentsService.deleteStudent(studentId, semester);
+    sendSuccess(res, { studentId, semester, deleted }, 'Đã xóa sinh viên thành công');
   } catch (err: any) {
     sendError(res, 400, err?.message || 'Lỗi xóa sinh viên');
   }
@@ -106,17 +112,19 @@ export const bulkImportStudentsHandler: RouteHandler = (req, res) => {
     const body = req.body || {};
     const items = Array.isArray(body.students) ? body.students : (Array.isArray(body) ? body : []);
     const mode = body.mode === 'replace' ? 'replace' : 'append';
-    const result = studentsService.bulkImportStudents(items, mode);
+    const semester = body.semester || req.query?.semester;
+    const result = studentsService.bulkImportStudents(items, mode, semester);
     sendSuccess(res, result, `Đã import thành công ${result.imported} sinh viên (Tổng: ${result.total})`);
   } catch (err: any) {
     sendError(res, 400, err?.message || 'Lỗi import danh sách sinh viên');
   }
 };
 
-export const clearAllStudentsHandler: RouteHandler = (_req, res) => {
+export const clearAllStudentsHandler: RouteHandler = (req, res) => {
   try {
-    const count = studentsService.clearAllStudents();
-    sendSuccess(res, { deleted: count }, `Đã xóa toàn bộ ${count} sinh viên`);
+    const semester = req.query?.semester || req.body?.semester;
+    const count = studentsService.clearAllStudents(semester);
+    sendSuccess(res, { deleted: count, semester }, `Đã xóa toàn bộ ${count} sinh viên`);
   } catch (err: any) {
     sendError(res, 500, err?.message || 'Lỗi xóa toàn bộ danh sách sinh viên');
   }

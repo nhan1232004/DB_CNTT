@@ -49,7 +49,8 @@ export const getMeHandler: RouteHandler = (req, res) => {
     sendError(res, 401, 'Chưa đăng nhập hoặc phiên đã hết hạn', 'UNAUTHORIZED');
     return;
   }
-  sendSuccess(res, req.user, 'Thông tin người dùng hiện tại');
+  const liveUser = authService.resolveCurrentClaims(req.user);
+  sendSuccess(res, liveUser, 'Thông tin người dùng hiện tại');
 };
 
 export const getFirebaseUsersHandler: RouteHandler = (req, res) => {

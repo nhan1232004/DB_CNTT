@@ -6,8 +6,14 @@
 // 5. Tuyệt đối không dùng Emoji, sử dụng SVG vector chuyên nghiệp
 
 const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemesterChange, embedded = false }) => {
-  const [students, setStudents] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const initialSyncCache = window.ApiClient?.getCachedStudentsSync
+    ? window.ApiClient.getCachedStudentsSync(activeSemester)
+    : { list: [], hasKnownData: false };
+  const [students, setStudents] = React.useState(Array.isArray(initialSyncCache?.list) ? initialSyncCache.list : []);
+  const [loading, setLoading] = React.useState(!initialSyncCache?.hasKnownData && (!initialSyncCache?.list || initialSyncCache.list.length === 0));
+  const [syncing, setSyncing] = React.useState(false);
+  const fetchSeqRef = React.useRef(0);
+  const enrichedModalKeyRef = React.useRef('');
   
   // Filters
   const [search, setSearch] = React.useState('');
@@ -140,18 +146,18 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
   };
 
   // Tải danh sách chứng chỉ và link CV thực tế khi mở Modal
+  const selectedSid = String(selectedStudent?.studentId || selectedStudent?.mssv || '').trim().toUpperCase();
   React.useEffect(() => {
-    if (!selectedStudent) {
+    if (!selectedStudent || !selectedSid) {
+      enrichedModalKeyRef.current = '';
       setStudentCerts([]);
       setStudentCvLink('');
       return;
     }
-    const sid = String(selectedStudent.studentId || selectedStudent.mssv || '').trim().toUpperCase();
-    if (!sid) {
-      setStudentCerts([]);
-      setStudentCvLink('');
-      return;
-    }
+    const sid = selectedSid;
+    const modalKey = `${activeSemester}_${sid}`;
+    const shouldEnrichModal = enrichedModalKeyRef.current !== modalKey;
+    enrichedModalKeyRef.current = modalKey;
 
     // 1. Tải link CV tức thời từ Cache (0ms)
     const cachedCv = selectedStudent.cvLink || selectedStudent.cvDriveLink || (window.ApiClient?.getCachedCv ? window.ApiClient.getCachedCv(sid) : (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : ''));
@@ -165,13 +171,17 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       });
     }
 
-    // Tự động làm giàu thông tin doanh nghiệp nếu chưa đầy đủ
-    if (!selectedStudent.taxCode || !selectedStudent.contactPerson || !selectedStudent.position || !selectedStudent.companyAddress) {
+    // Tự động làm giàu thông tin doanh nghiệp 1 lần duy nhất cho mỗi lần mở Modal (tránh vòng lặp render vô hạn)
+    if (shouldEnrichModal && (!selectedStudent.taxCode || !selectedStudent.contactPerson || !selectedStudent.position || !selectedStudent.companyAddress)) {
       let decl = selectedStudent.declarationData;
       if (!decl) {
         try {
-          const raw = localStorage.getItem('tdtu_decl_' + sid);
-          if (raw) decl = JSON.parse(raw);
+          const rawSem = localStorage.getItem(`tdtu_decl_${activeSemester}_${sid}`);
+          if (rawSem) decl = JSON.parse(rawSem);
+          else if (activeSemester === 'hk1_2026_2027') {
+            const raw = localStorage.getItem('tdtu_decl_' + sid);
+            if (raw) decl = JSON.parse(raw);
+          }
         } catch {}
       }
       if (decl) {
@@ -197,32 +207,35 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
           declarationData: decl
         }) : null);
       } else if (window.FirebaseService?.db) {
-        window.FirebaseService.db.collection('tdtu_declarations').doc(sid).get().then((doc: any) => {
-          if (doc.exists) {
-            const docData = doc.data();
-            const isComp = docData.internshipStatus === 'has_company';
-            setSelectedStudent((prev: any) => prev ? ({
-              ...prev,
-              status: isComp ? 'Có doanh nghiệp' : (docData.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (docData.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : prev.status)),
-              noCompanyOption: isComp ? null : (docData.noCompanyOption || prev.noCompanyOption),
-              hasChangedFromSupport: Boolean(isComp && (docData.hasChangedFromSupport || prev.hasChangedFromSupport || prev.noCompanyOption === 'faculty' || String(prev.status || '').includes('hỗ trợ'))) ? 1 : prev.hasChangedFromSupport,
-              companyName: docData.companyName || prev.companyName || prev.company,
-              company: docData.companyName || prev.company,
-              taxCode: docData.taxCode || prev.taxCode,
-              position: docData.position || prev.position,
-              companyAddress: docData.address || docData.companyAddress || prev.companyAddress,
-              address: docData.address || prev.address,
-              contactPerson: docData.contactPerson || docData.mentorName || docData.mentor || prev.contactPerson,
-              mentorName: docData.contactPerson || docData.mentorName || docData.mentor || prev.mentorName,
-              contactPhone: docData.contactPhone || docData.mentorPhone || prev.contactPhone,
-              mentorPhone: docData.contactPhone || docData.mentorPhone || prev.mentorPhone,
-              contactEmail: docData.contactEmail || docData.mentorEmail || prev.contactEmail,
-              mentorEmail: docData.mentorEmail || docData.contactEmail || prev.mentorEmail,
-              representative: docData.representative || prev.representative,
-              declarationData: docData
-            }) : null);
-          }
-        }).catch(() => {});
+        const db = window.FirebaseService.db;
+        db.collection('tdtu_declarations').doc(`${activeSemester}_${sid}`).get()
+          .then((semDoc: any) => semDoc?.exists ? semDoc : (activeSemester === 'hk1_2026_2027' ? db.collection('tdtu_declarations').doc(sid).get() : semDoc))
+          .then((doc: any) => {
+            if (doc?.exists) {
+              const docData = doc.data();
+              const isComp = docData.internshipStatus === 'has_company';
+              setSelectedStudent((prev: any) => prev ? ({
+                ...prev,
+                status: isComp ? 'Có doanh nghiệp' : (docData.internshipStatus === 'need_support' ? 'Cần Khoa hỗ trợ' : (docData.internshipStatus === 'interviewing' ? 'Đang chờ PV/KQPV' : prev.status)),
+                noCompanyOption: isComp ? null : (docData.noCompanyOption || prev.noCompanyOption),
+                hasChangedFromSupport: Boolean(isComp && (docData.hasChangedFromSupport || prev.hasChangedFromSupport || prev.noCompanyOption === 'faculty' || String(prev.status || '').includes('hỗ trợ'))) ? 1 : prev.hasChangedFromSupport,
+                companyName: docData.companyName || prev.companyName || prev.company,
+                company: docData.companyName || prev.company,
+                taxCode: docData.taxCode || prev.taxCode,
+                position: docData.position || prev.position,
+                companyAddress: docData.address || docData.companyAddress || prev.companyAddress,
+                address: docData.address || prev.address,
+                contactPerson: docData.contactPerson || docData.mentorName || docData.mentor || prev.contactPerson,
+                mentorName: docData.contactPerson || docData.mentorName || docData.mentor || prev.mentorName,
+                contactPhone: docData.contactPhone || docData.mentorPhone || prev.contactPhone,
+                mentorPhone: docData.contactPhone || docData.mentorPhone || prev.mentorPhone,
+                contactEmail: docData.contactEmail || docData.mentorEmail || prev.contactEmail,
+                mentorEmail: docData.mentorEmail || docData.contactEmail || prev.mentorEmail,
+                representative: docData.representative || prev.representative,
+                declarationData: docData
+              }) : null);
+            }
+          }).catch(() => {});
       }
     }
 
@@ -254,7 +267,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     } else {
       setStudentCertsLoading(false);
     }
-  }, [selectedStudent]);
+  }, [selectedSid, activeSemester]);
 
   const handleOpenStudentDetail = async (sv) => {
     let enriched = { ...sv };
@@ -351,272 +364,96 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
     }
   };
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (options: any = {}) => {
+    const reqSeq = ++fetchSeqRef.current;
+    const forceRefresh = Boolean(options?.forceRefresh);
     try {
-      setLoading(true);
-      const params = { semester: activeSemester };
-      if (search.trim()) params.search = search.trim();
-      if (majorFilter) params.major = majorFilter;
-      if (statusFilter) params.status = statusFilter;
-      if (classFilter) params.class = classFilter;
-
-      const res = await window.ApiClient.getStudents(params);
-      let list = res?.items || res?.data?.items || res?.students || (Array.isArray(res) ? res : []);
-
-      if ((!list || list.length === 0) && window.ApiClient?.getLiveStudents) {
-        try {
-          const fallback = await window.ApiClient.getLiveStudents(activeSemester);
-          if (Array.isArray(fallback)) list = fallback;
-        } catch {}
+      const cached = !forceRefresh && window.ApiClient?.getCachedStudentsSync
+        ? window.ApiClient.getCachedStudentsSync(activeSemester)
+        : null;
+      if (cached && cached.hasKnownData) {
+        setStudents(Array.isArray(cached.list) ? cached.list : []);
+        setLoading(false);
+        setSyncing(!cached.isHydrated);
+      } else {
+        if (students.length === 0) setLoading(true);
+        setSyncing(true);
       }
 
-      // Lọc bỏ các dòng tiêu đề hoặc bản ghi giả SV_ không hợp lệ
-      const cleanList = (list || []).filter((s: any) => {
-        const sid = String(s.studentId || s.mssv || '').trim();
+      // 1 lần truy vấn duy nhất (có Snapshot Cache + Single-flight deduplication & O(N) enrichment từ ApiClient)
+      const list = window.ApiClient?.getLiveStudents
+        ? await window.ApiClient.getLiveStudents(activeSemester, { forceRefresh })
+        : [];
+      if (reqSeq !== fetchSeqRef.current) return;
+
+      const cleanList = (Array.isArray(list) ? list : []).filter((s: any) => {
+        const sid = String(s?.studentId || s?.mssv || s?.id || '').trim();
         const sidLower = sid.toLowerCase();
-        if (!sid || sid.startsWith('SV_0_') || sid.startsWith('SV_') || sidLower.startsWith('stt') || sidLower.startsWith('số lượng') || sidLower.startsWith('mã số')) return false;
+        if (!sid || sid.startsWith('SV_') || sidLower.startsWith('stt') || sidLower.startsWith('số lượng') || sidLower.startsWith('mã số')) return false;
         return true;
       });
 
-      // 1. Lấy toàn bộ chứng chỉ realtime để map sang từng sinh viên theo đúng học kỳ
-      let allCerts = [];
-      if (window.ApiClient?.fetchAllCertificates) {
-        try {
-          allCerts = await window.ApiClient.fetchAllCertificates(activeSemester);
-        } catch {}
-      }
-      const certsByStudent = new Map();
-      if (Array.isArray(allCerts)) {
-        for (const c of allCerts) {
-          const csid = String(c?.studentId || '').trim().toUpperCase();
-          if (csid) {
-            if (!certsByStudent.has(csid)) certsByStudent.set(csid, []);
-            certsByStudent.get(csid).push(c);
-          }
-        }
-      }
-
-      // 2. Quét toàn bộ khai báo từ Cloud Firestore để đồng bộ giữa Sinh viên và Giảng viên (Đúng học kỳ)
-      const declMap = new Map();
-      const firestoreStudentsMap = new Map();
-      if (window.FirebaseService?.db) {
-        try {
-          const declSnap = await window.FirebaseService.db.collection('tdtu_declarations').get();
-          if (declSnap && !declSnap.empty) {
-            declSnap.forEach((doc: any) => {
-              const data = doc.data();
-              let dSem = data?.semester;
-              let dsid = String(data?.studentId || data?.mssv || '').trim().toUpperCase();
-              if (doc.id.includes('_')) {
-                const parts = doc.id.split('_');
-                if (parts.length >= 2 && parts[0].startsWith('hk')) {
-                  dSem = parts.slice(0, parts.length - 1).join('_');
-                  if (!dsid) dsid = parts[parts.length - 1].trim().toUpperCase();
-                }
-              }
-              if (!dsid) dsid = String(doc.id).trim().toUpperCase();
-              if (!dSem) dSem = 'hk1_2026_2027';
-
-              if (dSem === activeSemester && dsid) {
-                declMap.set(dsid, data);
-              }
-            });
-          }
-        } catch (e) {
-          console.warn('[StudentsPage] Error fetching Firestore declarations:', e);
-        }
-
-        try {
-          const stSnap = await window.FirebaseService.db.collection('tdtu_students').get();
-          if (stSnap && !stSnap.empty) {
-            stSnap.forEach((doc: any) => {
-              const data = doc.data();
-              let sSem = data?.semester;
-              let dsid = String(data?.studentId || data?.mssv || '').trim().toUpperCase();
-              if (doc.id.includes('_')) {
-                const parts = doc.id.split('_');
-                if (parts.length >= 2 && parts[0].startsWith('hk')) {
-                  sSem = parts.slice(0, parts.length - 1).join('_');
-                  if (!dsid) dsid = parts[parts.length - 1].trim().toUpperCase();
-                }
-              }
-              if (!dsid) dsid = String(doc.id).trim().toUpperCase();
-              if (!sSem) sSem = 'hk1_2026_2027';
-
-              if (sSem === activeSemester && dsid) {
-                firestoreStudentsMap.set(dsid, data);
-              }
-            });
-          }
-        } catch (e) {
-          console.warn('[StudentsPage] Error fetching Firestore students:', e);
-        }
-      }
-
-      // 3. Tự động làm giàu danh sách sinh viên với dữ liệu khai báo thực tế, doanh nghiệp & chứng chỉ
-      const enrichedList = cleanList.map((s: any) => {
-        const sid = String(s.studentId || s.mssv || '').trim().toUpperCase();
-        const studentCertsList = certsByStudent.get(sid) || [];
-        const certObj = studentCertsList[0] || null;
-        const certDisplay = studentCertsList.length > 1
-          ? studentCertsList.map((c: any) => `${c.name || 'CC'} ${c.score || ''}`.trim()).join(' · ')
-          : (certObj ? `${certObj.name || 'CC'} ${certObj.score || ''}`.trim() : (s.certificateDisplay || s.cert));
-
-        // ƯU TIÊN SỐ 1: Khai báo mới nhất từ localStorage hoặc Cloud Firestore (đúng học kỳ)
-        let clientDecl = null;
-        try {
-          const rawSem = localStorage.getItem(`tdtu_decl_${activeSemester}_${sid}`);
-          if (rawSem) {
-            clientDecl = JSON.parse(rawSem);
-          } else if (activeSemester === 'hk1_2026_2027') {
-            const raw = localStorage.getItem('tdtu_decl_' + sid);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (!parsed.semester || parsed.semester === activeSemester) {
-                clientDecl = parsed;
-              }
-            }
-          }
-        } catch {}
-        const firestoreDecl = declMap.get(sid);
-        const fsStudent = firestoreStudentsMap.get(sid);
-        let decl = clientDecl || firestoreDecl || (fsStudent?.semester === activeSemester ? fsStudent?.declarationData : null);
-
-        const cvLink = s.cvLink || s.cvDriveLink || decl?.cvDriveLink || fsStudent?.cvLink || fsStudent?.cvDriveLink || (window.ApiClient?.getStudentCvLink ? window.ApiClient.getStudentCvLink(sid) : '');
-
-        const isCurrentSemStudent = (s.semester || 'hk1_2026_2027') === activeSemester;
-        const companyCandidate = decl?.companyName || (isCurrentSemStudent ? (
-          (isRealCompany(fsStudent?.companyName) ? fsStudent?.companyName : (isRealCompany(fsStudent?.company) ? fsStudent?.company : '')) ||
-          (isRealCompany(s.companyName) ? s.companyName : (isRealCompany(s.company) ? s.company : ''))
-        ) : '');
-        const hasValidCompany = isRealCompany(companyCandidate);
-
-        const declStatus = String(decl?.internshipStatus || '').trim().toLowerCase();
-        const rawFsStatus = String(fsStudent?.status || s.status || '').trim().toLowerCase();
-
-        let resolvedStatus = 'Chưa có doanh nghiệp';
-        let resolvedCompany = 'Chưa có';
-
-        // 1. Chỉ xem là "Có doanh nghiệp" nếu:
-        //    - Có tên doanh nghiệp thực sự hợp lệ (hasValidCompany === true)
-        if (hasValidCompany) {
-          resolvedStatus = 'Có doanh nghiệp';
-          resolvedCompany = companyCandidate;
-        } else if (declStatus === 'interviewing' || decl?.noCompanyOption === 'self' || rawFsStatus.includes('chờ pv') || rawFsStatus.includes('phỏng vấn') || rawFsStatus === 'interviewing') {
-          resolvedStatus = 'Đang chờ PV/KQPV';
-          resolvedCompany = decl?.pendingCompany || 'Đang chờ PV';
-        } else if (declStatus === 'need_support' || decl?.noCompanyOption === 'faculty' || rawFsStatus.includes('hỗ trợ') || s.noCompanyOption === 'faculty' || fsStudent?.noCompanyOption === 'faculty') {
-          resolvedStatus = 'Cần Khoa hỗ trợ';
-          resolvedCompany = 'Khoa CNTT hỗ trợ';
-        } else {
-          resolvedStatus = 'Chưa có doanh nghiệp';
-          resolvedCompany = 'Chưa có';
-        }
-
-        const isComp = resolvedStatus === 'Có doanh nghiệp';
-        const hasChangedFromSupport = Boolean(
-          isComp && (
-            decl?.hasChangedFromSupport ||
-            fsStudent?.hasChangedFromSupport ||
-            s.hasChangedFromSupport ||
-            s.noCompanyOption === 'faculty' ||
-            fsStudent?.noCompanyOption === 'faculty' ||
-            String(fsStudent?.status || '').includes('hỗ trợ') ||
-            String(s.status || '').includes('hỗ trợ') ||
-            String(fsStudent?.company || '').includes('hỗ trợ') ||
-            String(s.company || '').includes('hỗ trợ')
-          )
-        );
-        const resolvedNoCompanyOpt = isComp ? null : (decl?.noCompanyOption || fsStudent?.noCompanyOption || s.noCompanyOption);
-
-        const rawContact = decl?.contactPerson || decl?.mentorName || fsStudent?.contactPerson || fsStudent?.mentorName || s.contactPerson;
-        const cleanContact = (isComp && rawContact && (rawContact.includes('Khoa CNTT') || rawContact.includes('Trợ lý'))) ? '' : rawContact;
-
-        if (decl || hasValidCompany || fsStudent?.declarationData) {
-          return {
-            ...s,
-            ...(fsStudent || {}),
-            noCompanyOption: resolvedNoCompanyOpt,
-            hasChangedFromSupport: hasChangedFromSupport ? 1 : 0,
-            companyName: resolvedCompany,
-            company: resolvedCompany,
-            taxCode: isComp ? (decl?.taxCode || fsStudent?.taxCode || s.taxCode) : '',
-            position: isComp ? (decl?.position || fsStudent?.position || s.position || 'Thực tập sinh') : (resolvedStatus === 'Cần Khoa hỗ trợ' ? 'Chờ Khoa điều phối' : (resolvedStatus === 'Đang chờ PV/KQPV' ? 'Đang chờ phỏng vấn' : '—')),
-            companyAddress: isComp ? (decl?.address || decl?.companyAddress || fsStudent?.companyAddress || fsStudent?.address || s.companyAddress) : '',
-            address: isComp ? (decl?.address || fsStudent?.address || s.address) : '',
-            contactPerson: cleanContact,
-            mentorName: cleanContact,
-            contactPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.contactPhone || s.contactPhone) : '',
-            mentorPhone: isComp && cleanContact ? (decl?.contactPhone || decl?.mentorPhone || fsStudent?.mentorPhone || s.mentorPhone) : '',
-            contactEmail: isComp ? (decl?.contactEmail || decl?.mentorEmail || fsStudent?.contactEmail || fsStudent?.mentorEmail || s.contactEmail) : '',
-            mentorEmail: isComp ? (decl?.mentorEmail || decl?.contactEmail || fsStudent?.mentorEmail || fsStudent?.contactEmail || s.mentorEmail) : '',
-            representative: isComp ? (decl?.representative || fsStudent?.representative || s.representative) : '',
-            declarationData: decl || fsStudent?.declarationData,
-            cvLink: cvLink,
-            cert: certDisplay || fsStudent?.cert || s.cert,
-            certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
-            certName: certObj?.name || fsStudent?.certName || s.certName,
-            certScore: certObj?.score || fsStudent?.certScore || s.certScore,
-            status: resolvedStatus
-          };
-        }
-        return {
-          ...s,
-          ...(fsStudent || {}),
-          noCompanyOption: resolvedNoCompanyOpt,
-          hasChangedFromSupport: hasChangedFromSupport ? 1 : 0,
-          cvLink: cvLink,
-          company: resolvedCompany,
-          companyName: resolvedCompany,
-          status: resolvedStatus,
-          cert: certDisplay || fsStudent?.cert || s.cert,
-          certificateDisplay: certDisplay || fsStudent?.certificateDisplay || s.certificateDisplay,
-          certName: certObj?.name || fsStudent?.certName || s.certName,
-          certScore: certObj?.score || fsStudent?.certScore || s.certScore,
-        };
-      });
-
-      setStudents(enrichedList);
+      setStudents(cleanList);
     } catch (err) {
       console.error('Error fetching students:', err);
     } finally {
-      setLoading(false);
+      if (reqSeq === fetchSeqRef.current) {
+        setLoading(false);
+        setSyncing(false);
+      }
     }
   };
 
   React.useEffect(() => {
-    fetchStudents();
+    setCurrentPage(1);
+    setSelectedIds([]);
+    fetchStudents({ forceRefresh: false });
 
-    const handleRealtimeUpdate = () => {
-      fetchStudents();
+    let debounceTimer: any = null;
+    const scheduleSync = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchStudents({ forceRefresh: false });
+      }, 120);
     };
 
+    const handleRealtimeUpdate = (e: any) => {
+      const targetSem = e?.detail?.semester;
+      if (targetSem && targetSem !== activeSemester) return;
+      scheduleSync();
+    };
+
+    window.addEventListener('tdtu_students_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_data_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_decl_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_declaration_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_certs_updated', handleRealtimeUpdate);
     window.addEventListener('tdtu_cv_updated', handleRealtimeUpdate);
-    window.addEventListener('tdtu_semester_changed', handleRealtimeUpdate);
-    window.addEventListener('storage', handleRealtimeUpdate);
+    window.addEventListener('tdtu_semester_changed', scheduleSync);
+    window.addEventListener('storage', scheduleSync);
 
     let bc = null;
     try {
       bc = new BroadcastChannel('tdtu_realtime_sync');
-      bc.onmessage = () => {
-        handleRealtimeUpdate();
+      bc.onmessage = (msg) => {
+        const targetSem = msg?.data?.semester;
+        if (targetSem && targetSem !== activeSemester) return;
+        scheduleSync();
       };
     } catch {}
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('tdtu_students_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_data_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_decl_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_declarations_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_declaration_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_certs_updated', handleRealtimeUpdate);
       window.removeEventListener('tdtu_cv_updated', handleRealtimeUpdate);
-      window.removeEventListener('tdtu_semester_changed', handleRealtimeUpdate);
-      window.removeEventListener('storage', handleRealtimeUpdate);
+      window.removeEventListener('tdtu_semester_changed', scheduleSync);
+      window.removeEventListener('storage', scheduleSync);
       if (bc) {
         try { bc.close(); } catch {}
       }
@@ -625,7 +462,6 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchStudents();
     setCurrentPage(1);
   };
 
@@ -1176,15 +1012,32 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className={`${embedded ? 'text-[22px] sm:text-[24px]' : 'text-[28px] sm:text-[30px]'} font-bold text-[#1f2937] text-left flex items-center gap-3`}>
+          <h1 className={`${embedded ? 'text-[22px] sm:text-[24px]' : 'text-[28px] sm:text-[30px]'} font-bold text-[#1f2937] text-left flex items-center gap-3 flex-wrap`}>
             <span>Danh sách sinh viên thực tập</span>
             <span className="px-3 py-1 rounded-full text-[13px] font-bold bg-[#ebf3ff] text-[#003087] border border-[#bfdbfe]">
               {totalItems} sinh viên
             </span>
+            {syncing && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-[#f8fafc] text-[#4b5563] border border-[#e2e8f0]">
+                Đang đồng bộ...
+              </span>
+            )}
           </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => fetchStudents({ forceRefresh: true })}
+            disabled={syncing}
+            className="px-3.5 py-2.5 min-h-[42px] whitespace-nowrap bg-white text-[#1f2937] border border-[#cbd5e1] hover:bg-[#f8fafc] rounded-lg text-[13px] font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0 disabled:opacity-60"
+            title="Đồng bộ mới nhất danh sách sinh viên từ máy chủ"
+          >
+            <svg className={`w-4 h-4 text-[#003087] ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Làm mới</span>
+          </button>
           {isAdmin && (
             <button
               type="button"

@@ -197,27 +197,33 @@
     if (!user || user.role !== 'student') return true;
     const sid = String(user.studentId || user.mssv || '').trim().toUpperCase();
     if (!sid || sid === '52100999' || user.isEnrolledThisSemester === false) return false;
+    const sem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+
+    if (root.ApiClient?.isStudentEnrolledInSemester) {
+      return root.ApiClient.isStudentEnrolledInSemester(sid, sem, user);
+    }
+
     const roleKey = root.PrimeRbac?.getUserRoleKey?.(user);
     if (roleKey === 'sv_ngoai_ky') return false;
 
-    const sem = activeSemester || localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
     try {
+      if (localStorage.getItem('tdtu_students_cleared_empty_' + sem) === 'true') return false;
       const raw = localStorage.getItem('tdtu_imported_students_' + sem);
-      if (raw) {
+      if (raw !== null) {
         const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length > 0) {
+        if (Array.isArray(arr)) {
           return arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === sid);
         }
       }
       if (sem === 'hk1_2026_2027') {
         const liveRaw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-        if (liveRaw) {
+        if (liveRaw !== null) {
           const liveArr = JSON.parse(liveRaw);
-          if (Array.isArray(liveArr) && liveArr.length > 0) {
+          if (Array.isArray(liveArr)) {
             return liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === sid);
           }
         }
-        return true;
+        return Boolean(user.isEnrolledThisSemester === true);
       }
     } catch {}
     return false;

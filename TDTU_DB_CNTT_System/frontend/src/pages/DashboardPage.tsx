@@ -185,15 +185,17 @@ const DashboardPage = ({ activeSemester = 'hk1_2026_2027', onSemesterChange, cur
 
   const isEnrolledStudent = React.useMemo(() => {
     if (!isStudent) return false;
-    if (currentUser?.isEnrolledThisSemester === false) return false;
     const cleanSid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
-    if (cleanSid === '52100999') return false;
-    if (window.PrimeRbac?.getUserRoleKey && window.PrimeRbac.getUserRoleKey(currentUser) === 'sv_ngoai_ky') return false;
-    if (Array.isArray(liveStudents) && liveStudents.length > 0) {
+    if (!cleanSid || cleanSid === '52100999') return false;
+    if (window.ApiClient?.isStudentEnrolledInSemester) {
+      return window.ApiClient.isStudentEnrolledInSemester(cleanSid, activeSemester, currentUser);
+    }
+    if (!loading && Array.isArray(liveStudents)) {
       return liveStudents.some(s => String(s.mssv || s.studentId || '').toUpperCase() === cleanSid);
     }
-    return true;
-  }, [isStudent, currentUser, liveStudents]);
+    if (currentUser?.isEnrolledThisSemester === false) return false;
+    return Boolean(currentUser?.isEnrolledThisSemester === true);
+  }, [isStudent, currentUser, liveStudents, loading, activeSemester]);
 
   const saveChartConfig = (nextConfig) => {
     setChartConfig(nextConfig);

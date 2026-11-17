@@ -39,29 +39,27 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
     return { days: diffDays, label: `Quá hạn ${Math.abs(diffDays)} ngày`, badgeText: `Đã kết thúc kỳ (Quá hạn ${Math.abs(diffDays)} ngày)`, isExpired: true, isToday: false };
   };
 
-  // Helper tính số lượng sinh viên thực tế cho từng kỳ (chính xác 100%, không số liệu ảo)
-  const getSemesterStudentCount = React.useCallback((semId) => {
-    if (semId === 'hk1_2026_2027') {
-      try {
-        const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-        if (raw) {
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr) && arr.length > 0) return arr.length;
-        }
-      } catch {}
-      return 91; // 91 sinh viên chuẩn theo danh sách Khoa CNTT HK1 2026-2027
+  // Helper tính số lượng và chỉ số thực tế cho từng học kỳ (chính xác 100%, không số liệu ảo 82/91)
+  const getSemesterMetrics = React.useCallback((semId) => {
+    if (window.ApiClient?.getSemesterMetricsSync) {
+      return window.ApiClient.getSemesterMetricsSync(semId);
     }
-
-    // Các học kỳ khác: Chỉ đếm số sinh viên thực tế đã được import/nạp vào học kỳ đó
     try {
-      const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
-      if (raw) {
+      if (localStorage.getItem(`tdtu_students_cleared_empty_${semId}`) === 'true') {
+        return { totalStudents: 0, enrolledCourses: [], known: true };
+      }
+      const raw = localStorage.getItem(`tdtu_imported_students_${semId}`) || (semId === 'hk1_2026_2027' ? localStorage.getItem('tdtu_live_students_clean') : null);
+      if (raw !== null) {
         const arr = JSON.parse(raw);
-        if (Array.isArray(arr)) return arr.length;
+        if (Array.isArray(arr)) return { totalStudents: arr.length, enrolledCourses: [], known: true };
       }
     } catch {}
-    return 0; // Chưa có danh sách -> Hiển thị chính xác 0 sinh viên
+    return { totalStudents: 0, enrolledCourses: [], known: false };
   }, []);
+
+  const getSemesterStudentCount = React.useCallback((semId) => {
+    return getSemesterMetrics(semId).totalStudents;
+  }, [getSemesterMetrics]);
 
   // Danh sách các học kỳ trong hệ thống
   const [semestersList, setSemestersList] = React.useState(() => {
@@ -91,7 +89,7 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
           reviewDeadline: '2026-10-20',
           reportDeadline: '2027-01-05',
           regulationNote: '',
-          totalStudents: 82,
+          totalStudents: 0,
           enrolledCourses: ['Kiến tập công nghiệp (KTCN)', 'Tập sự nghề nghiệp (TSNN)']
         },
         {
@@ -126,25 +124,25 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
     const delIds = new Set(window.ApiClient?.getDeletedSemesterIds ? window.ApiClient.getDeletedSemesterIds() : []);
     const filteredList = list.filter(s => s && s.id && !delIds.has(String(s.id)));
 
-    // Chuẩn hóa và làm sạch số lượng sinh viên thực tế (loại bỏ hoàn toàn các số ảo)
+    // Đồng bộ số lượng sinh viên & học phần từ danh sách thực tế (không ghi đè số ảo)
     const cleaned = filteredList.map(s => {
-      let count = 0;
-      if (s.id === 'hk1_2026_2027') {
-        try {
-          const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-          count = raw ? JSON.parse(raw).length : 82;
-        } catch { count = 82; }
-      } else {
-        try {
-          const raw = localStorage.getItem(`tdtu_imported_students_${s.id}`);
-          count = raw ? JSON.parse(raw).length : 0;
-        } catch { count = 0; }
+      const m = getSemesterMetrics(s.id);
+      if (m.known) {
+        return {
+          ...s,
+          totalStudents: m.totalStudents,
+          enrolledCourses: m.enrolledCourses.length > 0 ? m.enrolledCourses : (s.enrolledCourses || [])
+        };
       }
-      return { ...s, totalStudents: count };
+      return s;
     });
 
     try {
-      localStorage.setItem('tdtu_semesters_list', JSON.stringify(cleaned));
+      if (window.ApiClient?.safeSetStorage) {
+        window.ApiClient.safeSetStorage('tdtu_semesters_list', JSON.stringify(cleaned));
+      } else {
+        localStorage.setItem('tdtu_semesters_list', JSON.stringify(cleaned));
+      }
     } catch {}
     return cleaned;
   });
@@ -158,22 +156,34 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
       if (window.ApiClient?.getSemesters) {
         const list = window.ApiClient.getSemesters();
         if (Array.isArray(list) && list.length > 0) {
-          setSemestersList(list.map(s => ({
-            ...s,
-            totalStudents: getSemesterStudentCount(s.id)
-          })));
+          setSemestersList(list.map(s => {
+            const m = getSemesterMetrics(s.id);
+            return m.known
+              ? {
+                  ...s,
+                  totalStudents: m.totalStudents,
+                  enrolledCourses: m.enrolledCourses.length > 0 ? m.enrolledCourses : (s.enrolledCourses || [])
+                }
+              : s;
+          }));
         }
       }
     };
     window.addEventListener('tdtu_semesters_updated', handleSemUpdate);
     window.addEventListener('tdtu_deadlines_updated', handleSemUpdate);
+    window.addEventListener('tdtu_data_updated', handleSemUpdate);
+    window.addEventListener('tdtu_students_updated', handleSemUpdate);
+    window.addEventListener('tdtu_semester_changed', handleSemUpdate);
     window.addEventListener('storage', handleSemUpdate);
     return () => {
       window.removeEventListener('tdtu_semesters_updated', handleSemUpdate);
       window.removeEventListener('tdtu_deadlines_updated', handleSemUpdate);
+      window.removeEventListener('tdtu_data_updated', handleSemUpdate);
+      window.removeEventListener('tdtu_students_updated', handleSemUpdate);
+      window.removeEventListener('tdtu_semester_changed', handleSemUpdate);
       window.removeEventListener('storage', handleSemUpdate);
     };
-  }, [getSemesterStudentCount]);
+  }, [getSemesterMetrics]);
 
   // Form tạo mới học kỳ
   const [newSemesterName, setNewSemesterName] = React.useState('');
@@ -185,11 +195,16 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
   const [newRegulationNote, setNewRegulationNote] = React.useState('');
 
   const saveSemesters = (list) => {
-    // Luôn tính đúng số sinh viên trước khi lưu
-    const withRealCounts = list.map(s => ({
-      ...s,
-      totalStudents: getSemesterStudentCount(s.id)
-    }));
+    const withRealCounts = list.map(s => {
+      const m = getSemesterMetrics(s.id);
+      return m.known
+        ? {
+            ...s,
+            totalStudents: m.totalStudents,
+            enrolledCourses: m.enrolledCourses.length > 0 ? m.enrolledCourses : (s.enrolledCourses || [])
+          }
+        : s;
+    });
     setSemestersList(withRealCounts);
     if (window.ApiClient?.saveSemesters) {
       window.ApiClient.saveSemesters(withRealCounts);
@@ -209,14 +224,21 @@ const SemestersPage = ({ currentUser, activeSemester, onSemesterChange, onNaviga
   // Kích hoạt học kỳ hiện tại
   const handleActivate = (id) => {
     if (!canUpdate) return;
+    const nowIso = new Date().toISOString();
     const updated = semestersList.map(s => ({
       ...s,
-      isActive: s.id === id
+      isActive: s.id === id,
+      ...(s.id === id ? { activatedAt: nowIso, updatedAt: nowIso } : {})
     }));
     saveSemesters(updated);
-    try {
-      localStorage.setItem('tdtu_active_semester', id);
-    } catch {}
+    if (window.ApiClient?.setActiveSemester) {
+      window.ApiClient.setActiveSemester(id, { broadcast: true, userSelected: true });
+    } else {
+      try {
+        localStorage.setItem('tdtu_active_semester', id);
+      } catch {}
+    }
+    if (onSemesterChange) onSemesterChange(id);
     const target = updated.find(s => s.id === id);
     if (target && window.ApiClient?.saveSystemDeadlines) {
       window.ApiClient.saveSystemDeadlines(target);

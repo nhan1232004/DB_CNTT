@@ -324,9 +324,63 @@ export function initDatabaseSchema(db: DatabaseSync): void {
   try {
     db.exec(`ALTER TABLE declarations ADD COLUMN interviewProgress TEXT;`);
   } catch {}
+  try {
+    db.exec(`ALTER TABLE students ADD COLUMN semester TEXT DEFAULT 'hk1_2026_2027';`);
+  } catch {}
+
+  // 8. Semester-scoped Enrollments Table (Cách ly 100% danh sách sinh viên giữa các học kỳ)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS semester_enrollments (
+      semester TEXT NOT NULL,
+      studentId TEXT NOT NULL,
+      studentDataJson TEXT NOT NULL,
+      updatedAt TEXT NOT NULL,
+      PRIMARY KEY (semester, studentId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_sem_enroll_sem ON semester_enrollments(semester);
+  `);
+
+  // 9. System State Key-Value Store (Lưu học kỳ active, metadata danh sách theo kỳ, phiên bản)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS system_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+  `);
 
   // Seed default data if empty
   seedInitialData(db);
+
+  // Backfill từ bảng students sang semester_enrollments nếu chưa từng khởi tạo
+  try {
+    const enrollCount = (db.prepare('SELECT COUNT(*) as c FROM semester_enrollments').get() as any)?.c || 0;
+    const initMeta = db.prepare("SELECT value FROM system_state WHERE key = 'students_meta_hk1_2026_2027'").get() as any;
+    const isCleared = initMeta ? Boolean(JSON.parse(initMeta.value)?.cleared) : false;
+    if (enrollCount === 0 && !isCleared) {
+      const existingStudents = db.prepare('SELECT * FROM students').all() as any[];
+      const now = new Date().toISOString();
+      const upsertEnroll = db.prepare(`
+        INSERT OR IGNORE INTO semester_enrollments (semester, studentId, studentDataJson, updatedAt)
+        VALUES (?, ?, ?, ?)
+      `);
+      for (const st of existingStudents) {
+        const sem = String(st.semester || 'hk1_2026_2027').trim() || 'hk1_2026_2027';
+        const sid = String(st.studentId || '').trim().toUpperCase();
+        if (sid && !sid.startsWith('SV_')) {
+          upsertEnroll.run(sem, sid, JSON.stringify({ ...st, semester: sem }), now);
+        }
+      }
+      if (existingStudents.length > 0) {
+        db.prepare(`
+          INSERT OR IGNORE INTO system_state (key, value, updatedAt)
+          VALUES ('students_meta_hk1_2026_2027', ?, ?)
+        `).run(JSON.stringify({ cleared: false, totalStudents: existingStudents.length, datasetVersion: 1 }), now);
+      }
+    }
+  } catch (err) {
+    console.warn('[DB Backfill Enrollments Warning]:', err);
+  }
 }
 
 function seedInitialData(db: DatabaseSync): void {

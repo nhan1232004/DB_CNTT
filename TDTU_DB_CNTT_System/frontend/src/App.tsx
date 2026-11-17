@@ -303,9 +303,14 @@ const AppInner = () => {
     return 'dashboard';
   });
   const [authChecking, setAuthChecking] = React.useState(true);
+  const [syncVersion, setSyncVersion] = React.useState(0);
   const [activeSemester, setActiveSemester] = React.useState(() => {
     try {
-      return localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+      const saved = localStorage.getItem('tdtu_active_semester');
+      if (saved) return saved;
+      const list = window.ApiClient?.getSemesters?.() || [];
+      const activeObj = Array.isArray(list) ? list.find(s => s && s.isActive) : null;
+      if (activeObj?.id) return activeObj.id;
     } catch {}
     return 'hk1_2026_2027';
   });
@@ -333,49 +338,50 @@ const AppInner = () => {
 
   const handleSemesterChange = React.useCallback((newSem) => {
     setActiveSemester(newSem);
-    try {
-      localStorage.setItem('tdtu_active_semester', newSem);
-    } catch {}
-    if (window.SyncManager?.broadcastSemesterChange) {
-      window.SyncManager.broadcastSemesterChange(newSem);
+    if (window.ApiClient?.setActiveSemester) {
+      window.ApiClient.setActiveSemester(newSem, { broadcast: true, userSelected: true });
     } else {
-      window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
+      try {
+        localStorage.setItem('tdtu_active_semester', newSem);
+      } catch {}
+      if (window.SyncManager?.broadcastSemesterChange) {
+        window.SyncManager.broadcastSemesterChange(newSem);
+      } else {
+        window.dispatchEvent(new CustomEvent('tdtu_semester_changed', { detail: { semesterId: newSem } }));
+      }
     }
   }, []);
 
-  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không
+  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không (Fail-Closed)
   const isStudentEnrolledInSemester = React.useCallback((sid, semId) => {
     if (!sid) return false;
     const cleanSid = String(sid).trim().toUpperCase();
-    if (cleanSid === '52100999') return false; // Sinh viên ngoài kỳ mẫu
+    if (cleanSid === '52100999') return false;
 
-    // 1. Kiểm tra danh sách đã nạp trong LocalStorage của học kỳ đó
+    if (window.ApiClient?.isStudentEnrolledInSemester) {
+      return window.ApiClient.isStudentEnrolledInSemester(cleanSid, semId, currentUser);
+    }
+
     try {
+      if (localStorage.getItem(`tdtu_students_cleared_empty_${semId}`) === 'true') return false;
       const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
-      if (raw) {
+      if (raw !== null) {
         const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length > 0) {
+        if (Array.isArray(arr)) {
           return arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
         }
       }
-    } catch {}
-
-    // 2. Học kỳ chính HK1 2026-2027
-    if (semId === 'hk1_2026_2027') {
-      try {
+      if (semId === 'hk1_2026_2027') {
         const liveRaw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-        if (liveRaw) {
+        if (liveRaw !== null) {
           const liveArr = JSON.parse(liveRaw);
-          if (Array.isArray(liveArr) && liveArr.length > 0) {
+          if (Array.isArray(liveArr)) {
             return liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
           }
         }
-      } catch {}
-
-      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999') {
-        return true;
+        return Boolean(currentUser?.isEnrolledThisSemester === true);
       }
-    }
+    } catch {}
 
     return false;
   }, [currentUser]);
@@ -440,7 +446,23 @@ const AppInner = () => {
         .then(res => {
           const u = res?.user || (res?.role ? res : null);
           if (u && u.role && window.ApiClient?.isTdtuEmail?.(u.email) && u.email.toLowerCase() === saved.email.toLowerCase()) {
-            setCurrentUser(u);
+            let resolvedUser = u;
+            if (u.role === 'student') {
+              const curSem = window.ApiClient?.getActiveSemester?.() || 'hk1_2026_2027';
+              const sid = String(u.studentId || u.mssv || '').toUpperCase();
+              const liveEnrolled = sid === '52100999'
+                ? false
+                : (typeof window.ApiClient?.isStudentEnrolledInSemester === 'function'
+                  ? window.ApiClient.isStudentEnrolledInSemester(sid, curSem, u)
+                  : u.isEnrolledThisSemester !== false);
+              resolvedUser = {
+                ...u,
+                isEnrolledThisSemester: liveEnrolled,
+                roleId: liveEnrolled ? 'sv_trong_ky' : 'sv_ngoai_ky'
+              };
+              window.ApiClient?.setSavedUser?.(resolvedUser);
+            }
+            setCurrentUser(resolvedUser);
           } else {
             setCurrentUser(saved);
           }
@@ -461,14 +483,22 @@ const AppInner = () => {
     const handleSemesterEvt = (e) => {
       if (e?.detail?.semesterId) {
         setActiveSemester(prev => (prev !== e.detail.semesterId ? e.detail.semesterId : prev));
+        setSyncVersion(v => v + 1);
       }
     };
+    const handleLiveDataSync = () => setSyncVersion(v => v + 1);
     window.addEventListener('tdtu_semester_changed', handleSemesterEvt);
+    window.addEventListener('tdtu_data_updated', handleLiveDataSync);
+    window.addEventListener('tdtu_students_updated', handleLiveDataSync);
+    window.addEventListener('tdtu_semesters_updated', handleLiveDataSync);
 
     return () => {
       window.removeEventListener('popstate', syncRouteFromLocation);
       window.removeEventListener('storage', handleStorageTamper);
       window.removeEventListener('tdtu_semester_changed', handleSemesterEvt);
+      window.removeEventListener('tdtu_data_updated', handleLiveDataSync);
+      window.removeEventListener('tdtu_students_updated', handleLiveDataSync);
+      window.removeEventListener('tdtu_semesters_updated', handleLiveDataSync);
     };
   }, [setActiveTab]);
 
@@ -500,15 +530,24 @@ const AppInner = () => {
     let isStudentEnrolledInActiveSem = true;
     if (isStudent) {
       const sid = String(currentUser.studentId || currentUser.mssv || '').toUpperCase();
-      if (sid === '52100999' || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
-        isStudentEnrolledInActiveSem = false;
-      } else {
-        isStudentEnrolledInActiveSem = isStudentEnrolledInSemester(sid, activeSemester);
+      isStudentEnrolledInActiveSem = sid === '52100999'
+        ? false
+        : isStudentEnrolledInSemester(sid, activeSemester);
+
+      const expectedRoleId = isStudentEnrolledInActiveSem ? 'sv_trong_ky' : 'sv_ngoai_ky';
+      if (currentUser.isEnrolledThisSemester !== isStudentEnrolledInActiveSem || currentUser.roleId !== expectedRoleId) {
+        const syncedStudentUser = {
+          ...currentUser,
+          isEnrolledThisSemester: isStudentEnrolledInActiveSem,
+          roleId: expectedRoleId
+        };
+        window.ApiClient?.setSavedUser?.(syncedStudentUser);
+        setCurrentUser(syncedStudentUser);
       }
     }
 
     // Sinh viên không có trong danh sách kỳ đang kích hoạt: chuyển thành SV ngoài kỳ, chỉ xem được dashboard, profile và bulletin
-    if (isStudent && (!isStudentEnrolledInActiveSem || currentUser.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky')) {
+    if (isStudent && !isStudentEnrolledInActiveSem) {
       if (!['dashboard', 'profile', 'bulletin', 'accounts'].includes(activeTab)) {
         setActiveTab('dashboard', { replace: true });
         return;
@@ -541,7 +580,7 @@ const AppInner = () => {
         setActiveTab('dashboard', { replace: true });
       }
     }
-  }, [currentUser, activeTab, activeSemester, isStudentEnrolledInSemester, setActiveTab]);
+  }, [currentUser, activeTab, activeSemester, syncVersion, isStudentEnrolledInSemester, setActiveTab]);
 
   const handleLoginSuccess = (user, token) => {
     const candidate = user?.user || (user?.role ? user : null);

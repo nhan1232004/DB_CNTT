@@ -417,3 +417,124 @@ test('12. P1 Security: Giới hạn quyền Sinh viên Ngoài kỳ (Out-of-Semes
     assert.equal(resCert.status, 403, 'Sinh viên ngoài kỳ bị chặn thêm chứng chỉ mới');
   });
 });
+
+test('13. Cô lập học kỳ: bulk-import replace cho HK2 không làm mất danh sách HK1', async () => {
+  await withServer(async (baseUrl) => {
+    const adminToken = createValidToken({
+      uid: 'admin_test_sem',
+      name: 'GV. Dương Hữu Phúc',
+      email: 'duonghuuphuc@tdtu.edu.vn',
+      role: 'lecturer',
+      roleId: 'thay_phuc',
+      isAdmin: true
+    });
+
+    try {
+      const importRes = await fetch(`${baseUrl}/api/students/bulk-import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({
+          semester: 'hk2_2026_2027',
+          mode: 'replace',
+          students: [
+            { mssv: '522H8801', fullName: 'Nguyễn Văn A HK2', className: '22H50201', major: 'Kỹ thuật phần mềm', courses: ['KTCN'] },
+            { mssv: '522H8802', fullName: 'Trần Thị B HK2', className: '22H50101', major: 'Khoa học máy tính', courses: ['KTCN', 'TSNN'], isDualCourse: 1 }
+          ]
+        })
+      });
+      assert.equal(importRes.status, 200);
+      const importBody: any = await importRes.json();
+      assert.equal(importBody.success, true);
+
+      const hk2SumRes = await fetch(`${baseUrl}/api/students/summary?semester=hk2_2026_2027`, {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const hk2Sum: any = await hk2SumRes.json();
+      assert.equal(hk2Sum.data.totalStudents, 2);
+      assert.equal(hk2Sum.data.dualCourseStudents, 1);
+
+      const hk1SumRes = await fetch(`${baseUrl}/api/students/summary?semester=hk1_2026_2027`, {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const hk1Sum: any = await hk1SumRes.json();
+      assert.equal(hk1Sum.data.totalStudents, 91, 'Danh sách HK1 phải được bảo toàn nguyên vẹn 91 SV');
+    } finally {
+      await fetch(`${baseUrl}/api/students?semester=hk2_2026_2027`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+    }
+  });
+});
+
+test('14. Xóa sinh viên khỏi học kỳ active -> Tài khoản chuyển sang Ngoài kỳ trên /auth/me & SSO', async () => {
+  await withServer(async (baseUrl) => {
+    const adminToken = createValidToken({
+      uid: 'admin_test_del',
+      name: 'GV. Dương Hữu Phúc',
+      email: 'duonghuuphuc@tdtu.edu.vn',
+      role: 'lecturer',
+      roleId: 'thay_phuc',
+      isAdmin: true
+    });
+    const testSid = '522H9999';
+
+    try {
+      const createRes = await fetch(`${baseUrl}/api/students?semester=hk1_2026_2027`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({
+          studentId: testSid,
+          fullName: 'Sinh viên Kiểm thử Xóa',
+          className: '22H50201',
+          major: 'Kỹ thuật phần mềm',
+          courses: ['KTCN']
+        })
+      });
+      assert.ok([200, 201].includes(createRes.status));
+
+      const ssoBeforeRes = await fetch(`${baseUrl}/api/auth/google-sso`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: `${testSid.toLowerCase()}@student.tdtu.edu.vn`, name: 'Sinh viên Kiểm thử Xóa' })
+      });
+      assert.equal(ssoBeforeRes.status, 200);
+      const ssoBefore: any = await ssoBeforeRes.json();
+      assert.equal(ssoBefore.data.user.isEnrolledThisSemester, true);
+      assert.equal(ssoBefore.data.user.roleId, 'sv_trong_ky');
+      const svToken = ssoBefore.data.token;
+
+      // Xóa sinh viên khỏi kỳ active hk1_2026_2027
+      const delRes = await fetch(`${baseUrl}/api/students/${testSid}?semester=hk1_2026_2027`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      assert.equal(delRes.status, 200);
+
+      // Token cũ gọi /api/auth/me phải trả về trạng thái sống Ngoài kỳ
+      const meAfterRes = await fetch(`${baseUrl}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${svToken}` }
+      });
+      assert.equal(meAfterRes.status, 200);
+      const meAfter: any = await meAfterRes.json();
+      assert.equal(meAfter.data.isEnrolledThisSemester, false);
+      assert.equal(meAfter.data.roleId, 'sv_ngoai_ky');
+
+      // Đăng nhập lại SSO cũng phải nhận Ngoài kỳ
+      const ssoAfterRes = await fetch(`${baseUrl}/api/auth/google-sso`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: `${testSid.toLowerCase()}@student.tdtu.edu.vn`, name: 'Sinh viên Kiểm thử Xóa' })
+      });
+      assert.equal(ssoAfterRes.status, 200);
+      const ssoAfter: any = await ssoAfterRes.json();
+      assert.equal(ssoAfter.data.user.isEnrolledThisSemester, false);
+      assert.equal(ssoAfter.data.user.roleId, 'sv_ngoai_ky');
+    } finally {
+      await fetch(`${baseUrl}/api/students/${testSid}?semester=hk1_2026_2027`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+    }
+  });
+});

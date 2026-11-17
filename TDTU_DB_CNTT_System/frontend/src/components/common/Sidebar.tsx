@@ -16,6 +16,23 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
   const isFacultyStaff = isAdmin || roleKey === 'thay_phuc' || isLecturer;
 
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [, setSyncTick] = React.useState(0);
+
+  React.useEffect(() => {
+    const bump = () => setSyncTick(t => t + 1);
+    window.addEventListener('tdtu_data_updated', bump);
+    window.addEventListener('tdtu_students_updated', bump);
+    window.addEventListener('tdtu_semesters_updated', bump);
+    window.addEventListener('tdtu_semester_changed', bump);
+    window.addEventListener('storage', bump);
+    return () => {
+      window.removeEventListener('tdtu_data_updated', bump);
+      window.removeEventListener('tdtu_students_updated', bump);
+      window.removeEventListener('tdtu_semesters_updated', bump);
+      window.removeEventListener('tdtu_semester_changed', bump);
+      window.removeEventListener('storage', bump);
+    };
+  }, []);
 
   // Trạng thái thu gọn Sidebar
   const [isCollapsed, setIsCollapsed] = React.useState(() => {
@@ -77,7 +94,14 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
 
   const roleBadgeLabel = () => {
     if (isStudent) {
-      if (roleKey === 'sv_ngoai_ky') return 'Sinh viên (Ngoài kỳ)';
+      const sid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
+      const sem = activeSemester || window.ApiClient?.getActiveSemester?.() || 'hk1_2026_2027';
+      const enrolledLive = sid !== '52100999' && (
+        typeof window.ApiClient?.isStudentEnrolledInSemester === 'function'
+          ? window.ApiClient.isStudentEnrolledInSemester(sid, sem, currentUser)
+          : (roleKey !== 'sv_ngoai_ky' && currentUser?.isEnrolledThisSemester !== false)
+      );
+      if (!enrolledLive) return 'Sinh viên (Ngoài kỳ)';
       return currentUser?.studentId ? `${currentUser.studentId} · Trong kỳ` : 'Sinh viên trong kỳ';
     }
     if (isAdmin || roleKey === 'thay_phuc') return 'Quản trị viên';
@@ -193,24 +217,13 @@ const Sidebar = ({ activeTab, setActiveTab, currentUser, onLogout, activeSemeste
 
     // Sinh viên không có trong danh sách kỳ thực tập đang chọn: CHỈ THẤY Bảng điều khiển & Bảng tin
     if (isStudent) {
-      let isEnrolled = currentUser?.isEnrolledThisSemester !== false && roleKey !== 'sv_ngoai_ky';
-      const sem = activeSemester || 'hk1_2026_2027';
+      const sem = activeSemester || window.ApiClient?.getActiveSemester?.() || 'hk1_2026_2027';
       const sid = String(currentUser?.studentId || currentUser?.mssv || '').toUpperCase();
-      if (sid === '52100999' || currentUser?.isEnrolledThisSemester === false || roleKey === 'sv_ngoai_ky') {
-        isEnrolled = false;
-      } else {
-        try {
-          const raw = localStorage.getItem(`tdtu_imported_students_${sem}`) || (sem === 'hk1_2026_2027' ? (localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students')) : null);
-          if (raw) {
-            const arr = JSON.parse(raw);
-            if (Array.isArray(arr) && arr.length > 0) {
-              isEnrolled = arr.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
-            }
-          }
-        } catch {
-          isEnrolled = false;
-        }
-      }
+      const isEnrolled = sid !== '52100999' && (
+        typeof window.ApiClient?.isStudentEnrolledInSemester === 'function'
+          ? window.ApiClient.isStudentEnrolledInSemester(sid, sem, currentUser)
+          : (currentUser?.isEnrolledThisSemester !== false && roleKey !== 'sv_ngoai_ky')
+      );
       if (!isEnrolled) {
         return ['dashboard', 'bulletin'].includes(item.id);
       }

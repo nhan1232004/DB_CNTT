@@ -30,6 +30,12 @@ export function createApiRouter(): HttpRouter {
   router.use(bodyParserMiddleware);
   router.use(authMiddleware);
 
+  // 1.1 Health / Backend Capability Probe (Dùng để Frontend nhận diện tức thì có Node Backend hay Static Hosting)
+  router.get('/api/health', (_req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ success: true, data: { ok: true, mode: 'sqlite' } }));
+  });
+
   // 2. Authentication & Firebase RBAC Routes
   router.post('/api/auth/google-sso', authCtrl.googleSsoHandler);
   router.post('/api/auth/firebase-login', authCtrl.firebaseLoginHandler);

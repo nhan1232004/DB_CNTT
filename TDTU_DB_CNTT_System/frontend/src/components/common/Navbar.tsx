@@ -34,42 +34,36 @@ const Navbar = ({ currentUser, activeSemester, onSemesterChange, onNavigateTab }
   const [isSemesterOpen, setIsSemesterOpen] = React.useState(false);
   const semesterDropdownRef = React.useRef(null);
 
-  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không
+  // Helper kiểm tra sinh viên có tên trong danh sách của học kỳ cụ thể hay không (Fail-Closed)
   const isStudentEnrolledInSemester = React.useCallback((sid, semId) => {
     if (!sid) return false;
     const cleanSid = String(sid).trim().toUpperCase();
-    if (cleanSid === '52100999') return false; // Sinh viên ngoài kỳ mẫu không thuộc đợt nào
+    if (cleanSid === '52100999') return false;
 
-    // 1. Kiểm tra danh sách sinh viên đã nạp của học kỳ đó trong LocalStorage
+    if (window.ApiClient?.isStudentEnrolledInSemester) {
+      return window.ApiClient.isStudentEnrolledInSemester(cleanSid, semId, currentUser);
+    }
+
     try {
+      if (localStorage.getItem(`tdtu_students_cleared_empty_${semId}`) === 'true') return false;
       const raw = localStorage.getItem(`tdtu_imported_students_${semId}`);
-      if (raw) {
+      if (raw !== null) {
         const arr = JSON.parse(raw);
-        if (Array.isArray(arr) && arr.length > 0) {
-          const match = arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
-          if (match) return true;
+        if (Array.isArray(arr)) {
+          return arr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
         }
       }
-    } catch {}
-
-    // 2. Đối với học kỳ chính HK1 2026-2027
-    if (semId === 'hk1_2026_2027') {
-      try {
+      if (semId === 'hk1_2026_2027') {
         const liveRaw = localStorage.getItem('tdtu_live_students_clean') || localStorage.getItem('tdtu_live_students');
-        if (liveRaw) {
+        if (liveRaw !== null) {
           const liveArr = JSON.parse(liveRaw);
-          if (Array.isArray(liveArr) && liveArr.length > 0) {
-            const match = liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
-            if (match) return true;
+          if (Array.isArray(liveArr)) {
+            return liveArr.some(s => String(s.studentId || s.mssv || s.id || '').trim().toUpperCase() === cleanSid);
           }
         }
-      } catch {}
-
-      // Sinh viên hợp lệ trong hệ thống (không bị đánh dấu isEnrolledThisSemester: false)
-      if (currentUser?.isEnrolledThisSemester !== false && cleanSid !== '52100999') {
-        return true;
+        return Boolean(currentUser?.isEnrolledThisSemester === true);
       }
-    }
+    } catch {}
 
     return false;
   }, [currentUser]);

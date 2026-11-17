@@ -276,19 +276,26 @@
         return 'sv_ngoai_ky';
       }
       try {
-        const activeSem = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
-        // Nếu giảng viên kích hoạt học kỳ khác, sinh viên không thuộc kỳ đó sẽ chuyển sang sv_ngoai_ky
-        const rawImported = localStorage.getItem(`tdtu_imported_students_${activeSem}`);
-        if (rawImported) {
-          const list = JSON.parse(rawImported);
-          if (Array.isArray(list) && list.length > 0) {
-            const hasStudent = list.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
-            if (!hasStudent) return 'sv_ngoai_ky';
+        if (typeof localStorage !== 'undefined') {
+          const activeSem = localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027';
+          if (root.ApiClient?.isStudentEnrolledInSemester) {
+            const enrolled = root.ApiClient.isStudentEnrolledInSemester(sid, activeSem, user);
+            return enrolled ? 'sv_trong_ky' : 'sv_ngoai_ky';
+          }
+          if (localStorage.getItem(`tdtu_students_cleared_empty_${activeSem}`) === 'true') {
+            return 'sv_ngoai_ky';
+          }
+          // Nếu giảng viên kích hoạt học kỳ khác hoặc cập nhật/xóa danh sách, SV không có tên sẽ chuyển sang sv_ngoai_ky
+          const rawImported = localStorage.getItem(`tdtu_imported_students_${activeSem}`);
+          if (rawImported !== null) {
+            const list = JSON.parse(rawImported);
+            if (Array.isArray(list)) {
+              const hasStudent = list.some(s => String(s.studentId || s.mssv || s.id || '').toUpperCase() === sid);
+              return hasStudent ? 'sv_trong_ky' : 'sv_ngoai_ky';
+            }
           } else if (activeSem !== 'hk1_2026_2027') {
             return 'sv_ngoai_ky';
           }
-        } else if (activeSem !== 'hk1_2026_2027') {
-          return 'sv_ngoai_ky';
         }
       } catch {}
       return 'sv_trong_ky';

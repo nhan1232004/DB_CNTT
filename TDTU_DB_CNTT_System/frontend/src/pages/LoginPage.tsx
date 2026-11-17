@@ -16,6 +16,24 @@ const LoginPage = ({ onLoginSuccess }) => {
     return clean.endsWith('@tdtu.edu.vn') || clean.endsWith('@student.tdtu.edu.vn');
   };
 
+  // Helper kiểm tra sinh viên có nằm trong danh sách học kỳ đang kích hoạt hay không (Fail-Closed)
+  const checkStudentEnrolledSync = (studentId) => {
+    const sid = String(studentId || '').trim().toUpperCase();
+    if (!sid || sid === '52100999') return false;
+    const activeSem = window.ApiClient?.getActiveSemester ? window.ApiClient.getActiveSemester() : (localStorage.getItem('tdtu_active_semester') || 'hk1_2026_2027');
+    if (window.ApiClient?.isStudentEnrolledInSemester) {
+      return window.ApiClient.isStudentEnrolledInSemester(sid, activeSem, false);
+    }
+    try {
+      const raw = localStorage.getItem('tdtu_imported_students_' + activeSem) || (activeSem === 'hk1_2026_2027' ? localStorage.getItem('tdtu_live_students_clean') : null);
+      if (raw !== null) {
+        const list = JSON.parse(raw);
+        return Array.isArray(list) && list.some(s => String(s.mssv || s.studentId || '').trim().toUpperCase() === sid);
+      }
+    } catch {}
+    return false;
+  };
+
   // Helper: Khởi tạo đối tượng Người dùng hợp lệ theo quy chế TDTU
   const resolveUserFromEmail = (userEmail, userName) => {
     const clean = String(userEmail || '').trim().toLowerCase();
@@ -31,9 +49,16 @@ const LoginPage = ({ onLoginSuccess }) => {
       if (foundStored.isActive === false) {
         throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên Khoa CNTT.');
       }
+      const sidFromEmail = clean.endsWith('@student.tdtu.edu.vn')
+        ? (foundStored.studentId || clean.split('@')[0].toUpperCase())
+        : foundStored.studentId;
+      const isStudentAcc = clean.endsWith('@student.tdtu.edu.vn') || foundStored.role === 'student';
+      const enrolledStatus = isStudentAcc ? checkStudentEnrolledSync(sidFromEmail) : foundStored.isEnrolledThisSemester;
       return {
         ...foundStored,
         email: clean,
+        studentId: sidFromEmail,
+        isEnrolledThisSemester: enrolledStatus,
         name: foundStored.name || foundStored.displayName || userName || 'Người dùng TDTU',
         avatarUrl: foundStored.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${clean}`
       };
@@ -60,34 +85,17 @@ const LoginPage = ({ onLoginSuccess }) => {
     } else if (clean.endsWith('@student.tdtu.edu.vn')) {
       role = 'student';
       studentId = clean.split('@')[0].toUpperCase();
-      if (studentId === '522H0045') {
-        name = name || 'Nguyễn Hữu Nhân';
-        isEnrolledThisSemester = true;
-      } else if (studentId === '522H0001') {
-        name = name || 'Nguyễn Minh Anh';
-        isEnrolledThisSemester = true;
-      } else if (studentId === '522H0002') {
-        name = name || 'Trần Hoàng Nam';
-        isEnrolledThisSemester = true;
-      } else if (studentId === '52100999' || clean.includes('chuadk') || clean.includes('ngoaiky')) {
+      if (studentId === '52100999' || clean.includes('chuadk') || clean.includes('ngoaiky')) {
         name = name || 'Nguyễn Văn Ngoài Kỳ';
         studentId = '52100999';
         isEnrolledThisSemester = false;
-      } else if (studentId === '51900839') {
-        name = name || 'Võ Duy Trí';
-        isEnrolledThisSemester = true;
       } else {
-        name = name || `Sinh viên (${studentId})`;
-        try {
-          const raw = localStorage.getItem('tdtu_imported_students_hk1_2026_2027') || localStorage.getItem('tdtu_live_students_clean');
-          if (raw) {
-            const list = JSON.parse(raw);
-            isEnrolledThisSemester = Array.isArray(list) && list.some(s => String(s.mssv || s.studentId).toUpperCase() === studentId);
-          } else {
-            isEnrolledThisSemester = false;
-          }
-        } catch {
-          isEnrolledThisSemester = false;
+        isEnrolledThisSemester = checkStudentEnrolledSync(studentId);
+        if (!name) {
+          const activeSem = window.ApiClient?.getActiveSemester ? window.ApiClient.getActiveSemester() : 'hk1_2026_2027';
+          const list = window.ApiClient?.getCachedStudentsSync ? window.ApiClient.getCachedStudentsSync(activeSem, { enrich: false }).list : [];
+          const foundProfile = Array.isArray(list) ? list.find(s => String(s.mssv || s.studentId || '').toUpperCase() === studentId) : null;
+          name = foundProfile?.fullName || foundProfile?.name || `Sinh viên (${studentId})`;
         }
       }
     }
