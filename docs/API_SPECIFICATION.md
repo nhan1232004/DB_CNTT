@@ -1,6 +1,6 @@
-# TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0)
+# TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0 — Build v125)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 06/11/2026*
+*Phiên bản: v3.2.0 (Build v125) | Cập nhật hoàn thiện: 18/11/2026*
 
 ---
 
@@ -8,7 +8,7 @@
 
 * **Base URL (Local):** `http://localhost:3000/api`
 * **Ứng dụng Cloud:** https://dashboard-39cf8.web.app
-* **Kiến trúc Server:** Node.js native (`node:http`, `node:sqlite`), thực thi TypeScript trực tiếp với `--experimental-strip-types`, không sử dụng Express hay framework trung gian.
+* **Kiến trúc Server:** Node.js native (`node:http`, `node:sqlite`), thực thi TypeScript trực tiếp với `--experimental-strip-types`, không sử dụng Express hay framework trung gian. CSDL sử dụng bảng `semester_enrollments` và `system_state` để cô lập danh sách sinh viên theo từng học kỳ.
 * **Định dạng dữ liệu:** `application/json; charset=utf-8`
 * **Tiêu đề xác thực (Authorization Header):**
   ```http
@@ -20,7 +20,7 @@
     "success": true,
     "message": "Thông báo kết quả thao tác",
     "data": {},
-    "timestamp": "2026-11-05T10:00:00.000Z"
+    "timestamp": "2026-11-18T08:15:00.000Z"
   }
   ```
 
@@ -28,14 +28,21 @@
 
 ## 2. DANH MỤC ENDPOINTS THEO PHÂN HỆ
 
+### 2.0. Khảo sát Kết nối Hệ thống (`/api/health`)
+
+| Phương thức | Đường dẫn | Quyền truy cập | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | Public | Kiểm tra trạng thái Backend SQLite (`{ ok: true, mode: "sqlite" }`), giúp Frontend (`probeBackend()`) chuyển nhanh sang chế độ Static Firestore khi triển khai trên Firebase Hosting |
+
 ### 2.1. Phân hệ Xác thực & Quản lý Tài khoản (`/api/auth`)
 
 | Phương thức | Đường dẫn | Quyền truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/google-sso` | Public | Đăng nhập Google SSO TDTU (`@tdtu.edu.vn` hoặc `@student.tdtu.edu.vn`) |
+| `POST` | `/api/auth/google-sso` | Public | Đăng nhập Google SSO TDTU (`@tdtu.edu.vn` hoặc `@student.tdtu.edu.vn`), tự động đối chiếu danh sách học kỳ active |
 | `POST` | `/api/auth/firebase-login` | Public | Đăng nhập Firebase Auth (UID & ID Token) |
-| `GET` | `/api/auth/me` | Logged In | Lấy thông tin tài khoản và mặt nạ quyền Prime RBAC hiện tại |
-| `GET` | `/api/auth/firebase-users` | Logged In | Lấy danh sách tài khoản hệ thống |
+| `POST` | `/api/auth/login` | Public | Đăng nhập bằng tài khoản nội bộ TDTU (Email & Mật khẩu) |
+| `GET` | `/api/auth/me` | Logged In | Lấy thông tin tài khoản, mặt nạ Prime RBAC và tính lại `isEnrolledThisSemester` / `roleId` (`sv_trong_ky` hoặc `sv_ngoai_ky`) theo dữ liệu thực tế hiện tại |
+| `GET` | `/api/auth/firebase-users` | Admin | Lấy danh sách tài khoản hệ thống |
 | `POST` | `/api/auth/firebase-users` | Admin | Thêm mới hoặc đồng bộ tài khoản người dùng |
 | `PUT` | `/api/auth/firebase-users/:uid/status` | Admin | Khóa hoặc mở khóa tài khoản người dùng |
 | `POST` | `/api/auth/admin-role` | Admin | Cấp quyền hoặc thu hồi quyền Quản trị viên (Admin) cho Giảng viên |
@@ -44,15 +51,15 @@
 
 | Phương thức | Đường dẫn | Quyền truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/students` | Logged In | Lấy danh sách sinh viên (hỗ trợ lọc `semester`, `search`, `status`, `major`, `isDual`) kèm thông tin doanh nghiệp đã đồng bộ |
-| `GET` | `/api/students/summary` | Logged In | Lấy số liệu thống kê tổng quan theo học kỳ (`semester`) |
-| `GET` | `/api/students/eligibility/:studentId` | Logged In | Thẩm định sinh viên có thuộc danh sách đợt thực tập hiện hành hay không (**AUTH-03**) |
-| `GET` | `/api/students/:studentId` | Logged In | Lấy hồ sơ chi tiết 1 sinh viên kèm lịch sử khai báo doanh nghiệp |
-| `POST` | `/api/students` | Lecturer / Admin | Thêm mới sinh viên vào học kỳ chỉ định (`semester`) |
-| `PUT` | `/api/students/:studentId` | Lecturer / Admin | Cập nhật thông tin học vụ, GPA, doanh nghiệp hoặc trạng thái thực tập của sinh viên |
-| `DELETE` | `/api/students/:studentId` | Lecturer / Admin | Xóa hồ sơ sinh viên khỏi danh sách đợt thực tập |
-| `POST` | `/api/students/bulk-import` | Lecturer / Admin | Import hàng loạt danh sách sinh viên từ dữ liệu JSON/Excel |
-| `DELETE` | `/api/students` | Lecturer / Admin | Xóa toàn bộ danh sách sinh viên (phục vụ reset/nạp mới) |
+| `GET` | `/api/students` | Logged In | Lấy danh sách sinh viên cô lập theo `semester` (hỗ trợ `search`, `status`, `major`, `isDual`) từ bảng `semester_enrollments` |
+| `GET` | `/api/students/summary` | Logged In | Lấy số liệu thống kê tổng quan và phân bố ngành theo học kỳ (`?semester=...`) |
+| `GET` | `/api/students/eligibility/:studentId` | Logged In | Thẩm định sinh viên có thuộc danh sách học kỳ chỉ định hay không (`?semester=...`, **AUTH-03**) |
+| `GET` | `/api/students/:studentId` | Logged In | Lấy hồ sơ chi tiết 1 sinh viên theo học kỳ (`?semester=...`) kèm lịch sử khai báo |
+| `POST` | `/api/students` | Lecturer / Admin | Thêm mới sinh viên vào học kỳ chỉ định (`?semester=...`) và cập nhật `system_state` |
+| `PUT` | `/api/students/:studentId` | Lecturer / Admin | Cập nhật thông tin học vụ, GPA, doanh nghiệp hoặc trạng thái thực tập trong học kỳ (`?semester=...`) |
+| `DELETE` | `/api/students/:studentId` | Lecturer / Admin | Xóa sinh viên khỏi danh sách học kỳ chỉ định (`?semester=...`); bảo toàn chứng chỉ lịch sử và tự chuyển SV về trạng thái ngoài kỳ |
+| `POST` | `/api/students/bulk-import` | Admin | Import hàng loạt danh sách sinh viên (chế độ `replace` hoặc `append`) trong SQLite transaction theo từng học kỳ |
+| `DELETE` | `/api/students` | Lecturer / Admin | Xóa sạch toàn bộ danh sách sinh viên của học kỳ (`?semester=...`) |
 
 ### 2.3. Phân hệ Khai báo Thực tập & Tra cứu MST (`/api/internship`)
 

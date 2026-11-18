@@ -1,11 +1,13 @@
-# Danh Sách Tài Khoản Kiểm Thử Hệ Thống (Prime RBAC)
+# Danh Sách Tài Khoản Kiểm Thử Hệ Thống (Prime RBAC — v3.2.0 / Build v125)
 
 Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đại học Tôn Đức Thắng (`@tdtu.edu.vn` và `@student.tdtu.edu.vn`) phục vụ công tác kiểm thử và nghiệm thu hệ thống **Cổng Thông Tin Thực Tập Doanh Nghiệp Khoa CNTT**.
+*Cập nhật: 18/11/2026*
 
 > [!IMPORTANT]
 > - Toàn bộ các nút truy cập nhanh ngoài màn hình đăng nhập đã được **ẩn hoàn toàn** để đảm bảo tính bảo mật thực tế.
-> - Để đăng nhập kiểm thử bằng tài khoản bên dưới, vui lòng chọn tab **"Tài khoản Nội bộ TDTU"** tại màn hình đăng nhập và nhập đúng **Email + Mật khẩu**.
-> - Hệ thống **chặn tuyệt đối** mọi email ngoài tên miền TDTU (như `@gmail.com`), không tự động nhảy vào tài khoản mẫu khi hủy đăng nhập, và khóa hoàn toàn việc chuyển đổi tài khoản qua URL hoặc can thiệp LocalStorage.
+> - Để đăng nhập kiểm thử bằng tài khoản bên dưới, vui lòng chọn đúng tab **"Sinh viên"** hoặc **"Giảng viên / Nội bộ"** tại màn hình đăng nhập và nhập **Email + Mật khẩu** (hoặc dùng nút **"Đăng nhập bằng Google"** với tài khoản Google `@tdtu.edu.vn` / `@student.tdtu.edu.vn`).
+> - Từ phiên bản `v124–v125`, trạng thái **Trong kỳ (`sv_trong_ky`)** hay **Ngoài kỳ (`sv_ngoai_ky`)** của sinh viên được đối chiếu **trực tiếp theo danh sách thực tế của học kỳ đang kích hoạt** (không gắn cứng theo tài khoản): nếu giảng viên xóa sinh viên khỏi danh sách kỳ đó, khi sinh viên đăng nhập lại hoặc tải lại phiên sẽ tự động chuyển về Ngoài kỳ.
+> - Hệ thống **chặn tuyệt đối** mọi email ngoài tên miền TDTU (như `@gmail.com`), không tự động nhảy vào tài khoản mẫu khi hủy đăng nhập, và khóa hoàn toàn việc chuyển đổi tài khoản qua URL hoặc can thiệp `localStorage`.
 
 ---
 
@@ -64,3 +66,8 @@ Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đ
    - Cửa sổ B: Đăng nhập Giảng viên `duonghuuphuc@tdtu.edu.vn`, mở trang **Quản lý Sinh viên** (`/students`).
 2. Ở Cửa sổ A: Sinh viên gửi hoặc cập nhật phiếu khai báo nơi thực tập.
 3. Ở Cửa sổ B: Danh sách và popup hồ sơ sinh viên phía Giảng viên tự động cập nhật ngay lập tức mà không cần tải lại trang (nhờ Cloud Firestore listener và BroadcastChannel).
+
+### Kịch bản 3: Kiểm thử Nhập Excel Thay thế (`replace`), Xóa SV & Tải lại Trang (`v125`)
+1. Đăng nhập tài khoản Admin `duonghuuphuc@tdtu.edu.vn` -> mở **Quản lý sinh viên** (`/students`) hoặc **Nhập file Excel** (`/import`).
+2. Nạp file Excel danh sách mới cho một học kỳ với chế độ **Thay thế toàn bộ (`replace`)**: kiểm tra số lượng hiển thị đúng danh sách mới, thẻ học kỳ cập nhật sĩ số thực tế; nhấn **F5** tải lại trang hoặc đăng xuất/đăng nhập lại -> danh sách mới vẫn được giữ nguyên (không quay về file cũ).
+3. Xóa 1 sinh viên bất kỳ khỏi danh sách kỳ active -> đăng nhập vào tài khoản sinh viên đó -> hệ thống hiển thị trạng thái **Ngoài kỳ (`sv_ngoai_ky`)**, khóa tính năng khai báo mới nhưng vẫn bảo toàn lịch sử chứng chỉ.

@@ -1,7 +1,7 @@
 # HƯỚNG DẪN TẠO BIỂU ĐỒ MỚI (PLUG-AND-PLAY CHART PLUGIN)
 ## DÀNH CHO CÁC ĐỘI NHÓM KẾ THỪA VÀ PHÁT TRIỂN TIẾP THEO (2026 – 2031)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 | Cập nhật hoàn thiện: 05/11/2026*
+*Phiên bản: v3.2.0 (Build v125) | Cập nhật hoàn thiện: 18/11/2026*
 
 ---
 
@@ -82,7 +82,7 @@ export default plugin;
 ### 3. CƠ CHẾ TỰ ĐỘNG KHÁM PHÁ (AUTO-DISCOVERY)
 
 Khi bạn lưu file plugin vào `TDTU_DB_CNTT_System/backend/src/services/charts/ten-bieu-do.plugin.ts`:
-1. `WidgetRegistry` ngay lập tức ghi nhận plugin vào danh mục widget.
+1. `discoverChartPlugins()` trong `TDTU_DB_CNTT_System/backend/src/services/charts/index.ts` tự động quét mọi tệp `*.plugin.ts` (hoặc nạp đồng bộ trực tiếp khi import trong `charts/index.ts`), ghi nhận vào `WidgetRegistry`.
 2. Endpoint `GET /api/dashboard/widgets` tự động trả về widget mới cho giao diện React TypeScript.
 3. Giao diện người dùng (`DashboardPage.tsx`) sẽ tự động hiển thị thẻ biểu đồ mới trong Dashboard (và trong hộp thoại Quản lý biểu đồ dành cho Giảng viên / Admin) mà lập trình viên frontend không cần phải code lại layout.
 

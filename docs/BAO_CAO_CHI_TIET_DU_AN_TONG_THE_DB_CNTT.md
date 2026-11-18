@@ -1,7 +1,7 @@
 # BÁO CÁO CHI TIẾT TỔNG THỂ DỰ ÁN HỆ THỐNG QUẢN LÝ THỰC TẬP (DB_CNTT)
 ### CỔNG THÔNG TIN THỰC TẬP & DASHBOARD RA QUYẾT ĐỊNH (KTCN & TSNN)
 **Khoa Công nghệ Thông tin — Trường Đại học Tôn Đức Thắng (TDTU)**  
-*Thời gian cập nhật: Ngày 06/11/2026 · Phiên bản: v3.2.0 (Bản hoàn thiện toàn diện · 100% TypeScript · UI/UX Đẳng cấp & Cô lập Học kỳ)*
+*Thời gian cập nhật: Ngày 18/11/2026 · Phiên bản: v3.2.0 (Build v125 · 100% TypeScript · esbuild Bundle · Cô lập Học kỳ Toàn diện)*
 
 ---
 
@@ -11,9 +11,9 @@
 * **Đơn vị chủ quản:** Khoa Công nghệ Thông tin, Trường Đại học Tôn Đức Thắng (TDTU).
 * **Ngôn ngữ lập trình chủ đạo:** **100% TypeScript (`.ts` & `.tsx`)** xuyên suốt cả Backend, Frontend và Gói minh chứng kiến trúc Adapter.
 * **Công nghệ sử dụng chính xác (Zero Bloatware):**
-  - **Backend:** Node.js (v22+ / v24+) native, chạy trực tiếp TypeScript với cờ `--experimental-strip-types`, HTTP server tích hợp `node:http`, CSDL cục bộ `node:sqlite` (DatabaseSync, WAL mode), test runner tích hợp `node:test`. Hoàn toàn không sử dụng Express, NestJS, ORM cồng kềnh hay Jest/Mocha.
-  - **Frontend:** React 18 & ReactDOM 18 (CDN), Babel Standalone (runtime TSX transpiler), Tailwind CSS (CDN với TDTU design tokens), SheetJS (`xlsx` v0.18.5 cho xử lý Excel client-side).
-  - **Đám mây & Real-time:** Google Firebase Hosting (triển khai toàn cầu), Firebase Auth (Google SSO `@tdtu.edu.vn`), Cloud Firestore (đồng bộ dữ liệu đa thiết bị tức thì qua `onSnapshot`), BroadcastChannel API (đồng bộ liên tab).
+  - **Backend:** Node.js (`v22+` / `v24+`) native, chạy trực tiếp TypeScript với cờ `--experimental-strip-types`, HTTP server tích hợp `node:http`, CSDL cục bộ `node:sqlite` (`DatabaseSync`, WAL mode, bảng `semester_enrollments` và `system_state`), test runner tích hợp `node:test`. Hoàn toàn không sử dụng Express, NestJS, ORM cồng kềnh hay Jest/Mocha.
+  - **Frontend:** React 18 & ReactDOM 18 (CDN), đóng gói trước thành production bundle bằng **`esbuild`** (`scripts/build-frontend.mjs` -> `dist/app.bundle.js`, 21 modules, ~906.8 KB bundled) giúp khởi chạy tức thì trên trình duyệt mà không cần biên dịch Babel runtime, Tailwind CSS (CDN với TDTU design tokens), SheetJS (`xlsx` v0.18.5 cho xử lý Excel client-side).
+  - **Đám mây & Real-time:** Google Firebase Hosting (triển khai toàn cầu), Firebase Auth (Google SSO `@tdtu.edu.vn` / `@student.tdtu.edu.vn`), Cloud Firestore (đồng bộ đa thiết bị qua `onSnapshot` kèm `tdtu_system/students_meta` và `tdtu_student_cv`), BroadcastChannel API + Storage Event (`SyncManager` đa kênh).
 * **Phạm vi học phần quản lý:**
   1. **Kiến tập công nghiệp (KTCN):** 160 giờ thực hành doanh nghiệp.
   2. **Tập sự nghề nghiệp (TSNN):** 320 giờ thực tập chuyên sâu tại doanh nghiệp.
@@ -37,8 +37,10 @@ flowchart TD
     P6["Giai đoạn 6: Chuẩn hóa 100% TypeScript, Đồng bộ Real-time & Popup 150%<br/>✓ ĐÃ HOÀN TẤT 100%"]
     P7["Giai đoạn 7: Dynamic Semesters, Single Certificate & Clean UI<br/>✓ ĐÃ HOÀN TẤT 100%"]
     P8["Giai đoạn 8: Cô lập Khai báo theo Học kỳ & Nâng tầm Toàn diện UI/UX<br/>✓ ĐÃ HOÀN TẤT 100%"]
+    P9["Giai đoạn 9: esbuild Bundle, SPA Router, ModuleRegistry & 480 Assertions<br/>✓ ĐÃ HOÀN TẤT 100%"]
+    P10["Giai đoạn 10: Đồng bộ Danh sách SV Đa kỳ, Ngoài kỳ Động & Tối ưu Load (v125)<br/>✓ ĐÃ HOÀN TẤT 100%"]
 
-    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9 --> P10
 ```
 
 ### Chi tiết tiến độ từng giai đoạn:
@@ -62,7 +64,7 @@ flowchart TD
    - Xây dựng Trung tâm In ấn (Print Center) với 6 mẫu biểu mẫu A4 chuẩn thể thức hành chính Nhà nước (Nghị định 30/2020/NĐ-CP).
    - Thiết kế lại toàn bộ giao diện tuân thủ quy chuẩn TDTU Design System: loại bỏ emoji, chuyển cột Chi tiết sang menu 3 chấm sổ xuống `···`.
 6. **Giai đoạn 6 (Chuẩn hóa 100% TypeScript, Đồng bộ Hồ sơ Doanh nghiệp, Lọc Học kỳ & Popup 150%):**
-   - **Chuẩn hóa 100% TypeScript (`.ts` & `.tsx`):** Chuyển đổi hoàn toàn Frontend sang 22 tệp `.ts`/`.tsx` vận hành trên Babel TSX Runtime, xóa toàn bộ các bản sao `.js`/`.jsx` và mã thừa.
+   - **Chuẩn hóa 100% TypeScript (`.ts` & `.tsx`):** Chuyển đổi hoàn toàn Frontend sang các tệp `.ts`/`.tsx` thuần (xóa toàn bộ các bản sao `.js`/`.jsx` và mã thừa; sau đó tối ưu thành `21` module đóng gói bằng `esbuild` ở Giai đoạn 9).
    - **Đồng bộ Real-time Hồ sơ Doanh nghiệp (Sinh viên ↔ Giảng viên):** Toàn bộ thông tin doanh nghiệp (Tên công ty, Mã số thuế, Địa chỉ, Người đại diện, Vị trí thực tập, Mentor, SĐT Mentor) được đồng bộ tức thì vào hồ sơ sinh viên phía Giảng viên.
    - **Quản lý Danh sách Sinh viên theo Học kỳ Chặt chẽ:** Khắc phục triệt để việc danh sách sinh viên hiển thị tràn sang các học kỳ khác.
    - **Popup Thông báo Real-time & Phóng to 150%:** Popup thông báo nổi góc dưới phải cho sinh viên khi có thông báo mới; phóng đại kích thước và phông chữ các hộp thoại chi tiết lên **150%** giúp dễ quan sát và thao tác.
@@ -76,27 +78,33 @@ flowchart TD
 8. **Giai đoạn 8 (Cô lập Toàn diện Khai báo Thực tập theo Học kỳ & Nâng cấp Đột phá Giao diện UI/UX - Cập nhật 06/11/2026):**
    - **Cô lập Toàn vẹn Dữ liệu Khai báo Thực tập phía Sinh viên:** Khắc phục triệt để lỗi khai báo ở Học kỳ 1 bị lưu đọng sang Học kỳ 2. Khi sinh viên chuyển đổi học kỳ, giao diện tự động khởi tạo form khai báo mới tinh (trạng thái "Chưa khai báo", danh sách khai báo rỗng), dữ liệu được định danh theo scoped key `tdtu_decl_${activeSemester}_${studentId}`. Khi chuyển lại Học kỳ 1, toàn bộ thông tin đã đăng ký trước đó được bảo toàn nguyên vẹn 100%.
    - **Nâng cấp Toàn diện Giao diện UI/UX (Bản mới nhánh `522H0045` - Commit `45a741e`):** Nâng tầm thiết kế giao diện toàn bộ hệ thống (`Navbar`, `Sidebar`, `AccountsPage`, `CertificatesPage`, `DeclarationPage`, `LoginPage`, `StudentsPage`, `App.tsx`). Tối ưu hoá độ tương phản, bo góc chuẩn enterprise, hiệu ứng chuyển động hover mượt mà và trực quan hóa dữ liệu trạng thái.
-   - **Cơ chế Cache-Busting Tự động (`v20261106_v119_ui_enhancements`):** Toàn bộ 21 tệp module TypeScript nhúng trên `index.html` được gán định danh phiên bản mới nhất, đảm bảo trình duyệt client luôn nhận mã nguồn mới tức thì mà không gặp hiện tượng kẹt cache.
-   - **Kiểm thử Đồng bộ & Hiệu năng Real-time:** Đạt 100% độ đồng bộ dữ liệu thời gian thực giữa tài khoản Sinh viên và Giảng viên qua Cloud Firestore và BroadcastChannel API; thời gian đồng bộ tức thì (<500ms), không giật khựng hay đọng dữ liệu rác. Triển khai hoàn tất lên Firebase Hosting tại `https://dashboard-39cf8.web.app`.
+   - **Cơ chế Cache-Busting Tự động:** Toàn bộ các phiên bản giao diện trên `index.html` luôn gắn tham số phiên bản (hiện tại `v20261117_v125_firestore_rules_import_fix`) cho bundle `dist/app.bundle.js`, bảo đảm trình duyệt nhận mã nguồn mới ngay sau khi phát hành.
+   - **Kiểm thử Đồng bộ & Hiệu năng Real-time:** Đạt 100% độ đồng bộ dữ liệu thời gian thực giữa tài khoản Sinh viên và Giảng viên qua Cloud Firestore và `BroadcastChannel` API; thời gian đồng bộ tức thì. Triển khai trên Firebase Hosting tại https://dashboard-39cf8.web.app.
+9. **Giai đoạn 9 (Build `esbuild` Tốc độ cao, SPA Deep-Linking Router & Siết chặt An ninh Concurrency - `v121`–`v123`):**
+   - **Chuyển dịch Sang `esbuild` Pre-compiled Bundle (`scripts/build-frontend.mjs`):** Biên dịch 21 module `.ts`/`.tsx` của Frontend thành một file `TDTU_DB_CNTT_System/frontend/dist/app.bundle.js` duy nhất (<300ms build, ~906.8 KB), loại bỏ chi phí Babel TSX transpiler trên trình duyệt khách.
+   - **SPA Deep-Linking Router & `ModuleRegistry` (`module-registry.ts`):** Chuẩn hóa 12 tuyến đường định danh rõ ràng (`/dashboard`, `/declarations`, `/students`, `/certificates`, `/bulletin`, `/email-jd`, `/semesters`, `/import`, `/documents`, `/export`, `/profile`, `/accounts`), hỗ trợ alias URL và kiểm soát quyền trước khi render qua `TdtuStore` (`useSyncExternalStore`) và `SyncManager` 3 tầng.
+   - **Mở rộng Bộ Kiểm thử Prime RBAC & SQLite Concurrency:** Bổ sung kiểm thử vét cạn 480 tổ hợp (`5 vai trò x 12 phân hệ x 8 thừa số nguyên tố`), tính lũy đẳng/giao hoán và tăng cường khóa đồng thời WAL trên SQLite.
+10. **Giai đoạn 10 (Cô lập Dữ liệu Danh sách Sinh viên Đa kỳ, Sửa Lỗi Firestore Rules & Tối ưu Trang Giảng viên - `v124`–`v125`, Cập nhật 18/11/2026):**
+    - **Cô lập Học kỳ Ở Tầng Backend SQLite & Auth:** Thêm bảng `semester_enrollments` và `system_state` trong `sqlite.db.ts`; thêm endpoint `GET /api/health`; cập nhật `auth.service.ts` (`resolveCurrentClaims`, `loginWithGoogle`) để khi xóa sinh viên khỏi học kỳ active, tài khoản đó tự động chuyển về `sv_ngoai_ky` trên `/api/auth/me` và Google SSO.
+    - **Khắc phục Triệt để Lỗi Quay Về Danh sách Cũ & Bản ghi Zombie trên Cloud Firestore:** Sửa `firestore.rules` (`allow read: if true;`) giải quyết lỗi `403 PERMISSION_DENIED` khi truy vấn toàn collection lúc đăng nhập mật khẩu nội bộ hoặc mới tải lại trang; thêm `_extractDocSemAndSid()` luôn ưu tiên document chuẩn `${semester}_${sid}` thay vì bản legacy `<sid>`; thay toàn bộ `.set(..., { merge: true })` lên `tdtu_students` ở các hàm phụ bằng `.update()` / collection chuyên biệt (`tdtu_student_cv`, `tdtu_declarations`); đồng bộ siêu dữ liệu `tdtu_system/students_meta` & `recomputeAndSyncSemesterMeta()` cho từng học kỳ; bọc `importStudentsExcel` xóa doc cũ trên server trước khi ghi batch 150 doc/lượt và báo lỗi rõ nếu Firestore gặp sự cố thay vì nuốt lỗi.
+    - **Tối ưu Tốc độ Tải Trang Quản lý Sinh viên (`StudentsPage.tsx`):** Trang bị **RAM Snapshot Cache**, **Single-flight Deduplication** (`_liveStudentsInFlight`), cơ chế **Stale-While-Revalidate** (`getCachedStudentsSync`), loại bỏ 8 lượt quét Firestore dư thừa, gộp lọc tìm kiếm phía client, debounce sự kiện 120ms, loại bỏ vòng lặp re-render vô hạn ở modal chi tiết sinh viên và thêm nút **Làm mới**.
 
 ---
 
-## III. TỔNG HỢP 14 PHÂN HỆ CHỨC NĂNG HOÀN TẤT 100%
+## III. TỔNG HỢP 12 PHÂN HỆ CHỨC NĂNG HOÀN TẤT 100%
 
 1. **Đăng nhập & Xác thực Kép (`LoginPage.tsx`):** Google Workspace SSO (`@tdtu.edu.vn`, `@student.tdtu.edu.vn`) & Firebase Auth; đã ẩn nút đăng nhập nhanh của vai trò Doanh nghiệp theo yêu cầu.
-2. **Bảng điều khiển Ra quyết định (`DashboardPage.tsx`):** Thống kê KPI theo học kỳ, hiển thị biểu đồ từ Chart Router; chỉ cho phép Giảng viên/Admin sử dụng chức năng "Quản lý biểu đồ" (ẩn đối với Sinh viên).
-3. **Quản lý & Thẩm định Sinh viên (`StudentsPage.tsx`):** Lọc chính xác theo từng học kỳ; popup Hồ sơ sinh viên phóng to 150% hiển thị đầy đủ 4 tab (*Cá nhân & Học tập*, *Doanh nghiệp & Tiến độ*, *Chứng chỉ*, *Lịch sử khai báo*) với đầy đủ thông tin MST, Vị trí, Mentor, SĐT Mentor, Địa chỉ công ty.
+2. **Bảng điều khiển Ra quyết định (`DashboardPage.tsx`):** Thống kê KPI theo học kỳ, hiển thị biểu đồ từ Chart Router; chỉ cho phép Giảng viên/Admin sử dụng chức năng "Quản lý biểu đồ" (ẩn đối với Sinh viên); tích hợp thông tin Cẩm nang & cảnh báo trạng thái cho `sv_ngoai_ky` qua `StudentEligibilityBanner.tsx`.
+3. **Quản lý & Thẩm định Sinh viên (`StudentsPage.tsx`):** Lọc chính xác theo từng học kỳ kết hợp **RAM Snapshot Cache + Stale-While-Revalidate** giúp hiển thị tức thì (<5ms từ RAM/Cache), tránh vòng lặp render ở modal 4 tab (*Cá nhân & Học tập*, *Doanh nghiệp & Tiến độ*, *Chứng chỉ*, *Lịch sử khai báo*) và bổ sung nút Làm mới đồng bộ trực tiếp.
 4. **Khai báo Nơi Thực tập & Đối soát MST (`DeclarationPage.tsx`):** Khai báo 1 hoặc 2 môn (KTCN/TSNN), tự động tra cứu MST và đồng bộ toàn bộ trường thông tin doanh nghiệp sang hồ sơ giảng viên xem; cơ chế cô lập dữ liệu theo học kỳ triệt để (chuyển sang HK mới form tự động làm mới, chuyển lại HK cũ giữ nguyên dữ liệu đã đăng ký); popup chi tiết phóng to 150%.
-5. **Chứng chỉ Ngoại ngữ Chuẩn TDTU (`CertificatesPage.tsx`):** Chuẩn hóa chính sách 1 sinh viên = 1 chứng chỉ ngoại ngữ duy nhất; khi khai báo mới sẽ tự động ghi đè thay thế chứng chỉ cũ đồng bộ cả bên sinh viên và giảng viên; tắt thông báo spam tới giảng viên khi sinh viên cập nhật; popup thẩm định phóng to 150%.
+5. **Chứng chỉ Ngoại ngữ Chuẩn TDTU (`CertificatesPage.tsx`):** Chuẩn hóa chính sách 1 sinh viên = 1 chứng chỉ ngoại ngữ duy nhất; khi khai báo mới sẽ tự động ghi đè thay thế chứng chỉ cũ đồng bộ cả bên sinh viên và giảng viên (bảo toàn lịch sử chứng chỉ khi xóa SV khỏi danh sách học kỳ); tắt thông báo spam tới giảng viên; popup thẩm định phóng to 150%.
 6. **Bảng tin Tuyển dụng & Đơn Ứng tuyển (`BulletinPage.tsx`):** Xóa sạch toàn bộ dữ liệu mẫu; đăng thông báo học vụ; sinh viên nộp đơn ứng tuyển qua Popup form (chọn CV hoặc link mới + Cover letter); quy trình phê duyệt tiếp nhận thực tập 2 bước (`[✓ Tiếp nhận]` / `[✕ Từ chối]`) tự động chuyển trạng thái "Đã có nơi TT" theo thời gian thực; huy hiệu hiển thị số lượng đơn nộp thực tế.
 7. **Bóc tách Email JD Tự động (`EmailJdPage.tsx`):** Danh sách email sạch, phân tích nội dung email forward từ doanh nghiệp thành bản nháp JD và duyệt công khai 1-Click.
-8. **Trung tâm In ấn A4 & Bộ 6 Biểu mẫu (`DocumentsPage.tsx`):** Xem trước và in ấn A4 chuẩn Nghị định 30/2020/NĐ-CP cho 6 mẫu báo cáo/biểu mẫu của Giảng viên và Khoa.
-9. **Quản lý Kế hoạch Học kỳ Động (`SemestersPage.tsx`):** Quản trị học kỳ linh hoạt, đồng bộ thời gian thực qua Firestore `tdtu_system/semesters` và BroadcastChannel tới toàn bộ các trang; cô lập hạn chót sinh viên theo đúng học kỳ tham gia.
-10. **Nhập Dữ liệu Excel Đầu kỳ (`ImportDataPage.tsx`):** Đọc file Excel đa sheet (KTCN & TSNN), tự động đồng bộ danh sách học kỳ động, cập nhật sĩ số sinh viên thực tế và nạp vào đúng học kỳ được chọn.
-11. **Kết xuất Báo cáo Excel (`ExportDataPage.tsx`):** Xuất danh sách tổng hợp, sinh viên cần hỗ trợ và báo cáo phân bổ doanh nghiệp ra file `.xlsx`.
-12. **Hồ sơ Cá nhân Sinh viên (`ProfilePage.tsx`):** Quản lý thông tin liên lạc, CV, kỹ năng và GPA cá nhân.
-13. **Cẩm nang & Quy chế Học phần (`HandbookPage.tsx`):** Tra cứu quy định 160h KTCN / 320h TSNN và hướng dẫn dành cho sinh viên.
-14. **Quản trị Tài khoản & Ma trận Prime RBAC (`AccountsPage.tsx`):** Quản lý danh sách người dùng và phân quyền toán học theo số nguyên tố.
+8. **Trung tâm In ấn A4 & Xuất Báo cáo Excel (`DocumentsPage.tsx`):** Hợp nhất xem trước và in ấn A4 chuẩn Nghị định 30/2020/NĐ-CP cho 6 mẫu báo cáo/biểu mẫu của Giảng viên/Khoa cùng chức năng kết xuất danh sách/báo cáo `.xlsx` theo học kỳ (phục vụ cả 2 tuyến `/documents` và `/export` qua `ModuleRegistry`).
+9. **Quản lý Kế hoạch Học kỳ Động (`SemestersPage.tsx`):** Quản trị học kỳ linh hoạt, đồng bộ thời gian thực qua Firestore `tdtu_system/semesters`, `tdtu_system/students_meta` và `SyncManager`; tự động tính lại sĩ số thực tế (KTCN, TSNN, song song, đã có nơi TT) và cô lập hạn chót sinh viên theo đúng học kỳ tham gia.
+10. **Nhập Dữ liệu Excel Đầu kỳ (`ImportDataPage.tsx`):** Đọc file Excel đa sheet (KTCN & TSNN), xóa sạch bản ghi cũ (cả legacy lẫn có prefix) trên server trước khi ghi batch 150 doc/lượt trong chế độ `replace`, cập nhật `students_meta` và thông báo lỗi rõ ràng nếu đồng bộ Firestore gặp sự cố.
+11. **Hồ sơ Cá nhân Sinh viên (`ProfilePage.tsx`):** Quản lý thông tin liên lạc, CV (`tdtu_student_cv`), kỹ năng và GPA cá nhân.
+12. **Quản trị Tài khoản & Ma trận Prime RBAC (`AccountsPage.tsx`):** Quản lý danh sách người dùng và phân quyền toán học theo số nguyên tố.
 
 ---
 
@@ -104,7 +112,7 @@ flowchart TD
 
 | Tiêu chuẩn Kiến trúc | Quy định đề ra ban đầu | Triển khai thực tế trong mã nguồn TypeScript | Đánh giá |
 | :--- | :--- | :--- | :---: |
-| **100% TypeScript** | Sử dụng TypeScript làm ngôn ngữ chính toàn dự án | Toàn bộ Backend (`.ts`), Frontend (22 tệp `.ts`/`.tsx`) và Adapter Demo (`.ts`) | **ĐẠT 100%** |
+| **100% TypeScript** | Sử dụng TypeScript làm ngôn ngữ chính toàn dự án | Toàn bộ Backend (`36` tệp `.ts` + `2` tệp test), Frontend (`21` module `.ts`/`.tsx` đóng gói `esbuild` + `index.css`) và Adapter Demo (`.ts`) | **ĐẠT 100%** |
 | **Microservices Architecture** | Tách biệt các dịch vụ độc lập, giao tiếp qua HTTP/REST, container hóa | Phân tách Frontend SPA & Backend API; Auth SSO, Inbound Email Webhook, Tax Lookup Adapter độc lập; Dockerfile multi-stage | **ĐẠT 100%** |
 | **Clean Modularity** | Clean Architecture 3 lớp: Router → Middleware → Controller → Service | Toàn bộ backend chia tầng nghiêm ngặt: `routes/`, `middlewares/`, `controllers/`, `services/`, `models/` | **ĐẠT 100%** |
 | **Chart Router** | Dispatcher định tuyến biểu đồ theo `widgetId` và `options` | `ChartRouter.dispatch()` tại `services/chart-router.ts` điều phối động tới các plugin | **ĐẠT 100%** |
@@ -119,21 +127,23 @@ flowchart TD
 Toàn bộ các thư mục tạm thời, tệp bản sao `.js`/`.jsx` và mã nguồn dư thừa (hơn 30.000 dòng) đã được dọn dẹp triệt để:
 * **Đã xóa 21 tệp `.jsx`/`.js` bản sao trùng lặp** trong `TDTU_DB_CNTT_System/frontend/src/`, chỉ giữ lại duy nhất bản chuẩn `.tsx`/`.ts`.
 * **Đã xóa các tệp khung mẫu Vite cũ không sử dụng:** `src/features/`, `AppHeader.tsx`, `main.jsx`, `main.tsx`, `vite.config.js`, `frontend/public/`.
-* **Đã hợp nhất tài liệu về một thư mục `docs/` duy nhất ở gốc dự án:** Gồm `API_SPECIFICATION.md`, `BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md`, `HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md`, `HUONG_DAN_TAO_CHART_PLUGIN_MOI.md`, `architecture/` và `plans/`.
+* **Đã hợp nhất tài liệu về một thư mục `docs/` duy nhất ở gốc dự án:** Gồm `API_SPECIFICATION.md`, `BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md`, `HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md`, `HUONG_DAN_TAO_CHART_PLUGIN_MOI.md`, `TAI_KHOAN_KIEM_THU.md`, `architecture/` và `plans/`.
 * **Đã xóa các tệp cấu hình trùng lặp:** `TDTU_DB_CNTT_System/Dockerfile`, `TDTU_DB_CNTT_System/docker-compose.yml`, `TDTU_DB_CNTT_System/deployment/`, `TDTU_DB_CNTT_System/functions/`, `start-demo.bat`, `TDTU_DB_CNTT_System/start-system.bat`.
 
 ---
 
 ## VI. KẾT QUẢ KIỂM THỬ VÀ MÔI TRƯỜNG HOẠT ĐỘNG
 
-1. **Kiểm thử Biên dịch & Thực thi Giao diện TypeScript (`.ts` / `.tsx`):**
-   - **22/22 tệp `.ts` và `.tsx`** của Frontend biên dịch và khởi chạy thành công 100% qua Babel 8 TSX Runtime (`0` lỗi cú pháp, `0` lỗi runtime).
-2. **Kiểm thử Tự động Backend, Prime RBAC, Security P0 & Adapter (`npm test`):**
-   - **28/28 bài kiểm thử tự động đạt 100% Pass**:
-     - `api.test.ts` (10/10 Pass): API Summary, Tra cứu MST, Bảng tin, Widget Registry & Chart Router, Anti-Spam Notification, Admin Broadcast, P0 Token 401 Unauthorized, P0 Anti-Mock-JWT 401, P0 Chặn Sinh viên quyền Admin 403, P0 Phân quyền Prime RBAC qua HTTP Router.
-     - `prime-rbac.test.ts` (3/3 Pass): Ma trận phân quyền số nguyên tố, Phép nhân/chia cấp/thu hồi quyền, Giải mã mặt nạ quyền.
+1. **Biên dịch & Đóng gói Frontend TypeScript (`npm run build`):**
+   - **21/21 module `.ts` / `.tsx`** trong `TDTU_DB_CNTT_System/frontend/src/` được đóng gói thành công qua `esbuild` (`scripts/build-frontend.mjs`) tạo `TDTU_DB_CNTT_System/frontend/dist/app.bundle.js` (`1293.3 KB raw -> 906.8 KB bundled`) và vượt qua `node --check` với `0` lỗi cú pháp.
+   - Hệ thống vận hành 12 trang `.tsx` cốt lõi và điều phối hợp nhất các tuyến đường (`/documents`, `/export`, `/dashboard`, v.v.) thông qua `ModuleRegistry` (`TDTU_DB_CNTT_System/frontend/src/config/module-registry.ts`).
+2. **Kiểm thử Tự động Backend, Prime RBAC, Cô lập Học kỳ & Adapter (`npm test`):**
+   - **36/36 bài kiểm thử tự động đạt 100% Pass (`0` lỗi, `0` bỏ qua):**
+     - `api.test.ts` (14/14 Pass): API Summary, Tra cứu MST, Bảng tin, Widget Registry & Chart Router, Anti-Spam Notification, Admin Broadcast, P0 Token 401 Unauthorized, P0 Anti-Mock-JWT 401, P0 Chặn SV quyền Admin 403, P0 Phân quyền Prime RBAC qua HTTP Router, P0/P1 Bảo vệ hồ sơ cá nhân chéo giữa các SV 403, P1 Giới hạn SV Ngoài kỳ 403, Cô lập học kỳ khi `bulk-import replace` HK2 không ảnh hưởng HK1, và Xóa SV khỏi học kỳ active tự chuyển về `sv_ngoai_ky` trên `/api/auth/me` & SSO.
+     - `prime-rbac.test.ts` (7/7 Pass): Ma trận chuẩn của Thầy Phúc, phép toán Cấp/Gỡ quyền, giải mã mặt nạ, **kiểm thử vét cạn 480 tổ hợp (5 vai trò × 12 phân hệ × 8 thừa số nguyên tố)**, tính lũy đẳng/giao hoán, giá trị biên và chuẩn hóa học phần (`normalizeStudentCourse`).
      - `demo.test.ts` (15/15 Pass): Đối chiếu kiến trúc With Router vs No Router, Chuẩn hóa Adapter Schema V1 & V2, Xử lý lỗi Upstream 502/504.
+   - **Kiểm thử Tích hợp Frontend Bundle trên Node VM:** Vượt qua kịch bản giả lập Firestore kiểm chứng thứ tự ưu tiên document có prefix trước legacy `<sid>`, xóa sạch doc cũ khi `replace` (hỗ trợ cả MSSV chứa `/` và `_`), bảo toàn danh sách rỗng sau `clearAllStudents`, chặn tạo zombie doc, và ném lỗi rõ khi Firestore ghi thất bại (`V125_VM_VERIFICATION_PASSED`).
 3. **Môi trường hoạt động hiện tại:**
-   - **Local Web Server:** `http://localhost:3000` (Khởi chạy bằng `npm start` hoặc nhấp đúp `start-local.bat`).
-   - **Cloud Production:** https://dashboard-39cf8.web.app (Firebase Hosting — 32 tệp tinh gọn).
-   - **Mã nguồn Git:** Nhánh `522H0045`.
+   - **Local Web Server:** `http://localhost:3000` (Khởi chạy bằng `npm start` hoặc nhấp đúp `start-local.bat`, có endpoint `GET /api/health`).
+   - **Cloud Production:** https://dashboard-39cf8.web.app (Firebase Hosting + Firestore Rules cập nhật bản `v125`).
+   - **Mã nguồn Git:** Nhánh `522H0045` (`c331349`).

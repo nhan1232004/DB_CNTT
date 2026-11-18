@@ -3,14 +3,17 @@ GHI CHÚ TÀI KHOẢN KIỂM THỬ HỆ THỐNG CỔNG THỰC TẬP KHOA CNTT - 
 (TDTU INTERNSHIP PORTAL & DECISION SUPPORT SYSTEM - HK1 2026-2027)
 ================================================================================
 
-1. HƯỚNG DẪN ĐĂNG NHẬP ĐỂ KIỂM THỬ
+1. HƯỚNG DẪN ĐĂNG NHẬP ĐỂ KIỂM THỬ (PHIÊN BẢN v3.2.0 / BUILD v125 - 18/11/2026)
 --------------------------------------------------------------------------------
-- Tại màn hình Đăng nhập, chọn tab thứ 2: "Tài khoản Nội bộ TDTU"
-  (hoặc sử dụng tab "Google TDTU SSO" nếu đăng nhập bằng email Google thật do
-  Trường ĐH Tôn Đức Thắng cấp có đuôi @tdtu.edu.vn hoặc @student.tdtu.edu.vn).
-- LƯU Ý BẢO MẬT:
+- Tại màn hình Đăng nhập, chọn đúng tab "Sinh viên" hoặc "Giảng viên / Nội bộ"
+  và nhập Email + Mật khẩu nội bộ (hoặc nhấn nút "Đăng nhập bằng Google" với
+  tài khoản thật thuộc tên miền @tdtu.edu.vn / @student.tdtu.edu.vn).
+- LƯU Ý BẢO MẬT & PHÂN QUYỀN ĐỘNG:
   + Mọi tài khoản Gmail cá nhân (@gmail.com) hoặc ngoài tên miền TDTU đều bị
     chặn tuyệt đối ở cả Google SSO và đăng nhập mật khẩu.
+  + Trạng thái "Trong kỳ" (sv_trong_ky) / "Ngoài kỳ" (sv_ngoai_ky) của sinh
+    viên được đối chiếu trực tiếp từ danh sách thực tế của học kỳ active
+    (xóa SV khỏi kỳ thì tài khoản tự chuyển về Ngoài kỳ).
   + Không tự động nhảy vào bất kỳ tài khoản mẫu nào khi hủy/lỗi đăng nhập.
   + Không thể chuyển đổi tài khoản hoặc nâng quyền bằng cách sửa URL hay sửa
     LocalStorage (hệ thống tự động kiểm tra chữ ký phiên `_sig` và đăng xuất).
@@ -106,7 +109,7 @@ Thực tập, Quy chế 320 giờ và Bảng tin tuyển dụng để chuẩn b�
    - MSSV     : 52100999
 
 ================================================================================
-3. KỊCH BẢN KIỂM THỬ ĐẶC TRƯNG MỚI NHẤT (PHIÊN BẢN v3.2.0)
+3. KỊCH BẢN KIỂM THỬ ĐẶC TRƯNG MỚI NHẤT (PHIÊN BẢN v3.2.0 - BUILD v125)
 ================================================================================
 
 A. KIỂM THỬ CÔ LẬP KHAI BÁO THỰC TẬP THEO HỌC KỲ (SINH VIÊN):
@@ -120,4 +123,9 @@ B. KIỂM THỬ ĐỒNG BỘ REAL-TIME HAI CHIỀU (SINH VIÊN <-> GIẢNG VIÊN
    1. Mở Cửa sổ 1: Đăng nhập Sinh viên 522h0045@student.tdtu.edu.vn.
    2. Mở Cửa sổ 2: Đăng nhập Giảng viên duonghuuphuc@tdtu.edu.vn, vào trang Sinh viên.
    3. Sinh viên gửi phiếu khai báo -> Giảng viên nhận thông tin tức thì không reload.
+
+C. KIỂM THỬ NHẬP FILE EXCEL THAY THẾ (REPLACE) & XÓA SV NGOÀI KỲ (v125):
+   1. Admin nạp Excel danh sách mới theo chế độ "Thay thế toàn bộ": nhấn F5 tải
+      lại trang và kiểm tra danh sách vẫn giữ đúng file mới (không quay về file cũ).
+   2. Xóa 1 SV khỏi học kỳ active -> đăng nhập lại SV đó -> tự chuyển sang Ngoài kỳ.
 ================================================================================

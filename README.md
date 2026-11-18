@@ -7,13 +7,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25_.ts_%2F_.tsx-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-v10_Hosting_%26_Auth-FFCA28?logo=firebase)](https://firebase.google.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![Automated Tests](https://img.shields.io/badge/Automated_Tests-28%2F28_Passed-16a34a)](#)
+[![Automated Tests](https://img.shields.io/badge/Automated_Tests-36%2F36_Passed-16a34a)](#)
 [![Git Branch](https://img.shields.io/badge/Git_Branch-522H0045-003087)](#)
 
 - **Địa chỉ ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app
 - **Máy chủ phát triển cục bộ (Local Server):** `http://localhost:3000`
-- **Nhánh mã nguồn chính thức:** `522H0045`
-- **Phiên bản phát hành:** `v3.2.0 (Bản cập nhật hoàn thiện: 06/11/2026 · 100% TypeScript · UI/UX Nâng tầm & Cô lập Học kỳ)`
+- **Nhánh mã nguồn chính thức:** `522H0045` (`c331349`)
+- **Phiên bản phát hành:** `v3.2.0 · Build v125 (Cập nhật: 18/11/2026 · 100% TypeScript · esbuild Bundle · Cô lập Học kỳ Toàn diện & Tối ưu Firestore)`
 
 ---
 
@@ -40,8 +40,8 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
 ```text
 +-----------------------------------------------------------------------------+
 |                           TRÌNH DUYỆT KHÁCH (CLIENT)                        |
-|        React 18 Single Page Application (100% TypeScript: 22 Modules)       |
-|   Tailwind CSS Enterprise DS + TabErrorBoundary + LocalStorage / In-Memory  |
+|   React 18 SPA (21 Modules bundled qua esbuild · Router & ModuleRegistry)   |
+|   Tailwind CSS · TdtuStore · SyncManager (3 Tầng) · RAM Snapshot + SWR      |
 +-----------------------------------------------------------------------------+
                |                                            ^
                | HTTP / JSON API (Port 3000)                | Đồng bộ Real-time
@@ -101,19 +101,19 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
    - Ứng dụng Định lý Cơ bản của Số học: Mỗi quyền hạn được đại diện bằng một số nguyên tố độc lập (`Read=2`, `Create=3`, `Update=5`, `Delete=7`, `ScopeAll=11`, `Import=13`, `Export=17`, `Approve=19`).
    - Phân quyền cho một vai trò là phép Nhân các thừa số nguyên tố. Kiểm tra quyền là phép Chia hết (Modulo 0). Phương pháp này mang lại tốc độ xử lý 0ms và khả năng mở rộng không giới hạn mà không gây xung đột ma trận quyền.
 
-5. **Hệ thống Đồng bộ Đa thiết bị & Bộ nhớ đệm 2 tầng:**
-   - Kết hợp Cache In-Memory (<0.5ms) và LocalStorage với Firestore Real-time listener (`onSnapshot`).
-   - Khi sinh viên khai báo trên thiết bị di động, giảng viên xem trên máy tính để bàn được cập nhật ngay lập tức mà không cần tải lại trang.
+5. **Hệ thống Đồng bộ Đa thiết bị & RAM Snapshot Store (`SWR` + `SyncManager`):**
+   - Kết hợp `SyncManager` 3 tầng (`BroadcastChannel` + `localStorage` event + Firestore `onSnapshot`), Snapshot Cache trong RAM (`_studentsSnapshotMap`, `_declsSnapshotMap`, `_certsSnapshotList`, `_cvSnapshotMap`, `_notesSnapshotMap`) và **Single-flight Deduplication** giúp tải danh sách tức thì và đồng bộ xuyên thiết bị.
+   - Tự động thăm dò máy chủ qua `GET /api/health` (`ApiClient.probeBackend()`) để bỏ qua HTTP call thừa khi chạy chế độ Static Firebase Hosting.
 
-6. **Khả năng Cách ly Lỗi Giao diện (TabErrorBoundary):**
-   - Vùng nội dung giao diện được bảo vệ bởi bộ đệm `TabErrorBoundary`. Nếu một tab gặp sự cố tạm thời khi tải dữ liệu mạng, thanh menu Sidebar và Navbar vẫn hoạt động 100%, tuyệt đối không gây sập ứng dụng hoặc hủy phiên đăng nhập của người dùng.
+6. **Khả năng Cách ly Lỗi Giao diện (`TabErrorBoundary`) & SPA Deep-Linking Router:**
+   - Vùng nội dung được bảo vệ bởi `TabErrorBoundary`, định tuyến URL sạch qua `ModuleRegistry` (`module-registry.ts`), không gây sập ứng dụng khi có sự cố cục bộ.
 
-7. **Cô lập Dữ liệu Khai báo Thực tập theo Học kỳ (Semester Scoped Isolation):**
-   - Triệt tiêu hoàn toàn lỗi chồng chéo dữ liệu giữa các học kỳ đào tạo. Khi sinh viên đăng ký thực tập ở Học kỳ 1 nhưng chuyển sang Học kỳ 2, giao diện tự động khởi tạo form khai báo mới tinh (trạng thái "Chưa khai báo", danh sách rỗng), không bị lưu đọng thông tin của kỳ trước. Dữ liệu được cô lập theo bộ khóa cục bộ `tdtu_decl_${activeSemester}_${studentId}` và bảo toàn nguyên vẹn khi quay lại Học kỳ 1.
+7. **Cô lập Học kỳ Toàn diện (SQLite + Firestore + Client Guard - `v124`–`v125`):**
+   - Backend cô lập danh sách theo từng học kỳ qua bảng `semester_enrollments` và `system_state`; trạng thái **Trong kỳ (`sv_trong_ky`) / Ngoài kỳ (`sv_ngoai_ky`)** được tính động theo danh sách thực tế ở cả SQLite (`/api/auth/me`, SSO) lẫn Client (`ApiClient.isStudentEnrolledInSemester`), đồng thời bảo toàn chứng chỉ lịch sử khi xóa SV khỏi kỳ.
+   - Firestore chuẩn hóa document ID `${semester}_${sid}` kèm siêu dữ liệu `tdtu_system/students_meta` và `tdtu_student_cv`; quy trình import chế độ `replace` xóa sạch bản cũ trên server trước khi ghi batch mới (tối đa 150 doc/batch), không nuốt lỗi Firestore và không bị legacy doc `<sid>` ghi đè ngược khi tải lại trang.
 
-8. **Giao diện Hiện đại "Một tầm cao mới" & Cơ chế Cache-Buster Động:**
-   - Hệ thống giao diện React 18 được trau chuốt chuẩn mực doanh nghiệp với hiệu ứng hover mượt mà, glassmorphism, bảng màu TDTU nhận diện thương hiệu cao cấp.
-   - Cơ chế Cache-Busting theo phiên bản phát hành (`?v=20261106_v119_ui_enhancements`) trên toàn bộ 21 TypeScript script tags giúp trình duyệt người dùng tự động cập nhật ngay lập tức mà không bao giờ bị kẹt mã nguồn cũ.
+8. **Đóng gói `esbuild` Pre-compiled Bundle & Cache-Buster Động (`v125`):**
+   - Toàn bộ 21 module TypeScript Frontend được biên dịch trước thành `dist/app.bundle.js` qua `npm run build` (`scripts/build-frontend.mjs`), gắn tham số `?v=20261117_v125_firestore_rules_import_fix` trên `index.html` để trình duyệt cập nhật ngay mã nguồn mới nhất.
 
 ---
 
@@ -126,16 +126,16 @@ Hệ thống giải quyết tập trung các nghiệp vụ quản lý cho hai h�
 | :--- | :--- | :---: | :--- |
 | **Backend Runtime** | Node.js (`v22+` / `v24+`) | Native Engine | Thực thi trực tiếp TypeScript bằng cờ `--experimental-strip-types`, HTTP server tích hợp sẵn qua module chuẩn `node:http`. Hoàn toàn không phụ thuộc Express/NestJS. |
 | **Ngôn ngữ chủ đạo** | TypeScript (`.ts` / `.tsx`) | `v5.5+` | Chuẩn hóa Type an toàn 100% cho cả Backend APIs, Frontend Views, Prime RBAC và Adapter Code. |
-| **Cơ sở dữ liệu cục bộ** | SQLite (`node:sqlite`) | Embedded Native | Sử dụng module `node:sqlite` tích hợp sẵn trong Node.js (DatabaseSync), chế độ WAL (Write-Ahead Logging), lưu trữ file `db_cntt.sqlite` tốc độ cao. |
-| **Cơ sở dữ liệu thời gian thực** | Google Cloud Firestore | `v10.13.0` Compat | Đồng bộ dữ liệu real-time qua listener `onSnapshot` giữa Giảng viên và Sinh viên (học kỳ, thông báo, khai báo nơi thực tập, chứng chỉ, đơn ứng tuyển JD). |
-| **Xác thực người dùng** | Google Workspace SSO & Firebase Auth | `v10.13.0` Compat | Xác thực Google SSO bảo mật cao, bắt buộc tên miền nội bộ `@tdtu.edu.vn` (Giảng viên) và `@student.tdtu.edu.vn` (Sinh viên). |
-| **Frontend Framework** | React 18 & ReactDOM 18 | CDN Production | Xây dựng giao diện Single Page Application (SPA) dạng Component-driven, quản lý State cục bộ linh hoạt. |
-| **Trình thông dịch Frontend** | Babel Standalone (`@babel/standalone`) | CDN Runtime | Thông dịch trực tiếp mã nguồn TSX/TypeScript tại trình duyệt với preset `tsx`, tích hợp tham số Cache-Buster (`v20261106_v119`) giúp cập nhật giao diện lập tức không bị đọng cache. |
+| **Cơ sở dữ liệu cục bộ** | SQLite (`node:sqlite`) | Embedded Native | Sử dụng module `node:sqlite` (WAL mode), tách riêng bảng `semester_enrollments` và `system_state` để cô lập dữ liệu sinh viên theo từng học kỳ. |
+| **Cơ sở dữ liệu thời gian thực** | Google Cloud Firestore | `v10.13.0` Compat | Đồng bộ dữ liệu real-time (`tdtu_students`, `tdtu_system/students_meta`, `tdtu_system/semesters`, `tdtu_declarations`, `tdtu_certificates`, `tdtu_student_cv`) kết hợp RAM Snapshot & SWR. |
+| **Xác thực người dùng** | Google Workspace SSO & Firebase Auth | `v10.13.0` Compat | Xác thực Google SSO & nội bộ TDTU (`@tdtu.edu.vn`, `@student.tdtu.edu.vn`), tự đối chiếu trạng thái `sv_trong_ky` / `sv_ngoai_ky` theo học kỳ active. |
+| **Frontend Framework** | React 18 & ReactDOM 18 | CDN Production | Xây dựng giao diện Single Page Application (SPA) định tuyến qua `ModuleRegistry`, quản lý trạng thái đồng bộ bằng `TdtuStore`. |
+| **Đóng gói Frontend** | `esbuild` (`scripts/build-frontend.mjs`) | `v0.28.2` | Biên dịch trước 21 module `.ts`/`.tsx` thành `dist/app.bundle.js` (~906.8 KB) trong <300ms, kèm tham số Cache-Buster `v20261117_v125_firestore_rules_import_fix`. |
 | **Định dạng giao diện** | Tailwind CSS Enterprise | CDN | Bộ nhận diện chuẩn Khoa CNTT - ĐH Tôn Đức Thắng: Navy `#003087`, Red `#dc2626`, Dark Gray `#1f2937`, White `#ffffff`. |
 | **Xử lý Bảng tính Excel** | SheetJS (`xlsx`) | `v0.18.5` CDN | Phân tích file Excel (.xlsx, .xls, .csv), tự động nhận diện đa sheet môn học (KTCN & TSNN) và xuất báo cáo học vụ trực tiếp tại Client. |
-| **Đồng bộ đa Tab** | HTML5 BroadcastChannel API | Native Browser | Đồng bộ trạng thái tức thì giữa các tab trình duyệt (`tdtu_realtime_sync`). |
-| **Lưu trữ & Triển khai Web** | Firebase Hosting | Google Cloud | Triển khai Frontend SPA toàn cầu với chứng chỉ SSL tự động tại `https://dashboard-39cf8.web.app`. |
-| **Kiểm thử tự động** | Node.js Test Runner (`node --test`) | Native Runner | Bộ test suite 24 tests tự động hóa (Backend API, Prime RBAC, Reporting Adapter) chạy cực nhanh trong ~1.3s, không cần Jest/Mocha. |
+| **Đồng bộ đa Tab** | `SyncManager` 3 Tầng | BroadcastChannel + Storage | Đồng bộ trạng thái tức thì giữa các tab trình duyệt (`tdtu_realtime_sync`) và sự kiện hệ thống (`tdtu_students_updated`, `tdtu_semesters_updated`). |
+| **Lưu trữ & Triển khai Web** | Firebase Hosting & Rules | Google Cloud | Triển khai Frontend SPA + Firestore Security Rules toàn cầu tại https://dashboard-39cf8.web.app. |
+| **Kiểm thử tự động** | Node.js Test Runner (`node --test`) | Native Runner | Bộ test suite **36/36 tests** tự động hóa (`14` API/Security/Semester + `7` Prime RBAC/480 assertions + `15` Adapter) chạy trong ~1.4s. |
 | **Mẫu kiến trúc mở rộng** | Chart Router & Adapter Pattern | In-House Architecture | Cơ chế cắm-và-chạy (Plug-and-Play) theo nguyên lý OCP, hỗ trợ thêm mới biểu đồ độc lập và chuẩn hóa đa định dạng dữ liệu (Schema V1 / Schema V2). |
 
 ---
@@ -173,6 +173,7 @@ Dashoard_TSNN-main/
 |   |   |   |   `-- http-router.ts
 |   |   |   |-- services/                          # Các phân hệ dịch vụ nghiệp vụ độc lập
 |   |   |   |   |-- charts/                        # Thư mục chứa các Plugin Biểu đồ (OCP)
+|   |   |   |   |   |-- index.ts                   # Tự động nạp & đăng ký các Chart Plugin
 |   |   |   |   |   |-- major-distribution.plugin.ts
 |   |   |   |   |   |-- salary-trend.plugin.ts
 |   |   |   |   |   |-- status-pie.plugin.ts
@@ -190,44 +191,45 @@ Dashoard_TSNN-main/
 |   |   |   |   |-- tax-lookup.adapter.ts          # Tra cứu pháp lý doanh nghiệp qua MST
 |   |   |   |   `-- widget-registry.ts             # Danh mục biểu đồ Singleton
 |   |   |   |-- utils/
-|   |   |   |   `-- response.ts
+|   |   |   |   |-- response.ts
+|   |   |   |   `-- student-helper.ts              # Chuẩn hóa thông tin & học kỳ sinh viên
 |   |   |   `-- server.ts                          # Điểm khởi chạy Backend Server (Port 3000)
-|   |   |-- tests/                                 # Bộ kiểm thử tự động API và Prime RBAC (9/9 Pass)
+|   |   |-- tests/                                 # Bộ kiểm thử tự động API và Prime RBAC (21/21 Pass)
 |   |   |   |-- api.test.ts
 |   |   |   `-- prime-rbac.test.ts
 |   |   |-- package.json
 |   |   `-- tsconfig.json
 |   `-- frontend/                                  # React 18 TypeScript Single Page Application
+|       |-- data/                                  # Dữ liệu mẫu seed HK1 & Excel mẫu KTCN/TSNN
+|       |-- dist/
+|       |   `-- app.bundle.js                      # Production bundle (21 module đóng gói bởi esbuild)
 |       |-- src/
 |       |   |-- assets/                            # Logo TDTU và hình ảnh hệ thống
 |       |   |-- components/
 |       |   |   |-- common/                        # AdminNotificationModal, Navbar, Sidebar
 |       |   |   `-- student/                       # StudentEligibilityBanner
 |       |   |-- config/
-|       |   |   `-- firebase.config.ts             # Kết nối Firebase Auth và Cloud Firestore
-|       |   |-- pages/                             # 14 Trang chức năng nghiệp vụ (.tsx)
+|       |   |   |-- firebase.config.ts             # Kết nối Firebase Auth và Cloud Firestore
+|       |   |   `-- module-registry.ts             # SPA Router, ModuleRegistry & 3-Tier SyncManager
+|       |   |-- pages/                             # 12 Trang chức năng nghiệp vụ (.tsx)
 |       |   |   |-- AccountsPage.tsx               # Cài đặt hệ thống và Prime RBAC
 |       |   |   |-- BulletinPage.tsx               # Bảng tin tuyển dụng và Thông báo học vụ
 |       |   |   |-- CertificatesPage.tsx           # Hồ sơ chứng chỉ ngoại ngữ tốt nghiệp B1
 |       |   |   |-- DashboardPage.tsx              # Bảng điều khiển ra quyết định
 |       |   |   |-- DeclarationPage.tsx            # Khai báo thực tập 3 nhánh và tra cứu MST
-|       |   |   |-- DocumentsPage.tsx              # Trung tâm in ấn A4 (Bộ 6 biểu mẫu)
+|       |   |   |-- DocumentsPage.tsx              # Trung tâm in ấn A4 (Bộ 6 biểu mẫu) & Xuất Excel
 |       |   |   |-- EmailJdPage.tsx                # Phê duyệt JD tự động từ Email
-|       |   |   |-- ExportDataPage.tsx             # Xuất báo cáo học vụ Excel
-|       |   |   |-- HandbookPage.tsx               # Cẩm nang thực tập và quy chế 320 giờ
 |       |   |   |-- ImportDataPage.tsx             # Nạp danh sách sinh viên Excel đầu kỳ
 |       |   |   |-- LoginPage.tsx                  # Đăng nhập Google SSO và Firebase
 |       |   |   |-- ProfilePage.tsx                # Hồ sơ cá nhân sinh viên và link CV
 |       |   |   |-- SemestersPage.tsx              # Quản lý kế hoạch học kỳ và hạn chót
-|       |   |   `-- StudentsPage.tsx               # Quản lý danh sách 91 sinh viên thực tế
+|       |   |   `-- StudentsPage.tsx               # Quản lý sinh viên đa kỳ, cache SWR & Modal 4 tab
 |       |   |-- services/
-|       |   |   |-- api.client.ts                  # HTTP Client, Firestore Sync và Cache
+|       |   |   |-- api.client.ts                  # HTTP Client, Firestore Sync, Snapshot & SWR Cache
 |       |   |   `-- prime-rbac.ts                  # Kiểm tra quyền phía Client
-|       |   |-- types/
-|       |   |   `-- index.ts                       # Định nghĩa Type hợp đồng dùng chung
-|       |   |-- App.tsx                            # Bộ định tuyến tổng và TabErrorBoundary
+|       |   |-- App.tsx                            # Bộ định tuyến tổng, TdtuStore và TabErrorBoundary
 |       |   `-- index.css                          # Stylesheet chuẩn TDTU và Media Print A4
-|       |-- index.html                             # Host HTML nạp 22 TypeScript Modules
+|       |-- index.html                             # Host HTML nạp ./dist/app.bundle.js (v125)
 |       |-- package.json
 |       `-- tsconfig.json
 |-- Adapter_Code/
@@ -246,6 +248,8 @@ Dashoard_TSNN-main/
 |       |-- tests/
 |       |   `-- demo.test.ts                       # 15 Bài kiểm thử tự động Adapter
 |       `-- README.md
+|-- scripts/
+|   `-- build-frontend.mjs                         # Script esbuild đóng gói 21 module Frontend
 |-- docs/                                          # Hệ thống tài liệu kỹ thuật và bàn giao
 |   |-- architecture/                              # Sơ đồ thiết kế Sequence và Routing Flow
 |   |-- plans/                                     # Kế hoạch phát triển dự án
@@ -280,7 +284,7 @@ start-local.bat
 ```
 Tệp lệnh sẽ thực hiện các bước tự động:
 1. Kiểm tra phiên bản Node.js hiện tại của máy tính.
-2. Thực thi toàn bộ 24 bài kiểm thử tự động (Unit Tests).
+2. Thực thi toàn bộ **36 bài kiểm thử tự động** (Unit Tests & Integration).
 3. Khởi động Backend Server tại cổng 3000 phục vụ cả API và Giao diện Web.
 4. Tự động mở trình duyệt mặc định tại địa chỉ `http://localhost:3000`.
 
@@ -289,10 +293,13 @@ Tệp lệnh sẽ thực hiện các bước tự động:
 # Bước 1: Chuyển vào thư mục gốc của dự án
 cd Dashoard_TSNN-main
 
-# Bước 2: Chạy toàn bộ bộ kiểm thử tự động (Backend API, Prime RBAC, Chart Adapter)
+# Bước 2: Đóng gói production bundle Frontend (esbuild) nếu vừa chỉnh sửa UI
+npm run build
+
+# Bước 3: Chạy toàn bộ bộ kiểm thử tự động (Backend API, Prime RBAC, Chart Adapter)
 npm test
 
-# Bước 3: Khởi chạy máy chủ ứng dụng
+# Bước 4: Khởi chạy máy chủ ứng dụng
 npm start
 ```
 Mở trình duyệt và truy cập địa chỉ: **`http://localhost:3000`**
@@ -313,12 +320,12 @@ Hệ thống áp dụng nghiêm ngặt cơ chế phân quyền Prime RBAC và ng
 | :--- | :--- | :--- | :---: | :--- |
 | **1. Admin / BCN Khoa** | GV. Dương Hữu Phúc | `duonghuuphuc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền hệ thống: quản lý học kỳ, cấu hình hạn chót, duyệt thông báo toàn trường, quản lý biểu đồ Dashboard, phân quyền Prime RBAC, in 6 biểu mẫu A4 |
 | **1. Admin phụ** | GV. Phạm Văn C | `phamvanc@tdtu.edu.vn` | `Admin@123456` | Toàn quyền quản trị học vụ và xuất báo cáo |
-| **2. Giảng viên Cố vấn** | GV. Nguyễn Văn A | `nguyenvana@tdtu.edu.vn` | `Lecturer@123456` | Quản lý 91 sinh viên, xem tiến độ và nơi thực tập SV khai báo, tra cứu chứng chỉ tiếng Anh, mở link CV, duyệt JD từ email, xuất 6 mẫu in A4 |
-| **2. Giảng viên Cố vấn** | GV. Trần Minh Lan | `tranminhlan@tdtu.edu.vn` | `Lecturer@123456` | Thẩm định hồ sơ sinh viên theo chuyên ngành Hệ thống thông tin và Mạng |
-| **3. Sinh viên trong kỳ** | Nguyễn Hữu Nhân | `522h0045@student.tdtu.edu.vn` | `Student@123456` | Sinh viên đủ điều kiện học song song 2 học phần KTCN và TSNN, khai báo nơi thực tập và tra cứu MST, nộp chứng chỉ B1, xem Cẩm nang |
-| **3. Sinh viên thực tế** | Võ Duy Trí | `51900839@student.tdtu.edu.vn` | `Student@123456` | Sinh viên thực tế thuộc tập dữ liệu 91 SV (Lớp 19050402 - Ngành HTTT) |
-| **3. Sinh viên cần hỗ trợ** | Nguyễn Minh Anh | `522h0001@student.tdtu.edu.vn` | `Student@123456` | Đã chọn nhánh "Cần Khoa hỗ trợ điều phối", gửi nguyện vọng và link CV |
-| **4. Sinh viên ngoài kỳ** | Nguyễn Văn Ngoài Kỳ | `52100999@student.tdtu.edu.vn` | `Student@123456` | Sinh viên chưa có tên trong danh sách học phần kỳ này; hệ thống tự động tinh gọn giao diện chỉ còn 3 mục: Bảng điều khiển, Hồ sơ cá nhân, Bảng tin |
+| **2. Giảng viên Cố vấn** | GV. Nguyễn Văn A | `nguyenvana@tdtu.edu.vn` | `Gv@123456` / `Lecturer@123456` | Quản lý danh sách SV theo học kỳ, xem tiến độ và nơi thực tập SV khai báo, tra cứu chứng chỉ tiếng Anh, mở link CV, duyệt JD từ email, xuất 6 mẫu in A4 |
+| **2. Giảng viên Cố vấn** | GV. Trần Minh Lan | `tranminhlan@tdtu.edu.vn` | `Gv@123456` / `Lecturer@123456` | Thẩm định hồ sơ sinh viên theo chuyên ngành Hệ thống thông tin và Mạng |
+| **3. Sinh viên trong kỳ** | Nguyễn Hữu Nhân | `522h0045@student.tdtu.edu.vn` | `Sv@123456` / `Student@123456` | Trạng thái Trong kỳ/Ngoài kỳ tự động đối chiếu theo danh sách học kỳ active; khai báo nơi thực tập, MST, nộp chứng chỉ B1 |
+| **3. Sinh viên thực tế** | Võ Duy Trí | `51900839@student.tdtu.edu.vn` | `Sv@123456` / `Student@123456` | Sinh viên thực tế thuộc tập dữ liệu mặc định HK1 (Lớp 19050402 - Ngành HTTT) |
+| **3. Sinh viên cần hỗ trợ** | Nguyễn Minh Anh | `522h0001@student.tdtu.edu.vn` | `Sv@123456` / `Student@123456` | Gửi nguyện vọng Khoa hỗ trợ điều phối và link CV |
+| **4. Sinh viên ngoài kỳ** | Nguyễn Văn Ngoài Kỳ | `52100999@student.tdtu.edu.vn` | `Sv@123456` / `Student@123456` | Sinh viên chưa có tên trong danh sách học phần kỳ này (hoặc vừa bị xóa khỏi kỳ); hệ thống tự động chuyển về `sv_ngoai_ky`, khóa khai báo mới |
 
 ---
 
@@ -405,34 +412,26 @@ Sau khi tạo xong file, biểu đồ mới sẽ ngay lập tức xuất hiện 
 
 ## 9. BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITES)
 
-Hệ thống tích hợp sẵn 28 bài kiểm thử tự động (Unit Tests, Security Tests và Integration Tests) chạy trực tiếp qua Node.js native test runner:
+Hệ thống tích hợp sẵn **36 bài kiểm thử tự động** (Unit Tests, Security Tests, Cô lập Học kỳ và Integration Tests) chạy trực tiếp qua Node.js native test runner:
 
 ```bash
 npm test
 ```
 
-### Kết quả kiểm thử thực tế (28/28 Tests Passed):
-- **Phân hệ Reporting Adapter Demo (15 tests):**
-  - Kiểm tra widget discovery và tra cứu registry.
-  - Kiểm tra tính đồng nhất dữ liệu giữa Schema V1 và Schema V2 khi đi qua Adapter.
+### Kết quả kiểm thử thực tế (36/36 Tests Passed):
+- **Phân hệ Reporting Adapter Demo (15/15 tests):**
+  - Kiểm tra widget discovery và tra cứu registry (`No Router` vs `With Router`).
+  - Kiểm tra tính đồng nhất dữ liệu giữa Schema V1 và Schema V2 khi đi qua `CompanyAdapter`.
   - Kiểm tra khả năng tái sử dụng Adapter cho cả hai loại biểu đồ Pie và Bar.
-  - Kiểm tra cơ chế xử lý mã lỗi: 404 Not Found, 502 Bad Gateway khi upstream sai định dạng, 503 Service Unavailable, và 504 Gateway Timeout.
-  - Kiểm tra sự tương đồng về kết quả Chart JSON giữa mô hình Có Router và Không Router.
-- **Phân hệ Backend API Core & Security P0 (10 tests):**
-  - Test 1: API Summary thống kê tổng quan đợt thực tập.
-  - Test 2: API Tra cứu pháp lý Mã số thuế doanh nghiệp (MST VNG `0303882213`).
-  - Test 3: API Bảng tin tuyển dụng và thông báo học vụ.
-  - Test 4: API Widget Registry và Chart Router dispatch.
-  - Test 5: API Notification Anti-Spam (Bỏ qua thông báo trùng lặp trong 20 giây).
-  - Test 6: API Notification Admin Broadcast và xem trước số lượng người nhận.
-  - Test 7: **P0 Security** - Từ chối truy cập 401 khi không có Token (Unauthorized trên `/api/students`, `DELETE /api/students`, `/api/certificates`).
-  - Test 8: **P0 Security** - Chặn triệt để token giả mạo `mock_jwt_` và raw Base64 unverified (401).
-  - Test 9: **P0 Security** - Chặn sinh viên truy cập chức năng Admin (403 Forbidden).
-  - Test 10: **P0 Security** - Phân quyền Prime RBAC thực thi qua HTTP Router (403 với sinh viên, 200 với giảng viên).
-- **Phân hệ Phân quyền Prime RBAC (3 tests):**
-  - Test 1: Kiểm tra khớp 100% ma trận số nguyên tố chuẩn của BCN Khoa CNTT.
-  - Test 2: Phép toán Cấp quyền (Nhân số nguyên tố) và Gỡ quyền (Chia số nguyên tố).
-  - Test 3: Giải mã mặt nạ quyền (Explain Permission Mask).
+  - Kiểm tra cơ chế xử lý mã lỗi: `404` Not Found, `502` Bad Gateway khi upstream sai định dạng hoặc HTTP 503, và `504` Gateway Timeout.
+- **Phân hệ Backend API Core, Security P0/P1 & Cô lập Học kỳ (14/14 tests):**
+  - Test 1–6: API Summary, Tra cứu MST VNG `0303882213`, Bảng tin 2 tầng, Widget Registry & Chart Router dispatch, Notification Anti-Spam (20s), Admin Broadcast & Audience Preview.
+  - Test 7–12 (**P0 & P1 Security**): Chặn `401` khi thiếu/giả mạo token (`mock_jwt_`, Base64), chặn `403` sinh viên gọi API Admin, thực thi Prime RBAC qua HTTP Router, bảo vệ hồ sơ/chứng chỉ chéo giữa các SV, khóa SV Ngoài kỳ nộp khai báo/chứng chỉ (`403`).
+  - Test 13–14 (**Semester Isolation & Live Enrollment — v124/v125**): `bulk-import` chế độ `replace` cho HK2 bảo toàn nguyên vẹn `91` SV của HK1; xóa SV khỏi học kỳ active tự động chuyển tài khoản đó sang `sv_ngoai_ky` (`isEnrolledThisSemester: false`) trên cả `GET /api/auth/me` lẫn Google SSO.
+- **Phân hệ Phân quyền Prime RBAC & Chuẩn hóa Học phần (7/7 tests):**
+  - Test 1–3: Ma trận chuẩn BCN Khoa CNTT, phép toán Cấp (Nhân) / Gỡ (Chia) số nguyên tố, giải mã mặt nạ quyền (`explainPermissionMask`).
+  - Test 4–6: Kiểm thử vét cạn **480 Assertions (5 Vai trò × 12 Phân hệ × 8 Thừa số nguyên tố)**, tính lũy đẳng/giao hoán và xử lý giá trị biên.
+  - Test 7: Chuẩn hóa học phần KTCN/TSNN (`normalizeStudentCourse`), lịch sử học kỳ và kiểm tra quyền sở hữu hồ sơ (`isStudentOwnerOrStaff`).
 
 ---
 
@@ -464,11 +463,11 @@ Khi đưa hệ thống về vận hành trên hạ tầng server riêng của Kh
 
 Để hỗ trợ công tác bàn giao trơn tru và định hướng phát triển tiếp nối trong giai đoạn 2026 - 2031, các tài liệu chuyên sâu đã được biên soạn đầy đủ tại thư mục `docs/`:
 
-1. [HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md): Tài liệu hướng dẫn bàn giao, bản đồ kiến trúc và quy trình tiếp nhận code.
-2. [HUONG_DAN_TAO_CHART_PLUGIN_MOI.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/HUONG_DAN_TAO_CHART_PLUGIN_MOI.md): Cẩm nang lập trình viên mở rộng thêm các biểu đồ trực quan hóa mới.
-3. [API_SPECIFICATION.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/API_SPECIFICATION.md): Bản đặc tả chi tiết toàn bộ các endpoint RESTful API kèm ví dụ request/response JSON.
-4. [BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md): Báo cáo tổng kết tiến độ và kết quả thực hiện 6 giai đoạn dự án.
-5. [TAI_KHOAN_KIEM_THU.md](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/docs/TAI_KHOAN_KIEM_THU.md) và [TAI_KHOAN_KIEM_THU.txt](file:///d:/KTCN_TSNN/Dashoard_TSNN-main/TAI_KHOAN_KIEM_THU.txt): Danh sách chi tiết tài khoản, mật khẩu và phân quyền phục vụ nghiệm thu hệ thống.
+1. [HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md](./docs/HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md): Tài liệu hướng dẫn bàn giao, bản đồ kiến trúc và quy trình tiếp nhận code (`2026–2031`).
+2. [HUONG_DAN_TAO_CHART_PLUGIN_MOI.md](./docs/HUONG_DAN_TAO_CHART_PLUGIN_MOI.md): Cẩm nang lập trình viên mở rộng thêm các biểu đồ trực quan hóa mới.
+3. [API_SPECIFICATION.md](./docs/API_SPECIFICATION.md): Bản đặc tả chi tiết các endpoint RESTful API kèm ví dụ request/response JSON.
+4. [BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md](./docs/BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md): Báo cáo tổng kết tiến độ và kết quả thực hiện **10 giai đoạn dự án (Build v125)**.
+5. [TAI_KHOAN_KIEM_THU.md](./docs/TAI_KHOAN_KIEM_THU.md) và [TAI_KHOAN_KIEM_THU.txt](./TAI_KHOAN_KIEM_THU.txt): Danh sách chi tiết tài khoản, mật khẩu và kịch bản nghiệm thu hệ thống.
 
 ---
 
