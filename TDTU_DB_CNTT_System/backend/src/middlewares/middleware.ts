@@ -61,11 +61,34 @@ export function signJwtToken(claims: Omit<UserClaims, 'iat' | 'exp'>): string {
   return `${headerB64}.${payloadB64}.${signature}`;
 }
 
+const ALLOWED_CORS_ORIGINS = new Set([
+  'https://dashboard-39cf8.web.app',
+  'https://dashboard-39cf8.firebaseapp.com',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+]);
+
+function isAllowedCorsOrigin(origin?: string): boolean {
+  if (!origin) return true;
+  if (ALLOWED_CORS_ORIGINS.has(origin)) return true;
+  return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+}
+
 export const corsMiddleware: Middleware = (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
+  const allowOrigin = origin && isAllowedCorsOrigin(origin) ? origin : 'https://dashboard-39cf8.web.app';
+
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);

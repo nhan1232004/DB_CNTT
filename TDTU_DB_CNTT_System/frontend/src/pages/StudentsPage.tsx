@@ -1938,7 +1938,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                         <div className="flex items-center gap-3 shrink-0">
                           {cert.driveLink ? (
                             <a
-                              href={cert.driveLink}
+                              href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(cert.driveLink) : cert.driveLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-5 py-2.5 rounded-xl bg-[#ebf3ff] text-[#003087] text-[13.5px] font-bold border border-[#bfdbfe] hover:bg-[#dbeafe] transition cursor-pointer"
@@ -1995,7 +1995,7 @@ const StudentsPage = ({ currentUser, activeSemester = 'hk1_2026_2027', onSemeste
                           Sao chép link
                         </button>
                         <a
-                          href={studentCvLink || selectedStudent.cvLink}
+                          href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(studentCvLink || selectedStudent.cvLink) : (studentCvLink || selectedStudent.cvLink)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-5 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-[13px] font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"

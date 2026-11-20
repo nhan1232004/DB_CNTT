@@ -640,7 +640,7 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
 
             {cvLink && (
               <a
-                href={cvLink}
+                href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(cvLink) : cvLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-white hover:bg-[#f1f5f9] text-[#003087] border border-[#cbd5e1] rounded-xl text-sm font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
@@ -783,9 +783,10 @@ const ProfilePage = ({ currentUser, onNavigateTab, onSemesterChange, activeSemes
                   <button
                     type="button"
                     onClick={() => {
-                      const link = cert.driveLink || (cert.proofData && String(cert.proofData).startsWith('http') ? cert.proofData : null);
-                      if (link) {
-                        window.open(link, '_blank');
+                      const rawLink = cert.driveLink || (cert.proofData && String(cert.proofData).startsWith('http') ? cert.proofData : null);
+                      const safeLink = rawLink && window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(rawLink, '') : rawLink;
+                      if (safeLink) {
+                        window.open(safeLink, '_blank', 'noopener,noreferrer');
                       } else {
                         setPreviewCertModal(cert);
                       }

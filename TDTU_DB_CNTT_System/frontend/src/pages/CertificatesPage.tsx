@@ -671,7 +671,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                         {hasDrive ? (
                           <div className="flex items-center gap-1.5">
                             <a
-                              href={driveUrl}
+                              href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(driveUrl) : driveUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-2.5 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
@@ -862,7 +862,7 @@ const ScopeAllCertificatesView = ({ currentUser, activeSemester = 'hk1_2026_2027
                     {selectedProofModal.driveLink || selectedProofModal.proofData}
                   </span>
                   <a
-                    href={selectedProofModal.driveLink || selectedProofModal.proofData}
+                    href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(selectedProofModal.driveLink || selectedProofModal.proofData) : (selectedProofModal.driveLink || selectedProofModal.proofData)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-3 py-1 bg-[#003087] text-white text-[11px] font-bold rounded-lg shrink-0 hover:bg-[#002266] transition inline-flex items-center gap-1"
@@ -1400,7 +1400,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                       <td className="py-3.5 px-4">
                         {hasDrive ? (
                           <a
-                            href={driveUrl}
+                            href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(driveUrl) : driveUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-2.5 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
@@ -1672,7 +1672,7 @@ const StudentPersonalCertificatesView = ({ currentUser, activeSemester = 'hk1_20
                   <span>Liên kết Google Drive minh chứng <span className="text-[#dc2626]">*</span></span>
                   {formData.driveLink && (formData.driveLink.startsWith('http://') || formData.driveLink.startsWith('https://')) && (
                     <a
-                      href={formData.driveLink}
+                      href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(formData.driveLink) : formData.driveLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#003087]  font-bold hover:underline inline-flex items-center gap-0.5 text-[11px]"

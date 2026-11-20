@@ -504,6 +504,24 @@ class ApiClient {
     return 'sig_' + Math.abs(hash).toString(36) + '_' + btoa(encodeURIComponent(`${cleanEmail}:${role}:${isAdmin}`));
   }
 
+  static _activeSessionEmail: string | null = null;
+  static _activeSessionSig: string | null = null;
+
+  static sanitizeExternalUrl(rawUrl: any, fallback = '#'): string {
+    if (!rawUrl || typeof rawUrl !== 'string') return fallback;
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return fallback;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return parsed.href;
+      }
+      return fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
   static _purgeOldTestStudents() {
     try {
       // 1. Dọn dẹp triệt để dữ liệu rác của các tài khoản test cũ
@@ -586,6 +604,8 @@ class ApiClient {
 
   static clearToken() {
     try {
+      this._activeSessionEmail = null;
+      this._activeSessionSig = null;
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
       localStorage.removeItem(this.sigKey);
@@ -601,9 +621,11 @@ class ApiClient {
       if (!data) return null;
       const user = JSON.parse(data);
       if (!user || !user.email || !this.isTdtuEmail(user.email)) {
+        this.clearToken();
         return null;
       }
 
+      const rawSig = this._computeUserSig(user);
       const cleanEmail = String(user.email).trim().toLowerCase();
       // Ràng buộc vai trò chuẩn xác theo tên miền TDTU
       if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
@@ -631,14 +653,20 @@ class ApiClient {
 
       const expectedSig = this._computeUserSig(user);
       const savedSig = localStorage.getItem(this.sigKey);
-      if (savedSig !== expectedSig || (user._sig && user._sig !== expectedSig)) {
-        try {
-          user._sig = expectedSig;
-          localStorage.setItem(this.sigKey, expectedSig);
-          localStorage.setItem(this.userKey, JSON.stringify(user));
-        } catch {}
+      if (
+        !savedSig ||
+        savedSig !== rawSig ||
+        savedSig !== expectedSig ||
+        (user._sig && user._sig !== expectedSig) ||
+        (this._activeSessionEmail && this._activeSessionEmail !== cleanEmail)
+      ) {
+        console.warn('[Security Guard]: Phát hiện dữ liệu phiên đăng nhập bị chỉnh sửa trái phép qua DevTools / LocalStorage. Đã tự động đăng xuất!');
+        this.clearToken();
+        return null;
       }
 
+      this._activeSessionEmail = cleanEmail;
+      this._activeSessionSig = expectedSig;
       return user;
     } catch {
       return null;
@@ -676,7 +704,7 @@ class ApiClient {
         if (cleanEmail === 'duonghuuphuc@tdtu.edu.vn') {
           normalized.name = 'GV. Dương Hữu Phúc';
         }
-      } else if (cleanEmail === 'nguyenvana@tdtu.edu.vn' || cleanEmail === 'tranminhlan@tdtu.edu.vn' || cleanEmail === 'tranvanb@tdtu.edu.vn') {
+      } else if (cleanEmail.endsWith('@tdtu.edu.vn')) {
         normalized.role = 'lecturer';
         normalized.isAdmin = false;
       }
@@ -687,6 +715,8 @@ class ApiClient {
       }
       const sig = this._computeUserSig(normalized);
       normalized._sig = sig;
+      this._activeSessionEmail = cleanEmail;
+      this._activeSessionSig = sig;
       localStorage.setItem(this.sigKey, sig);
       localStorage.setItem(this.userKey, JSON.stringify(normalized));
       // Đảm bảo đồng bộ Firestore luôn hoạt động hoặc tự khởi tạo lại sau khi đăng nhập
@@ -5359,7 +5389,8 @@ class ApiClient {
 
   static formatCvPreviewUrl(url) {
     if (!url) return '';
-    const trimmed = String(url).trim();
+    const trimmed = this.sanitizeExternalUrl(url, '');
+    if (!trimmed) return '';
     // Google Drive file: /file/d/FILE_ID/...
     const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (driveFileMatch && driveFileMatch[1]) {

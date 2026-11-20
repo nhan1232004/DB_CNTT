@@ -538,3 +538,43 @@ test('14. Xóa sinh viên khỏi học kỳ active -> Tài khoản chuyển sang
     }
   });
 });
+
+test('15. P0/P1 Security Hardening (Đợt 1): Chặn Path Traversal, Security Headers & Giới hạn CORS Origin', async () => {
+  await withServer(async (baseUrl) => {
+    // 1. Kiểm tra Security Headers và CORS đối với Origin không hợp lệ
+    const healthRes = await fetch(`${baseUrl}/api/health`, {
+      headers: { 'Origin': 'https://evil-attacker.example.com' }
+    });
+    assert.equal(healthRes.status, 200);
+    assert.equal(healthRes.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(healthRes.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.equal(healthRes.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
+    assert.ok(healthRes.headers.get('content-security-policy')?.includes("frame-ancestors 'self'"));
+    assert.notEqual(
+      healthRes.headers.get('access-control-allow-origin'),
+      'https://evil-attacker.example.com',
+      'Không được cấp CORS cho tên miền lạ'
+    );
+
+    // 2. Origin hợp lệ (localhost hoặc dashboard-39cf8.web.app) phải được cấp phép
+    const validCorsRes = await fetch(`${baseUrl}/api/health`, {
+      headers: { 'Origin': 'http://localhost:3000' }
+    });
+    assert.equal(validCorsRes.headers.get('access-control-allow-origin'), 'http://localhost:3000');
+
+    // 3. Kiểm tra chống Path Traversal khi truy cập static file
+    const traversalPaths = [
+      '/%2e%2e/backend/src/server.ts',
+      '/..%5cbackend%5csrc%5cserver.ts',
+      '/%2e%2e%2f%2e%2e%2fpackage.json'
+    ];
+    for (const p of traversalPaths) {
+      const res = await fetch(`${baseUrl}${p}`);
+      const text = await res.text();
+      assert.ok(
+        !text.includes('createApiRouter') && !text.includes('dashboard-tsnn-tdtu'),
+        `Path traversal bị chặn an toàn cho đường dẫn: ${p}`
+      );
+    }
+  });
+});

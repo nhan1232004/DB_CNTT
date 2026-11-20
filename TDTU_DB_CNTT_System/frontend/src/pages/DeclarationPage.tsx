@@ -1474,7 +1474,7 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                           <td className="py-3.5 px-4 text-center">
                             {hasDrive ? (
                               <a
-                                href={row.cvDriveLink}
+                                href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(row.cvDriveLink) : row.cvDriveLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-2.5 py-1.5 bg-[#003087] hover:bg-[#002266] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
@@ -2355,9 +2355,9 @@ const DeclarationPage = ({ currentUser, onNavigateTab, activeSemester = 'hk1_202
                     <span className="text-slate-500 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Hồ sơ năng lực (Link CV):</span>
                     <div>
                       <a
-                        href={selectedDetailModal.cvDriveLink}
+                        href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(selectedDetailModal.cvDriveLink) : selectedDetailModal.cvDriveLink}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="px-4 py-2 bg-[#003087] hover:bg-[#002266] text-white rounded-xl text-sm font-bold transition inline-flex items-center gap-2 shadow-xs cursor-pointer"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">

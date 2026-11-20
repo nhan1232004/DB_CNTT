@@ -290,8 +290,9 @@ export class NotificationService {
         };
       }
       case 'students_by_major': {
-        const m = targetMajor || 'Kỹ thuật phần mềm';
-        const count = (this.db.prepare('SELECT COUNT(*) as c FROM students WHERE UPPER(major) LIKE UPPER(?)').get(`%${m}%`) as any)?.c || 0;
+        const m = String(targetMajor || 'Kỹ thuật phần mềm').slice(0, 100);
+        const escapedMajor = m.replace(/[\\%_]/g, '\\$&');
+        const count = (this.db.prepare("SELECT COUNT(*) as c FROM students WHERE UPPER(major) LIKE UPPER(?) ESCAPE '\\'").get(`%${escapedMajor}%`) as any)?.c || 0;
         return {
           count,
           label: `Sinh viên ngành ${m}`,

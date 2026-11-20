@@ -146,8 +146,25 @@ export class HttpRouter {
 
   private serveStaticFile(req: CustomRequest, res: CustomResponse): boolean {
     if (!this.staticDir) return false;
-    let safePath = req.path === '/' ? '/index.html' : req.path;
-    const filePath = path.join(this.staticDir, safePath);
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(req.path === '/' ? '/index.html' : req.path);
+    } catch {
+      return false;
+    }
+    if (decodedPath.includes('\0')) {
+      return false;
+    }
+
+    const rootDir = path.resolve(this.staticDir);
+    const normalizedRel = decodedPath.replace(/\\/g, '/');
+    if (normalizedRel.split('/').some(segment => segment === '..')) {
+      return false;
+    }
+    const filePath = path.resolve(rootDir, '.' + (normalizedRel.startsWith('/') ? normalizedRel : '/' + normalizedRel));
+    if (filePath !== rootDir && !filePath.startsWith(rootDir + path.sep)) {
+      return false;
+    }
 
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath).toLowerCase();
@@ -169,7 +186,15 @@ export class HttpRouter {
         '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
-      res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' });
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Referrer-Policy': 'strict-origin-when-cross-origin'
+      });
       fs.createReadStream(filePath).pipe(res);
       return true;
     }

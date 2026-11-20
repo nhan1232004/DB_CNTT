@@ -740,7 +740,7 @@ const BulletinPage = ({ currentUser, activeSemester, onSemesterChange, onNavigat
                         <div className="text-[11.5px] text-[#4b5563] flex items-center justify-between pt-1 border-t border-slate-200">
                           <span>Nộp: {app.appliedAtText || (app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : '—')}</span>
                           {app.cvLink && (
-                            <a href={app.cvLink} target="_blank" rel="noopener noreferrer" className="text-[#003087] font-bold hover:underline inline-flex items-center gap-0.5">
+                            <a href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(app.cvLink) : app.cvLink} target="_blank" rel="noopener noreferrer" className="text-[#003087] font-bold hover:underline inline-flex items-center gap-0.5">
                               <span>Xem CV</span>
                               <span>↗</span>
                             </a>
@@ -1247,7 +1247,7 @@ const BulletinPage = ({ currentUser, activeSemester, onSemesterChange, onNavigat
                                 <td className="py-3.5 px-4 text-center">
                                   {app.cvLink ? (
                                     <a
-                                      href={app.cvLink}
+                                      href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(app.cvLink) : app.cvLink}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="px-2.5 py-1 bg-[#003087] hover:bg-[#002266] text-white rounded-md text-[11px] font-bold inline-flex items-center gap-1 shadow-2xs"
@@ -1640,7 +1640,7 @@ const BulletinPage = ({ currentUser, activeSemester, onSemesterChange, onNavigat
                           {studentSavedCv}
                         </span>
                         <a
-                          href={studentSavedCv}
+                          href={window.ApiClient?.sanitizeExternalUrl ? window.ApiClient.sanitizeExternalUrl(studentSavedCv) : studentSavedCv}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[#003087] font-bold hover:underline shrink-0 text-[11px]"
