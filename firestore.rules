@@ -11,8 +11,25 @@ service cloud.firestore {
 
     function isTdtuUser() {
       return isAuthenticated() &&
+        request.auth.token.email != null &&
         (request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$') ||
          request.auth.token.email.matches('.*@student\\.tdtu\\.edu\\.vn$'));
+    }
+
+    function isStaff() {
+      return isAuthenticated() &&
+        request.auth.token.email != null &&
+        request.auth.token.email.matches('.*@tdtu\\.edu\\.vn$');
+    }
+
+    function isAdmin() {
+      return isStaff() &&
+        (request.auth.token.email in [
+          'duonghuuphuc@tdtu.edu.vn',
+          'phamvanc@tdtu.edu.vn',
+          'thayphuc@tdtu.edu.vn',
+          'admin@tdtu.edu.vn'
+        ]);
     }
 
     function isValidPayload() {
@@ -34,86 +51,93 @@ service cloud.firestore {
 
     // 1. Hồ sơ người dùng hệ thống (tdtu_users)
     match /tdtu_users/{userId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(userId);
-      allow delete: if userId != 'u_gv_phuc';
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(userId) &&
+        (isAdmin() || userId == 'u_gv_phuc' || request.resource.data.get('isAdmin', false) == false);
+      allow delete: if isAdmin() && userId != 'u_gv_phuc';
     }
 
     // 2. Danh sách sinh viên thực tập theo học kỳ (tdtu_students)
     match /tdtu_students/{studentId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(studentId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(studentId);
+      allow delete: if isStaff();
     }
 
     // 3. Khai báo doanh nghiệp thực tập & nguyện vọng hỗ trợ (tdtu_declarations)
     match /tdtu_declarations/{declId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(declId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(declId);
+      allow delete: if isTdtuUser();
     }
 
     // 4. Chứng chỉ ngoại ngữ sinh viên (tdtu_certificates)
     match /tdtu_certificates/{certId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(certId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(certId);
+      allow delete: if isTdtuUser();
     }
 
     // 5. Link CV sinh viên (tdtu_student_cv)
     match /tdtu_student_cv/{studentId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(studentId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(studentId);
+      allow delete: if isTdtuUser();
     }
 
     // 6. Tin tuyển dụng JD đã duyệt (tdtu_jds)
     match /tdtu_jds/{jdId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(jdId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(jdId);
+      allow delete: if isStaff();
     }
 
     // 7. Hàng đợi duyệt JD (tdtu_jd_queue)
     match /tdtu_jd_queue/{queueId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(queueId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(queueId);
+      allow delete: if isStaff();
     }
 
     // 8. Thông báo từ Giảng viên & Ban Chủ nhiệm Khoa (tdtu_announcements)
     match /tdtu_announcements/{ancId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(ancId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isStaff() && isValidPayload() && isNotLegacyMockId(ancId);
+      allow delete: if isStaff();
     }
 
     // 9. Bảng tin chung (tdtu_bulletin)
     match /tdtu_bulletin/{postId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(postId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(postId);
+      allow delete: if isStaff();
     }
 
     // 10. Đơn ứng tuyển JD của sinh viên (tdtu_applications)
     match /tdtu_applications/{appId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(appId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(appId);
+      allow delete: if isTdtuUser();
     }
 
     // 11. Hộp thư Thông báo học vụ (tdtu_notifications)
     match /tdtu_notifications/{notifId} {
-      allow read: if true;
-      allow create, update: if isValidPayload() && isNotLegacyMockId(notifId);
-      allow delete: if true;
+      allow read: if isTdtuUser();
+      allow create, update: if isTdtuUser() && isValidPayload() && isNotLegacyMockId(notifId);
+      allow delete: if isTdtuUser();
     }
 
     // 12. Cấu hình hệ thống & Học kỳ (tdtu_system)
     match /tdtu_system/{configDoc} {
-      allow read: if true;
-      allow create, update: if isValidPayload();
-      allow delete: if configDoc != 'semesters';
+      allow read: if isTdtuUser();
+      allow create, update: if isStaff() && isValidPayload();
+      allow delete: if isAdmin() && configDoc != 'semesters';
+    }
+
+    // 13. Ma trận phân quyền Prime RBAC (tdtu_roles)
+    match /tdtu_roles/{roleId} {
+      allow read: if isTdtuUser();
+      allow create, update, delete: if isAdmin() && isValidPayload();
     }
 
     // Mặc định: Chặn toàn bộ các collection / document không nằm trong danh mục trên

@@ -578,3 +578,41 @@ test('15. P0/P1 Security Hardening (Đợt 1): Chặn Path Traversal, Security H
     }
   });
 });
+
+test('16. P0/P1 Security Hardening (Đợt 2): Xác thực Mật khẩu Scrypt & Chặn Firebase/SSO ID Token Giả mạo (alg:none / sai iss)', async () => {
+  await withServer(async (baseUrl) => {
+    // 1. Đăng nhập mật khẩu hợp lệ qua Scrypt timing-safe
+    const okLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'duonghuuphuc@tdtu.edu.vn', password: 'Admin@123456' })
+    });
+    assert.equal(okLogin.status, 200);
+
+    // 2. Đăng nhập sai mật khẩu -> 401
+    const badLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'duonghuuphuc@tdtu.edu.vn', password: 'WrongPassword123' })
+    });
+    assert.equal(badLogin.status, 401);
+
+    // 3. Chặn Firebase ID Token giả mạo có alg: "none" hoặc thiếu kid
+    const forgedHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+    const forgedPayload = Buffer.from(JSON.stringify({
+      email: 'duonghuuphuc@tdtu.edu.vn',
+      aud: 'dashboard-39cf8',
+      iss: 'https://securetoken.google.com/dashboard-39cf8',
+      sub: 'fake_uid',
+      exp: Math.floor(Date.now() / 1000) + 3600
+    })).toString('base64url');
+    const forgedIdToken = `${forgedHeader}.${forgedPayload}.fakesig`;
+
+    const badSsoRes = await fetch(`${baseUrl}/api/auth/google-sso`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'duonghuuphuc@tdtu.edu.vn', idToken: forgedIdToken })
+    });
+    assert.equal(badSsoRes.status, 401, 'Phải từ chối ID Token có alg:none / thiếu kid');
+  });
+});

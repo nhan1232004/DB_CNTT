@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { getDatabase } from '../models/sqlite.db.ts';
 import { ENV } from '../config/env.config.ts';
 import { signJwtToken } from '../middlewares/middleware.ts';
@@ -144,22 +145,44 @@ export class AuthService {
   verifyFirebaseIdToken(idToken: string, expectedEmail: string): void {
     try {
       const parts = (idToken || '').split('.');
-      if (parts.length !== 3) {
+      if (parts.length !== 3 || !parts[2]) {
         throw new Error('Định dạng Token không hợp lệ');
       }
+      const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf-8'));
+      if (!header || header.alg !== 'RS256' || !header.kid) {
+        throw new Error('Thuật toán ký Firebase ID Token phải là RS256 kèm kid hợp lệ');
+      }
       const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
-      if (payload.exp && Date.now() >= payload.exp * 1000) {
+      if (!payload.exp || Date.now() >= payload.exp * 1000) {
         throw new Error('Firebase ID Token đã hết hạn');
       }
-      if (payload.email && payload.email.toLowerCase() !== expectedEmail.toLowerCase()) {
+      if (!payload.email || payload.email.toLowerCase() !== expectedEmail.toLowerCase()) {
         throw new Error('Email trong Token không khớp với email đăng nhập');
       }
-      if (payload.aud && payload.aud !== 'dashboard-39cf8') {
+      if (payload.aud !== 'dashboard-39cf8') {
         throw new Error('Token không thuộc dự án TDTU');
+      }
+      if (payload.iss && payload.iss !== 'https://securetoken.google.com/dashboard-39cf8') {
+        throw new Error('Issuer (iss) của Firebase Token không hợp lệ');
+      }
+      if (!payload.sub || typeof payload.sub !== 'string') {
+        throw new Error('Subject (sub) của Firebase Token không hợp lệ');
       }
     } catch (err: any) {
       throw new Error(`Xác thực Firebase Token thất bại: ${err?.message || 'Token không hợp lệ'}`);
     }
+  }
+
+  private verifyPasswordWithScrypt(inputPwd: string, allowedPlaintexts: string[]): boolean {
+    const salt = 'tdtu_cntt_scrypt_salt_2026';
+    const inputHash = crypto.scryptSync(inputPwd, salt, 32);
+    for (const candidate of allowedPlaintexts) {
+      const candidateHash = crypto.scryptSync(candidate, salt, 32);
+      if (crypto.timingSafeEqual(inputHash, candidateHash)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   loginWithFirebase(email: string, firebaseUid?: string, idToken?: string, name?: string): { token: string; user: UserClaims } {
@@ -195,15 +218,17 @@ export class AuthService {
       '52100999@student.tdtu.edu.vn': ['Sv@123456', 'Student@123456', '52100999', 'Tdtu@2026']
     };
 
-    let validPwd = false;
+    let allowedList: string[] = [];
     if (credentialMap[cleanEmail]) {
-      validPwd = credentialMap[cleanEmail].includes(pwd);
+      allowedList = credentialMap[cleanEmail];
     } else if (cleanEmail.endsWith('@student.tdtu.edu.vn')) {
       const mssv = cleanEmail.split('@')[0].toUpperCase();
-      validPwd = pwd === 'Sv@123456' || pwd === 'Student@123456' || pwd === mssv || pwd === 'Tdtu@2026';
+      allowedList = ['Sv@123456', 'Student@123456', mssv, 'Tdtu@2026'];
     } else if (cleanEmail.endsWith('@tdtu.edu.vn')) {
-      validPwd = pwd === 'Gv@123456' || pwd === 'Lecturer@123456' || pwd === 'Tdtu@2026';
+      allowedList = ['Gv@123456', 'Lecturer@123456', 'Tdtu@2026'];
     }
+
+    const validPwd = allowedList.length > 0 && this.verifyPasswordWithScrypt(pwd, allowedList);
 
     if (!validPwd) {
       throw new Error('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');

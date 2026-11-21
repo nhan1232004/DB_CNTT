@@ -4,15 +4,22 @@ import type { RouteHandler } from '../models/types.ts';
 
 export const googleSsoHandler: RouteHandler = (req, res) => {
   try {
-    const { email, name, avatarUrl } = req.body || {};
+    const { email, name, avatarUrl, idToken } = req.body || {};
     if (!email) {
       sendError(res, 400, 'Email đăng nhập là bắt buộc', 'EMAIL_REQUIRED');
       return;
     }
+    if (process.env.NODE_ENV === 'production' || idToken) {
+      if (!idToken) {
+        sendError(res, 401, 'Yêu cầu Google/Firebase ID Token hợp lệ khi đăng nhập SSO', 'ID_TOKEN_REQUIRED');
+        return;
+      }
+      authService.verifyFirebaseIdToken(idToken, email);
+    }
     const result = authService.loginWithGoogle(email, name, avatarUrl);
     sendSuccess(res, result, 'Đăng nhập Google SSO TDTU thành công');
   } catch (err: any) {
-    sendError(res, 400, err?.message || 'Đăng nhập thất bại', 'AUTH_FAILED');
+    sendError(res, 401, err?.message || 'Đăng nhập thất bại', 'AUTH_FAILED');
   }
 };
 

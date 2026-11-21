@@ -606,6 +606,7 @@ class ApiClient {
     try {
       this._activeSessionEmail = null;
       this._activeSessionSig = null;
+      this.stopFirestoreSync();
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
       localStorage.removeItem(this.sigKey);
@@ -720,7 +721,13 @@ class ApiClient {
       localStorage.setItem(this.sigKey, sig);
       localStorage.setItem(this.userKey, JSON.stringify(normalized));
       // Đảm bảo đồng bộ Firestore luôn hoạt động hoặc tự khởi tạo lại sau khi đăng nhập
-      if (!this._firestoreSyncInitialized || this._firestoreUnsubscribes.length === 0) {
+      if (window.FirebaseService?.auth && !window.FirebaseService.auth.currentUser && window.FirebaseService?.ensureAuthenticatedSession) {
+        window.FirebaseService.ensureAuthenticatedSession(normalized).then(() => {
+          if (!this._firestoreSyncInitialized || this._firestoreUnsubscribes.length === 0) {
+            this.restartFirestoreSync();
+          }
+        });
+      } else if (!this._firestoreSyncInitialized || this._firestoreUnsubscribes.length === 0) {
         this.restartFirestoreSync();
       }
     } catch {}
@@ -733,6 +740,21 @@ class ApiClient {
     if (!db) {
       setTimeout(() => this.initFirestoreSync(), 500);
       return;
+    }
+
+    const auth = window.FirebaseService?.auth;
+    if (auth && !auth.currentUser) {
+      const savedUser = this.getSavedUser();
+      if (!savedUser) {
+        // Chưa đăng nhập: không khởi tạo listener không xác thực trên trang Login
+        return;
+      }
+      if (window.FirebaseService?.waitForAuthReady) {
+        window.FirebaseService.waitForAuthReady().then((u: any) => {
+          if (u) this.initFirestoreSync();
+        });
+        return;
+      }
     }
 
     try {
@@ -2862,6 +2884,9 @@ class ApiClient {
       // 1. Chỉ truy vấn Cloud Firestore một lần duy nhất nếu Snapshot chưa nạp hoặc forceRefresh
       if (window.FirebaseService?.db && (forceRefresh || !this._studentsSnapshotLoaded)) {
         try {
+          if (window.FirebaseService?.auth && !window.FirebaseService.auth.currentUser && window.FirebaseService?.waitForAuthReady) {
+            await window.FirebaseService.waitForAuthReady();
+          }
           const db = window.FirebaseService.db;
           const needMeta = forceRefresh || !this._metaSnapshotLoaded;
           const needDecls = forceRefresh || !this._declsSnapshotLoaded;
@@ -3682,11 +3707,22 @@ class ApiClient {
       throw new Error('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
     }
 
+    // Đăng nhập trực tiếp vào Firebase Authentication thật để cấp request.auth token cho Cloud Firestore Rules
+    let fbIdToken = null;
+    if (window.FirebaseService?.signInWithEmailPassword) {
+      try {
+        const fbRes = await window.FirebaseService.signInWithEmailPassword(clean, pwd);
+        fbIdToken = fbRes?.idToken || null;
+      } catch (fbErr) {
+        console.warn('[Firebase Auth Email Sign-In Warning]:', fbErr?.message || fbErr);
+      }
+    }
+
     if (await this.probeBackend()) {
       try {
         const res = await this.request('/api/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ email: clean, password: pwd })
+          body: JSON.stringify({ email: clean, password: pwd, idToken: fbIdToken })
         });
         if (res?.token) this.setToken(res.token);
         if (res?.user || res?.role) this.setSavedUser(res.user || res);
@@ -3696,7 +3732,7 @@ class ApiClient {
 
     return this.handleFallback('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: clean, password: pwd })
+      body: JSON.stringify({ email: clean, password: pwd, idToken: fbIdToken })
     });
   }
 
@@ -3709,11 +3745,18 @@ class ApiClient {
       );
     }
 
+    let idToken = null;
+    try {
+      if (window.FirebaseService?.auth?.currentUser) {
+        idToken = await window.FirebaseService.auth.currentUser.getIdToken();
+      }
+    } catch {}
+
     if (await this.probeBackend()) {
       try {
         const res = await this.request('/api/auth/google-sso', {
           method: 'POST',
-          body: JSON.stringify({ email: clean, name, avatarUrl })
+          body: JSON.stringify({ email: clean, name, avatarUrl, idToken })
         });
         if (res?.token) this.setToken(res.token);
         if (res?.user || res?.role) this.setSavedUser(res.user || res);
@@ -3723,7 +3766,7 @@ class ApiClient {
 
     return this.handleFallback('/api/auth/google-sso', {
       method: 'POST',
-      body: JSON.stringify({ email: clean, name, avatarUrl })
+      body: JSON.stringify({ email: clean, name, avatarUrl, idToken })
     });
   }
 
