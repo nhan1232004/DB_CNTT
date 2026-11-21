@@ -7,13 +7,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25_.ts_%2F_.tsx-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-v10_Hosting_%26_Auth-FFCA28?logo=firebase)](https://firebase.google.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![Automated Tests](https://img.shields.io/badge/Automated_Tests-36%2F36_Passed-16a34a)](#)
+[![Automated Tests](https://img.shields.io/badge/Automated_Tests-38%2F38_Passed-16a34a)](#)
 [![Git Branch](https://img.shields.io/badge/Git_Branch-522H0045-003087)](#)
 
 - **Địa chỉ ứng dụng trực tuyến (Live Production):** https://dashboard-39cf8.web.app
 - **Máy chủ phát triển cục bộ (Local Server):** `http://localhost:3000`
-- **Nhánh mã nguồn chính thức:** `522H0045` (`c331349`)
-- **Phiên bản phát hành:** `v3.2.0 · Build v125 (Cập nhật: 18/11/2026 · 100% TypeScript · esbuild Bundle · Cô lập Học kỳ Toàn diện & Tối ưu Firestore)`
+- **Nhánh mã nguồn chính thức:** `522H0045` (`1aeb598`)
+- **Phiên bản phát hành:** `v3.2.0 · Build v127 (Cập nhật: 21/11/2026 · 100% TypeScript · esbuild Bundle · Gia cố Bảo mật Đợt 1 & 2 · Firebase Auth & Firestore RBAC)`
 
 ---
 
@@ -194,7 +194,7 @@ Dashoard_TSNN-main/
 |   |   |   |   |-- response.ts
 |   |   |   |   `-- student-helper.ts              # Chuẩn hóa thông tin & học kỳ sinh viên
 |   |   |   `-- server.ts                          # Điểm khởi chạy Backend Server (Port 3000)
-|   |   |-- tests/                                 # Bộ kiểm thử tự động API và Prime RBAC (21/21 Pass)
+|   |   |-- tests/                                 # Bộ kiểm thử tự động API và Prime RBAC (23/23 Pass)
 |   |   |   |-- api.test.ts
 |   |   |   `-- prime-rbac.test.ts
 |   |   |-- package.json
@@ -229,7 +229,7 @@ Dashoard_TSNN-main/
 |       |   |   `-- prime-rbac.ts                  # Kiểm tra quyền phía Client
 |       |   |-- App.tsx                            # Bộ định tuyến tổng, TdtuStore và TabErrorBoundary
 |       |   `-- index.css                          # Stylesheet chuẩn TDTU và Media Print A4
-|       |-- index.html                             # Host HTML nạp ./dist/app.bundle.js (v125)
+|       |-- index.html                             # Host HTML nạp ./dist/app.bundle.js (v127)
 |       |-- package.json
 |       `-- tsconfig.json
 |-- Adapter_Code/
@@ -412,22 +412,23 @@ Sau khi tạo xong file, biểu đồ mới sẽ ngay lập tức xuất hiện 
 
 ## 9. BỘ KIỂM THỬ TỰ ĐỘNG (AUTOMATED TEST SUITES)
 
-Hệ thống tích hợp sẵn **36 bài kiểm thử tự động** (Unit Tests, Security Tests, Cô lập Học kỳ và Integration Tests) chạy trực tiếp qua Node.js native test runner:
+Hệ thống tích hợp sẵn **38 bài kiểm thử tự động** (Unit Tests, Security Tests, Cô lập Học kỳ và Integration Tests) chạy trực tiếp qua Node.js native test runner:
 
 ```bash
 npm test
 ```
 
-### Kết quả kiểm thử thực tế (36/36 Tests Passed):
+### Kết quả kiểm thử thực tế (38/38 Tests Passed):
 - **Phân hệ Reporting Adapter Demo (15/15 tests):**
   - Kiểm tra widget discovery và tra cứu registry (`No Router` vs `With Router`).
   - Kiểm tra tính đồng nhất dữ liệu giữa Schema V1 và Schema V2 khi đi qua `CompanyAdapter`.
   - Kiểm tra khả năng tái sử dụng Adapter cho cả hai loại biểu đồ Pie và Bar.
   - Kiểm tra cơ chế xử lý mã lỗi: `404` Not Found, `502` Bad Gateway khi upstream sai định dạng hoặc HTTP 503, và `504` Gateway Timeout.
-- **Phân hệ Backend API Core, Security P0/P1 & Cô lập Học kỳ (14/14 tests):**
+- **Phân hệ Backend API Core, Security P0/P1 & Cô lập Học kỳ (16/16 tests):**
   - Test 1–6: API Summary, Tra cứu MST VNG `0303882213`, Bảng tin 2 tầng, Widget Registry & Chart Router dispatch, Notification Anti-Spam (20s), Admin Broadcast & Audience Preview.
   - Test 7–12 (**P0 & P1 Security**): Chặn `401` khi thiếu/giả mạo token (`mock_jwt_`, Base64), chặn `403` sinh viên gọi API Admin, thực thi Prime RBAC qua HTTP Router, bảo vệ hồ sơ/chứng chỉ chéo giữa các SV, khóa SV Ngoài kỳ nộp khai báo/chứng chỉ (`403`).
   - Test 13–14 (**Semester Isolation & Live Enrollment — v124/v125**): `bulk-import` chế độ `replace` cho HK2 bảo toàn nguyên vẹn `91` SV của HK1; xóa SV khỏi học kỳ active tự động chuyển tài khoản đó sang `sv_ngoai_ky` (`isEnrolledThisSemester: false`) trên cả `GET /api/auth/me` lẫn Google SSO.
+  - Test 15–16 (**Security Hardening Đợt 1 & Đợt 2 — v126/v127**): Chặn Path Traversal khi truy cập static file (`%2e%2e`, `..\`), kiểm tra HTTP Security Headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `CSP`), giới hạn CORS Origin hợp lệ, xác thực mật khẩu bằng `crypto.scryptSync` + `timingSafeEqual` và từ chối Firebase/Google ID Token giả mạo (`alg: "none"`, thiếu `kid`, sai `iss`/`aud`).
 - **Phân hệ Phân quyền Prime RBAC & Chuẩn hóa Học phần (7/7 tests):**
   - Test 1–3: Ma trận chuẩn BCN Khoa CNTT, phép toán Cấp (Nhân) / Gỡ (Chia) số nguyên tố, giải mã mặt nạ quyền (`explainPermissionMask`).
   - Test 4–6: Kiểm thử vét cạn **480 Assertions (5 Vai trò × 12 Phân hệ × 8 Thừa số nguyên tố)**, tính lũy đẳng/giao hoán và xử lý giá trị biên.
@@ -463,11 +464,12 @@ Khi đưa hệ thống về vận hành trên hạ tầng server riêng của Kh
 
 Để hỗ trợ công tác bàn giao trơn tru và định hướng phát triển tiếp nối trong giai đoạn 2026 - 2031, các tài liệu chuyên sâu đã được biên soạn đầy đủ tại thư mục `docs/`:
 
-1. [HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md](./docs/HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md): Tài liệu hướng dẫn bàn giao, bản đồ kiến trúc và quy trình tiếp nhận code (`2026–2031`).
-2. [HUONG_DAN_TAO_CHART_PLUGIN_MOI.md](./docs/HUONG_DAN_TAO_CHART_PLUGIN_MOI.md): Cẩm nang lập trình viên mở rộng thêm các biểu đồ trực quan hóa mới.
-3. [API_SPECIFICATION.md](./docs/API_SPECIFICATION.md): Bản đặc tả chi tiết các endpoint RESTful API kèm ví dụ request/response JSON.
-4. [BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md](./docs/BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md): Báo cáo tổng kết tiến độ và kết quả thực hiện **10 giai đoạn dự án (Build v125)**.
-5. [TAI_KHOAN_KIEM_THU.md](./docs/TAI_KHOAN_KIEM_THU.md) và [TAI_KHOAN_KIEM_THU.txt](./TAI_KHOAN_KIEM_THU.txt): Danh sách chi tiết tài khoản, mật khẩu và kịch bản nghiệm thu hệ thống.
+1. [HUONG_DAN_SU_DUNG_NHANH.md](./HUONG_DAN_SU_DUNG_NHANH.md) (và [docs/HUONG_DAN_SU_DUNG_NHANH.md](./docs/HUONG_DAN_SU_DUNG_NHANH.md)): Tài liệu hướng dẫn sử dụng & kiểm thử nhanh gói gọn trong 1 trang A4 kèm sơ đồ luồng sử dụng.
+2. [HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md](./docs/HUONG_DAN_BAN_GIAO_VA_PHAT_TRIEN.md): Tài liệu hướng dẫn bàn giao, bản đồ kiến trúc và quy trình tiếp nhận code (`2026–2031`).
+3. [HUONG_DAN_TAO_CHART_PLUGIN_MOI.md](./docs/HUONG_DAN_TAO_CHART_PLUGIN_MOI.md): Cẩm nang lập trình viên mở rộng thêm các biểu đồ trực quan hóa mới.
+4. [API_SPECIFICATION.md](./docs/API_SPECIFICATION.md): Bản đặc tả chi tiết các endpoint RESTful API kèm ví dụ request/response JSON.
+5. [BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md](./docs/BAO_CAO_CHI_TIET_DU_AN_TONG_THE_DB_CNTT.md): Báo cáo tổng kết tiến độ và kết quả thực hiện **11 giai đoạn dự án (Build v127)**.
+6. [TAI_KHOAN_KIEM_THU.md](./docs/TAI_KHOAN_KIEM_THU.md) và [TAI_KHOAN_KIEM_THU.txt](./TAI_KHOAN_KIEM_THU.txt): Danh sách chi tiết tài khoản (đã đồng bộ lên Firebase Authentication), mật khẩu và kịch bản nghiệm thu hệ thống.
 
 ---
 

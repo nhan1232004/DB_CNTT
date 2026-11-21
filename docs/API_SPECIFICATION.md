@@ -1,6 +1,6 @@
-# TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0 — Build v125)
+# TÀI LIỆU ĐẶC TẢ RESTful API HỆ THỐNG DB_CNTT (v3.2.0 — Build v127)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 (Build v125) | Cập nhật hoàn thiện: 18/11/2026*
+*Phiên bản: v3.2.0 (Build v127) | Cập nhật hoàn thiện: 21/11/2026*
 
 ---
 
@@ -38,9 +38,9 @@
 
 | Phương thức | Đường dẫn | Quyền truy cập | Mô tả |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/google-sso` | Public | Đăng nhập Google SSO TDTU (`@tdtu.edu.vn` hoặc `@student.tdtu.edu.vn`), tự động đối chiếu danh sách học kỳ active |
-| `POST` | `/api/auth/firebase-login` | Public | Đăng nhập Firebase Auth (UID & ID Token) |
-| `POST` | `/api/auth/login` | Public | Đăng nhập bằng tài khoản nội bộ TDTU (Email & Mật khẩu) |
+| `POST` | `/api/auth/google-sso` | Public | Đăng nhập Google SSO TDTU (`@tdtu.edu.vn` hoặc `@student.tdtu.edu.vn`), kiểm tra `idToken` RS256 và tự động đối chiếu danh sách học kỳ active |
+| `POST` | `/api/auth/firebase-login` | Public | Đăng nhập Firebase Auth (kiểm tra `alg === 'RS256'`, `kid`, `iss`, `aud === 'dashboard-39cf8'`, `sub`) |
+| `POST` | `/api/auth/login` | Public | Đăng nhập bằng tài khoản nội bộ TDTU (Email & Mật khẩu xác thực qua `crypto.scryptSync` + `timingSafeEqual`) |
 | `GET` | `/api/auth/me` | Logged In | Lấy thông tin tài khoản, mặt nạ Prime RBAC và tính lại `isEnrolledThisSemester` / `roleId` (`sv_trong_ky` hoặc `sv_ngoai_ky`) theo dữ liệu thực tế hiện tại |
 | `GET` | `/api/auth/firebase-users` | Admin | Lấy danh sách tài khoản hệ thống |
 | `POST` | `/api/auth/firebase-users` | Admin | Thêm mới hoặc đồng bộ tài khoản người dùng |

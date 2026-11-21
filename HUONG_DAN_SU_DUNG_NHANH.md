@@ -1,7 +1,7 @@
 # HƯỚNG DẪN SỬ DỤNG NHANH — HỆ THỐNG QUẢN LÝ THỰC TẬP KHOA CNTT (TDTU)
 
 - **Link Web trực tuyến:** [https://dashboard-39cf8.web.app](https://dashboard-39cf8.web.app)
-- **Phiên bản:** `v3.2.0 (Build v125)` — Khoa Công nghệ Thông tin, Trường Đại học Tôn Đức Thắng
+- **Phiên bản:** `v3.2.0 (Build v127 — 21/11/2026)` — Khoa Công nghệ Thông tin, Trường Đại học Tôn Đức Thắng
 
 ---
 

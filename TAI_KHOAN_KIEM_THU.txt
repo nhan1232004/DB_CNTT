@@ -3,12 +3,16 @@ GHI CHÚ TÀI KHOẢN KIỂM THỬ HỆ THỐNG CỔNG THỰC TẬP KHOA CNTT - 
 (TDTU INTERNSHIP PORTAL & DECISION SUPPORT SYSTEM - HK1 2026-2027)
 ================================================================================
 
-1. HƯỚNG DẪN ĐĂNG NHẬP ĐỂ KIỂM THỬ (PHIÊN BẢN v3.2.0 / BUILD v125 - 18/11/2026)
+1. HƯỚNG DẪN ĐĂNG NHẬP ĐỂ KIỂM THỬ (PHIÊN BẢN v3.2.0 / BUILD v127 - 21/11/2026)
 --------------------------------------------------------------------------------
 - Tại màn hình Đăng nhập, chọn đúng tab "Sinh viên" hoặc "Giảng viên / Nội bộ"
   và nhập Email + Mật khẩu nội bộ (hoặc nhấn nút "Đăng nhập bằng Google" với
   tài khoản thật thuộc tên miền @tdtu.edu.vn / @student.tdtu.edu.vn).
 - LƯU Ý BẢO MẬT & PHÂN QUYỀN ĐỘNG:
+  + Toàn bộ 103 tài khoản nội bộ TDTU (Admin, Giảng viên, SV Ngoài kỳ và 91 SV
+    thực tế) đã được đồng bộ trực tiếp vào Firebase Authentication thật
+    (dashboard-39cf8) và bảo vệ bởi Cloud Firestore RBAC Rules (isTdtuUser,
+    isStaff, isAdmin).
   + Mọi tài khoản Gmail cá nhân (@gmail.com) hoặc ngoài tên miền TDTU đều bị
     chặn tuyệt đối ở cả Google SSO và đăng nhập mật khẩu.
   + Trạng thái "Trong kỳ" (sv_trong_ky) / "Ngoài kỳ" (sv_ngoai_ky) của sinh
@@ -16,7 +20,7 @@ GHI CHÚ TÀI KHOẢN KIỂM THỬ HỆ THỐNG CỔNG THỰC TẬP KHOA CNTT - 
     (xóa SV khỏi kỳ thì tài khoản tự chuyển về Ngoài kỳ).
   + Không tự động nhảy vào bất kỳ tài khoản mẫu nào khi hủy/lỗi đăng nhập.
   + Không thể chuyển đổi tài khoản hoặc nâng quyền bằng cách sửa URL hay sửa
-    LocalStorage (hệ thống tự động kiểm tra chữ ký phiên `_sig` và đăng xuất).
+    LocalStorage (hệ thống tự động đối chiếu chữ ký phiên `rawSig` và hủy phiên).
 
 ================================================================================
 2. DANH SÁCH TÀI KHOẢN KIỂM THỬ THEO 4 NHÓM VAI TRÒ (PRIME RBAC)

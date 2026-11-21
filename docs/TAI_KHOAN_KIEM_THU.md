@@ -1,13 +1,14 @@
-# Danh Sách Tài Khoản Kiểm Thử Hệ Thống (Prime RBAC — v3.2.0 / Build v125)
+# Danh Sách Tài Khoản Kiểm Thử Hệ Thống (Prime RBAC — v3.2.0 / Build v127)
 
 Tài liệu này cung cấp danh sách các tài khoản nội bộ Trường Đại học Tôn Đức Thắng (`@tdtu.edu.vn` và `@student.tdtu.edu.vn`) phục vụ công tác kiểm thử và nghiệm thu hệ thống **Cổng Thông Tin Thực Tập Doanh Nghiệp Khoa CNTT**.
-*Cập nhật: 18/11/2026*
+*Cập nhật: 21/11/2026*
 
 > [!IMPORTANT]
+> - Toàn bộ **103 tài khoản nội bộ TDTU** (Admin, Giảng viên, SV Ngoài kỳ `52100999` và 91 sinh viên thực tế) đã được **đồng bộ trực tiếp lên Firebase Authentication (`dashboard-39cf8`)**. Khi đăng nhập bằng Email + Mật khẩu hoặc Google SSO, hệ thống đều cấp **Firebase ID Token chuẩn RS256** (`request.auth != null`) để xác thực với bộ luật bảo mật `firestore.rules`.
 > - Toàn bộ các nút truy cập nhanh ngoài màn hình đăng nhập đã được **ẩn hoàn toàn** để đảm bảo tính bảo mật thực tế.
 > - Để đăng nhập kiểm thử bằng tài khoản bên dưới, vui lòng chọn đúng tab **"Sinh viên"** hoặc **"Giảng viên / Nội bộ"** tại màn hình đăng nhập và nhập **Email + Mật khẩu** (hoặc dùng nút **"Đăng nhập bằng Google"** với tài khoản Google `@tdtu.edu.vn` / `@student.tdtu.edu.vn`).
-> - Từ phiên bản `v124–v125`, trạng thái **Trong kỳ (`sv_trong_ky`)** hay **Ngoài kỳ (`sv_ngoai_ky`)** của sinh viên được đối chiếu **trực tiếp theo danh sách thực tế của học kỳ đang kích hoạt** (không gắn cứng theo tài khoản): nếu giảng viên xóa sinh viên khỏi danh sách kỳ đó, khi sinh viên đăng nhập lại hoặc tải lại phiên sẽ tự động chuyển về Ngoài kỳ.
-> - Hệ thống **chặn tuyệt đối** mọi email ngoài tên miền TDTU (như `@gmail.com`), không tự động nhảy vào tài khoản mẫu khi hủy đăng nhập, và khóa hoàn toàn việc chuyển đổi tài khoản qua URL hoặc can thiệp `localStorage`.
+> - Từ phiên bản `v124–v127`, trạng thái **Trong kỳ (`sv_trong_ky`)** hay **Ngoài kỳ (`sv_ngoai_ky`)** của sinh viên được đối chiếu **trực tiếp theo danh sách thực tế của học kỳ đang kích hoạt** (không gắn cứng theo tài khoản): nếu giảng viên xóa sinh viên khỏi danh sách kỳ đó, khi sinh viên đăng nhập lại hoặc tải lại phiên sẽ tự động chuyển về Ngoài kỳ.
+> - Hệ thống **chặn tuyệt đối** mọi email ngoài tên miền TDTU (như `@gmail.com`), không tự động nhảy vào tài khoản mẫu khi hủy đăng nhập, tự động hủy phiên (`clearToken()`) nếu phát hiện chỉnh sửa `localStorage` qua DevTools, và chặn 100% truy cập trái phép trên Cloud Firestore (`403 Forbidden`).
 
 ---
 

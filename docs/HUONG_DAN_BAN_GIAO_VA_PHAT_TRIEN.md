@@ -1,13 +1,13 @@
 # TÀI LIỆU HƯỚNG DẪN BÀN GIAO & PHÁT TRIỂN HỆ THỐNG DB_CNTT
 ## HỆ THỐNG QUẢN LÝ THỰC TẬP, TỰ ĐỘNG HÓA JD & HỖ TRỢ RA QUYẾT ĐỊNH (100% TYPESCRIPT)
 ### KHOA CÔNG NGHỆ THÔNG TIN - TRƯỜNG ĐẠI HỌC TÔN ĐỨC THẮNG (TDTU)
-*Phiên bản: v3.2.0 (Build v125) | Cập nhật hoàn thiện: 18/11/2026*
+*Phiên bản: v3.2.0 (Build v127) | Cập nhật hoàn thiện: 21/11/2026*
 
 ---
 
 ## 1. MỤC TIÊU VÀ ĐỊNH HƯỚNG THIẾT KẾ BỀN VỮNG
 
-Dự án **DB_CNTT (`v3.2.0` — Build `v125`)** được thiết kế theo các tiêu chuẩn kỹ thuật nghiêm ngặt nhằm phục vụ mục tiêu **bàn giao trơn tru** cho các đội nhóm sinh viên, giảng viên và kỹ sư kế thừa (2026 – 2031):
+Dự án **DB_CNTT (`v3.2.0` — Build `v127`)** được thiết kế theo các tiêu chuẩn kỹ thuật nghiêm ngặt nhằm phục vụ mục tiêu **bàn giao trơn tru** cho các đội nhóm sinh viên, giảng viên và kỹ sư kế thừa (2026 – 2031):
 1. **Đồng nhất 100% TypeScript (`.ts` & `.tsx`):** Toàn bộ Backend (`36` tệp `.ts` mã nguồn + `2` tệp kiểm thử), Frontend (`21` module `.ts`/`.tsx` đóng gói bằng `esbuild` + stylesheet `index.css`) và Gói minh chứng kiến trúc (`Adapter_Code/`) đều viết bằng TypeScript thuần.
 2. **Module hóa triệt để (`ModuleRegistry`, SPA Router & Clean 3-Tier Architecture):** Tuyệt đối không nhồi nhét code vào một file duy nhất. Frontend quản lý module qua `module-registry.ts`, `TdtuStore` (`useSyncExternalStore`) và `SyncManager`; Backend tách rõ `routes/`, `middlewares/`, `controllers/`, `services/`, `models/`.
 3. **Kiến trúc Cắm-và-Chạy (Plug-and-Play Engine):** Sử dụng mô hình **Chart Router** kết hợp với **Widget Registry** và **Adapter Pattern**, cho phép mở rộng thêm báo cáo mới mà không chạm vào mã nguồn lõi.
@@ -25,13 +25,13 @@ Dự án **DB_CNTT (`v3.2.0` — Build `v125`)** được thiết kế theo các
 | :--- | :--- | :--- | :--- |
 | **Backend Runtime** | **Node.js** | `v22+` / `v24+` native | Chạy trực tiếp TypeScript bằng cờ `--experimental-strip-types`. Server HTTP tích hợp sẵn từ module chuẩn `node:http`. Zero third-party web framework. |
 | **Cơ sở dữ liệu Backend** | **SQLite** (`node:sqlite`) | DatabaseSync (WAL mode) | Lưu trữ hồ sơ sinh viên cô lập theo học kỳ (`semester_enrollments`), trạng thái hệ thống (`system_state`), thông báo, JD, chứng chỉ cục bộ siêu nhẹ. |
-| **Bộ kiểm thử tự động** | **Node.js Test Runner** (`node:test`) | Native Module | Kiểm thử đơn vị và tích hợp **36/36 tests pass** tự động (`14` API/Security/Semester + `7` Prime RBAC/480 assertions + `15` Reporting Adapter). |
+| **Bộ kiểm thử tự động** | **Node.js Test Runner** (`node:test`) | Native Module | Kiểm thử đơn vị và tích hợp **38/38 tests pass** tự động (`16` API/Security/Semester + `7` Prime RBAC/480 assertions + `15` Reporting Adapter). |
 | **Giao diện Frontend** | **React 18 & ReactDOM 18** | CDN Production | Xây dựng Single-Page Application (SPA) với `ModuleRegistry`, SPA Deep-Linking Router (`history.pushState`), `TdtuStore` và `TabErrorBoundary`. |
-| **Đóng gói Frontend** | **`esbuild` Bundle Script** | `scripts/build-frontend.mjs` | Biên dịch trước `21` module `.ts`/`.tsx` thành tệp `dist/app.bundle.js` (~906.8 KB) trong <300ms, bỏ hoàn toàn phụ thuộc trình biên dịch Babel phía trình duyệt. |
+| **Đóng gói Frontend** | **`esbuild` Bundle Script** | `scripts/build-frontend.mjs` | Biên dịch trước `21` module `.ts`/`.tsx` thành tệp `dist/app.bundle.js` (~913.3 KB) trong <400ms, bỏ hoàn toàn phụ thuộc trình biên dịch Babel phía trình duyệt. |
 | **Hệ thống Styling UI** | **Tailwind CSS** | CDN Engine | Utility-first CSS cấu hình bảng màu chuẩn đại học TDTU (`tdtu-primary: #003087`, `tdtu-red: #dc2626`, v.v.), tích hợp `@media print` xuất file A4 chuẩn. |
 | **Xử lý Bảng tính Excel** | **SheetJS** (`xlsx`) | `v0.18.5` CDN | Đọc và ghi file Excel (`.xlsx`, `.xls`) trực tiếp trên trình duyệt phục vụ nhập danh sách sinh viên và xuất báo cáo kết quả thực tập. |
-| **Nền tảng Cloud & Auth** | **Google Firebase** | Firebase Hosting & Auth | Lưu trữ web tĩnh tốc độ cao; xác thực Google SSO trường Đại học Tôn Đức Thắng (`@tdtu.edu.vn`, `@student.tdtu.edu.vn`). |
-| **Cơ sở dữ liệu Realtime** | **Cloud Firestore** | Firebase Compat SDK `v10.13.0` | Đồng bộ đa thiết bị (`tdtu_students`, `tdtu_system/students_meta`, `tdtu_system/semesters`, `tdtu_declarations`, `tdtu_certificates`, `tdtu_student_cv`) kết hợp RAM Snapshot Cache & SWR. |
+| **Nền tảng Cloud & Auth** | **Google Firebase** | Firebase Hosting & Auth | Lưu trữ web tĩnh tốc độ cao kèm HTTP Security Headers; xác thực Google SSO & Email/Password thật trên Firebase Auth cho **103 tài khoản nội bộ TDTU** (`@tdtu.edu.vn`, `@student.tdtu.edu.vn`). |
+| **Cơ sở dữ liệu Realtime** | **Cloud Firestore** | Firebase Compat SDK `v10.13.0` | Bảo vệ bằng `firestore.rules` phân quyền `isTdtuUser()` / `isStaff()` / `isAdmin()`; đồng bộ đa thiết bị (`tdtu_students`, `tdtu_system/students_meta`, `tdtu_system/semesters`, `tdtu_declarations`, `tdtu_certificates`, `tdtu_student_cv`) kết hợp RAM Snapshot Cache & SWR. |
 | **Đồng bộ Liên Tab** | **SyncManager 3 Tầng** | BroadcastChannel + Storage + EventBus | Kênh truyền `tdtu_realtime_sync` đồng bộ dữ liệu và học kỳ tức thì giữa các tab trình duyệt. |
 | **Đóng gói Triển khai** | **Docker & Compose** (Tùy chọn) | `Dockerfile`, `docker-compose.yml` | Đóng gói môi trường Fullstack độc lập một lệnh `docker compose up -d` dành cho môi trường máy chủ Linux/Windows. |
 
@@ -74,8 +74,8 @@ Dashoard_TSNN-main/
 │   │   │   │   ├── response.ts
 │   │   │   │   └── student-helper.ts
 │   │   │   └── server.ts                        # Điểm khởi chạy HTTP Server (Port 3000)
-│   │   └── tests/                               # Bộ kiểm thử tự động Backend & RBAC (21/21 Pass)
-│   │       ├── api.test.ts                      # 14 tests API, Security P0/P1 & Cô lập Học kỳ
+│   │   └── tests/                               # Bộ kiểm thử tự động Backend & RBAC (23/23 Pass)
+│   │       ├── api.test.ts                      # 16 tests API, Security P0/P1 (Đợt 1 & 2) & Cô lập Học kỳ
 │   │       └── prime-rbac.test.ts               # 7 tests (kèm 480 assertions vét cạn Prime RBAC)
 │   └── frontend/                                # Phân hệ giao diện React 18 TypeScript (.ts / .tsx)
 │       ├── package.json
@@ -133,12 +133,12 @@ Dashoard_TSNN-main/
    http://localhost:3000
    ```
 
-### 4.2. Chạy Bộ Kiểm thử Tự động (36/36 Automated Tests)
-Để xác minh toàn bộ logic nghiệp vụ Backend API, cô lập học kỳ SQLite, phân quyền Prime RBAC, tra cứu MST, chống spam thông báo, bộ test an ninh P0/P1 và kiến trúc Chart Router / Adapter V1-V2:
+### 4.2. Chạy Bộ Kiểm thử Tự động (38/38 Automated Tests)
+Để xác minh toàn bộ logic nghiệp vụ Backend API, cô lập học kỳ SQLite, phân quyền Prime RBAC, tra cứu MST, chống spam thông báo, bộ test an ninh P0/P1 (Đợt 1 & Đợt 2) và kiến trúc Chart Router / Adapter V1-V2:
 ```powershell
 npm test
 ```
-*Kết quả:* **36/36 Tests Pass (100%)** (`14 API, Security & Semester Isolation tests` + `7 Prime RBAC tests` + `15 Adapter & Chart Router tests`). Thời gian chạy ~1.4s không cần cài Jest/Mocha.
+*Kết quả:* **38/38 Tests Pass (100%)** (`16 API, Security & Semester Isolation tests` + `7 Prime RBAC tests` + `15 Adapter & Chart Router tests`). Thời gian chạy ~1.5s không cần cài Jest/Mocha.
 
 ### 4.3. Biên dịch & Triển khai Lên Firebase Hosting (Production)
 ```powershell
@@ -201,13 +201,16 @@ Khi tiếp quản hoặc mở rộng mã nguồn, đội nhóm kỹ sư cần l�
    - Khi sinh viên quay lại Học kỳ 1, toàn bộ thông tin đã đăng ký trước đó được nạp lại đầy đủ, đảm bảo an toàn dữ liệu và tính nhất quán.
 
 7. **Kiến trúc `esbuild` Bundle & Quản lý Cache Phiên bản:**
-   - Toàn bộ Frontend sử dụng tệp bundle duy nhất `dist/app.bundle.js` biên dịch qua `scripts/build-frontend.mjs`, luôn gắn tham số phiên bản (hiện tại `?v=20261117_v125_firestore_rules_import_fix`) trên `index.html`.
+   - Toàn bộ Frontend sử dụng tệp bundle duy nhất `dist/app.bundle.js` biên dịch qua `scripts/build-frontend.mjs`, luôn gắn tham số phiên bản (hiện tại `?v=20261121_v127_security_phase2_firebase_auth`) trên `index.html`.
 8. **Cô lập Danh sách Sinh viên Đa kỳ ở Tầng SQLite & Firestore (`v124`–`v125`):**
    - SQLite tách riêng bảng `semester_enrollments` và `system_state` (`students_meta_<sem>`); Cloud Firestore dùng khóa chuẩn `${semester}_${sid}` kết hợp `tdtu_system/students_meta` (`cleared`, `datasetVersion`, `count`) để không bao giờ quay về dữ liệu mẫu `/data/real-students.json` hay danh sách cũ khi thay thế hoặc xóa sạch danh sách.
    - Trong `importStudentsExcel(mode = 'replace')`, hệ thống đọc danh sách cũ từ server (`_deleteFirestoreStudentsForSemester`), xóa sạch cả bản chuẩn lẫn bản legacy không prefix `<sid>`, sau đó mới ghi từng batch `150` docs và cập nhật `recomputeAndSyncSemesterMeta()` — tuyệt đối không nuốt lỗi Firestore khi đang trực tuyến.
    - `_extractDocSemAndSid()` đảm bảo bản ghi có prefix học kỳ luôn được ưu tiên đè lên bản legacy nếu đồng tồn tại, đồng thời hỗ trợ cả MSSV có chứa ký tự `_` hoặc `/`.
 9. **Xác định Sinh viên Trong kỳ / Ngoài kỳ Động (Live Enrollment Claim):**
    - Bỏ hoàn toàn mọi trạng thái `isEnrolledThisSemester` gắn cứng. Backend (`auth.service.ts` `resolveCurrentClaims` & `loginWithGoogle`) và Frontend (`ApiClient.isStudentEnrolledInSemester`, `PrimeRbac`, `ModuleRegistry`, `App.tsx`, `Sidebar.tsx`, `Navbar.tsx`, `DashboardPage.tsx`) đều đối chiếu trực tiếp với danh sách sinh viên của học kỳ active (`fail-closed` khi danh sách rỗng `[]`). Khi giảng viên xóa sinh viên khỏi kỳ, tài khoản sinh viên tự chuyển về `sv_ngoai_ky`.
-10. **Tối ưu Tốc độ Tải Trang Quản lý Sinh viên & Firestore Rules (`StudentsPage.tsx`):**
+10. **Tối ưu Tốc độ Tải Trang Quản lý Sinh viên (`StudentsPage.tsx`):**
     - `ApiClient` lưu Snapshot trong RAM (`_studentsSnapshotMap`, `_declsSnapshotMap`, `_certsSnapshotList`, `_cvSnapshotMap`, `_notesSnapshotMap`), khử trùng lặp request song song (`_liveStudentsInFlight`), phục vụ hiển thị tức thì theo **Stale-While-Revalidate** (`getCachedStudentsSync`) và `probeBackend()` qua `GET /api/health`.
-    - `StudentsPage.tsx` debounce listener (120ms), tránh vòng lặp re-render ở modal chi tiết (`[selectedSid, activeSemester]` + `enrichedModalKeyRef`), dùng `fetchSeqRef` tránh race-condition khi đổi học kỳ nhanh, và sửa `firestore.rules` (`allow read: if true;`) để truy vấn toàn collection hoạt động ổn định cả khi đăng nhập bằng mật khẩu nội bộ.
+    - `StudentsPage.tsx` debounce listener (120ms), tránh vòng lặp re-render ở modal chi tiết (`[selectedSid, activeSemester]` + `enrichedModalKeyRef`) và dùng `fetchSeqRef` tránh race-condition khi đổi học kỳ nhanh.
+11. **Gia cố Bảo mật Toàn diện Đợt 1 & Đợt 2 (`v126`–`v127`):**
+    - **Đợt 1 (`v126`):** Chặn Path Traversal trong `http-router.ts`; giới hạn CORS Origin và bổ sung HTTP Security Headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`, `CSP`) trên cả Backend và `firebase.json`; thoát ký tự `%`, `_` trong SQL `LIKE`; lọc mọi đường dẫn CV/Chứng chỉ qua `ApiClient.sanitizeExternalUrl()` (chỉ nhận `http:` / `https:`); khóa tự ký lại `_sig` trong `getSavedUser()` và tự động hủy phiên ngay khi phát hiện sửa `localStorage` qua DevTools.
+    - **Đợt 2 (`v127`):** Đưa toàn bộ **103 tài khoản nội bộ TDTU** (4 Admin, 3 Giảng viên, SV Ngoài kỳ `52100999` và 91 sinh viên thực tế) vào **Firebase Authentication thật (`dashboard-39cf8`)**; tự động đăng nhập Firebase Auth (`signInWithEmailPassword` & `waitForAuthReady`) để cấp `request.auth` chuẩn RS256; siết chặt `firestore.rules` (chặn 100% truy cập không đăng nhập `403`, phân quyền đọc/ghi/xóa theo `isTdtuUser()`, `isStaff()`, `isAdmin()`); xác thực mật khẩu Backend bằng `crypto.scryptSync` + `crypto.timingSafeEqual`.
